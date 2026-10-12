@@ -1,0 +1,3 @@
+[submodule "vendor/enigma"]
+	path = vendor/enigma
+	url = https://github.com/QuiltMC/enigma
