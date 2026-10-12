@@ -42,7 +42,7 @@ import java.util.regex.Pattern;
  * Created by: Dani-error
  */
 @RequiredArgsConstructor
-public class MappingsService implements Service {
+public final class MappingsService implements Service {
 
     private static final Pattern PARSE_ERROR_PATTERN = Pattern.compile("^Line (\\d+): (.*) in file (.*)$", Pattern.DOTALL);
 
