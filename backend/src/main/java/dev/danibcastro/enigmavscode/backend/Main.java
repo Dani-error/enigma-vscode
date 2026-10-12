@@ -25,7 +25,7 @@ public class Main {
 
         JsonRpcConnection connection = new JsonRpcConnection(in, out);
 
-        // TODO: initialise backend
+        new Backend(connection);
 
         connection.listen();
         connection.close();
