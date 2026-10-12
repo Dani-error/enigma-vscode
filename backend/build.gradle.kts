@@ -54,6 +54,9 @@ tasks.test {
 	systemProperty("enigma.test.obf", file("../vendor/enigma/enigma/build/test-obf").absolutePath)
 	systemProperty("enigma.test.resources", file("../vendor/enigma").absolutePath)
 
+	// use the backend's logging configuration, which the error capturing relies on
+	systemProperty("tinylog.configuration", "enigma-vscode-tinylog.properties")
+
 	testLogging {
 		events("failed")
 		exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
