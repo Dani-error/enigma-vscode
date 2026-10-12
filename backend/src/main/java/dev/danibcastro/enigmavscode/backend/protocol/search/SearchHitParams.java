@@ -7,4 +7,6 @@ package dev.danibcastro.enigmavscode.backend.protocol.search;
  * Created by: Dani-error
  */
 /** What is sent with a request. */
-public record SearchHitParams(String id) { }
+public record SearchHitParams(
+        String id
+) { }

@@ -12,7 +12,10 @@ import dev.danibcastro.enigmavscode.backend.protocol.wire.IntTuple;
 /**
  * How far one class is mapped. Sent as {@code [mapped, mappable]}.
  */
-public record ClassProgress(int mapped, int mappable) implements IntTuple {
+public record ClassProgress(
+        int mapped,
+        int mappable
+) implements IntTuple {
 
     @Override
     public int[] toInts() {

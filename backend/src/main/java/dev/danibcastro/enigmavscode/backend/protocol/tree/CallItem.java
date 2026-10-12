@@ -17,9 +17,15 @@ import java.util.List;
  *
  * @param sites where the calls are
  */
-public record CallItem(@Flatten EntryInfo info, List<Site> sites) {
+public record CallItem(
+        @Flatten EntryInfo info,
+        List<Site> sites
+) {
 
     /** One call: what is called, and the method it is called in. */
-    public record Site(EntryRef entry, EntryRef context) { }
+    public record Site(
+            EntryRef entry,
+            EntryRef context
+    ) { }
 
 }

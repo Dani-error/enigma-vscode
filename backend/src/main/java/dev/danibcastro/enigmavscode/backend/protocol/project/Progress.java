@@ -17,5 +17,4 @@ public record Progress(
         @Nullable String message,
         int done,
         int total
-) {
-}
+) { }

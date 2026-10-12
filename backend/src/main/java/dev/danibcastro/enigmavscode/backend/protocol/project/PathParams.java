@@ -8,4 +8,6 @@ package dev.danibcastro.enigmavscode.backend.protocol.project;
  */
 
 /** A file or folder to read from or write to. */
-public record PathParams(String path) { }
+public record PathParams(
+        String path
+) { }

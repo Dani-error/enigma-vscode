@@ -8,4 +8,6 @@ package dev.danibcastro.enigmavscode.backend.protocol.entry;
  */
 
 /** What is sent with a request. */
-public record EntryParams(EntryRef entry) { }
+public record EntryParams(
+        EntryRef entry
+) { }

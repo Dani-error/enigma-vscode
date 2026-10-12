@@ -17,7 +17,10 @@ import java.util.List;
  */
 public sealed interface ErrorData {
 
-    record Said(Problem key, List<String> args) implements ErrorData { }
+    record Said(
+            Problem key,
+            List<String> args
+    ) implements ErrorData { }
 
     /**
      * Mappings that could not be read, and where: the client marks the place in the file.
@@ -25,7 +28,12 @@ public sealed interface ErrorData {
      * @param kind always {@code mappingParse}, which is what the client tells this by
      * @param line counted from 1
      */
-    record MappingParse(Kind kind, @OmitIfNull @Nullable Integer line, @OmitIfNull @Nullable String reason, @OmitIfNull @Nullable String file) implements ErrorData { }
+    record MappingParse(
+            Kind kind,
+            @OmitIfNull @Nullable Integer line,
+            @OmitIfNull @Nullable String reason,
+            @OmitIfNull @Nullable String file
+    ) implements ErrorData { }
 
     @AllArgsConstructor
     @Getter @Accessors(fluent = true)

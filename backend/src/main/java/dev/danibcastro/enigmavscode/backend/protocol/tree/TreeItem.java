@@ -42,6 +42,8 @@ public record TreeItem(
         List<TreeItem> children
 ) {
 
-    public record Root(@Nullable TreeItem root) { }
+    public record Root(
+            @Nullable TreeItem root
+    ) { }
 
 }
