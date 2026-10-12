@@ -2,6 +2,7 @@ package dev.danibcastro.enigmavscode.backend;
 
 import dev.danibcastro.enigmavscode.backend.rpc.JsonRpcConnection;
 import dev.danibcastro.enigmavscode.backend.service.Service;
+import dev.danibcastro.enigmavscode.backend.service.impl.EntryService;
 import dev.danibcastro.enigmavscode.backend.service.impl.ExportService;
 import dev.danibcastro.enigmavscode.backend.service.impl.StatsService;
 
@@ -20,6 +21,7 @@ public final class Backend {
         Session session = new Session(rpc);
 
         List.of(
+                new EntryService(session),
                 new StatsService(session),
                 new ExportService(session)
                 // TODO: rest
