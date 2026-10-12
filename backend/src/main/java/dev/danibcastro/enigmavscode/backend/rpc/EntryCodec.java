@@ -1,15 +1,16 @@
 package dev.danibcastro.enigmavscode.backend.rpc;
 
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
+import dev.danibcastro.enigmavscode.backend.protocol.entry.EntryKind;
+import dev.danibcastro.enigmavscode.backend.protocol.entry.EntryRef;
+import dev.danibcastro.enigmavscode.backend.protocol.entry.SymbolKind;
 import lombok.experimental.UtilityClass;
+import org.jspecify.annotations.Nullable;
 import org.quiltmc.enigma.api.translation.representation.MethodDescriptor;
 import org.quiltmc.enigma.api.translation.representation.TypeDescriptor;
 import org.quiltmc.enigma.api.translation.representation.entry.*;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.Objects;
 
 /*
  * Project: enigma-vscode
@@ -21,113 +22,78 @@ import java.util.Map;
 @UtilityClass
 public class EntryCodec {
 
-    public static Map<String, Object> toJson(Entry<?> entry) {
-        Map<String, Object> json = new LinkedHashMap<>();
+    public EntryRef toRef(Entry<?> entry) {
         if (entry instanceof ClassEntry classEntry) {
-            json.put("kind", "class");
-            json.put("name", classEntry.getFullName());
+            return new EntryRef(EntryKind.CLASS, null, null, classEntry.getFullName(), null, null, null);
         } else if (entry instanceof FieldEntry field) {
-            json.put("kind", "field");
-            if (field.getParent() != null) {
-                json.put("owner", field.getParent().getFullName());
-            }
-            json.put("name", field.getName());
-            json.put("desc", field.getDesc().toString());
+            return new EntryRef(EntryKind.FIELD, field.getParent().getFullName(), null, field.getName(), field.getDesc().toString(), null, null);
         } else if (entry instanceof MethodEntry method) {
-            json.put("kind", "method");
-            if (method.getParent() != null) {
-                json.put("owner", method.getParent().getFullName());
-            }
-            json.put("name", method.getName());
-            json.put("desc", method.getDesc().toString());
+            return new EntryRef(EntryKind.METHOD, method.getParent().getFullName(), null, method.getName(), method.getDesc().toString(), null, null);
         } else if (entry instanceof LocalVariableEntry local) {
             MethodEntry method = local.getParent();
-            json.put("kind", "local");
-            if (method.getParent() != null) {
-                json.put("owner", method.getParent().getFullName());
-            }
-            json.put("method", method.getName());
-            json.put("desc", method.getDesc().toString());
-            json.put("index", local.getIndex());
-            json.put("parameter", local.isArgument());
-            json.put("name", local.getName());
-        } else {
-            throw new IllegalArgumentException("Cannot serialize entry of type " + entry.getClass().getName());
+            return new EntryRef(EntryKind.LOCAL, method.getParent().getFullName(), method.getName(), local.getName(), method.getDesc().toString(), local.getIndex(), local.isArgument());
         }
 
-        return json;
+        throw new IllegalArgumentException("Cannot serialize entry of type " + entry.getClass().getName());
     }
 
-    public static Entry<?> fromJson(JsonElement element) {
-        if (element == null || !element.isJsonObject()) {
+    /**
+     * The entry the client names.
+     * @throws RpcException if what it sent names nothing
+     */
+    public Entry<?> fromRef(@Nullable EntryRef ref) {
+        if (ref == null) {
             throw RpcException.invalidParams("Expected an entry");
         }
 
-        JsonObject json = element.getAsJsonObject();
-        String kind = string(json, "kind");
+        if (ref.kind() == null) {
+            throw RpcException.invalidParams("Entry is missing \"kind\"");
+        }
+
         try {
-            switch (kind) {
-                case "class" -> {
-                    return new ClassEntry(string(json, "name"));
+            return switch (ref.kind()) {
+                case CLASS -> new ClassEntry(part(ref.name(), "name"));
+                case FIELD -> new FieldEntry(ownerOf(ref), part(ref.name(), "name"), new TypeDescriptor(part(ref.desc(), "desc")));
+                case METHOD -> new MethodEntry(ownerOf(ref), part(ref.name(), "name"), new MethodDescriptor(part(ref.desc(), "desc")));
+                case LOCAL -> {
+                    MethodEntry method = new MethodEntry(ownerOf(ref), part(ref.method(), "method"), new MethodDescriptor(part(ref.desc(), "desc")));
+                    // a variable is a parameter unless it says otherwise, and may have no name in the jar
+                    boolean parameter = ref.parameter() == null || ref.parameter();
+                    yield new LocalVariableEntry(method, part(ref.index(), "index"), Objects.requireNonNullElse(ref.name(), ""), parameter, null);
                 }
-                case "field" -> {
-                    return new FieldEntry(new ClassEntry(string(json, "owner")), string(json, "name"), new TypeDescriptor(string(json, "desc")));
-                }
-                case "method" -> {
-                    return new MethodEntry(new ClassEntry(string(json, "owner")), string(json, "name"), new MethodDescriptor(string(json, "desc")));
-                }
-                case "local" -> {
-                    MethodEntry method = new MethodEntry(new ClassEntry(string(json, "owner")), string(json, "method"), new MethodDescriptor(string(json, "desc")));
-                    boolean parameter = !json.has("parameter") || json.get("parameter").getAsBoolean();
-                    String name = json.has("name") && !json.get("name").isJsonNull() ? json.get("name").getAsString() : "";
-                    return new LocalVariableEntry(method, json.get("index").getAsInt(), name, parameter, null);
-                }
-                default -> throw RpcException.invalidParams("Unknown entry kind: " + kind);
-            }
+            };
         } catch (RpcException e) {
             throw e;
         } catch (RuntimeException e) {
+            // a descriptor that is none, for example
             throw RpcException.invalidParams("Malformed entry: " + e.getMessage());
         }
     }
 
-    public static ClassEntry classFromJson(JsonObject params, String key) {
-        if (!params.has(key) || params.get(key).isJsonNull()) {
-            throw RpcException.invalidParams("Missing parameter: " + key);
-        }
-
-        JsonElement element = params.get(key);
-        if (element.isJsonPrimitive()) {
-            return new ClassEntry(element.getAsString());
-        }
-
-        if (fromJson(element) instanceof ClassEntry classEntry) {
-            return classEntry;
-        }
-
-        throw RpcException.invalidParams("Expected a class entry for " + key);
+    private ClassEntry ownerOf(EntryRef ref) {
+        return new ClassEntry(part(ref.owner(), "owner"));
     }
 
-    private static String string(JsonObject json, String key) {
-        if (!json.has(key) || json.get(key).isJsonNull()) {
-            throw RpcException.invalidParams("Entry is missing \"" + key + "\"");
+    private <T> T part(@Nullable T value, String name) {
+        if (value == null) {
+            throw RpcException.invalidParams("Entry is missing \"" + name + "\"");
         }
 
-        return json.get(key).getAsString();
+        return value;
     }
 
-    public static String kindOf(Entry<?> entry) {
+    public SymbolKind kindOf(Entry<?> entry) {
         if (entry instanceof ClassEntry) {
-            return "class";
+            return SymbolKind.CLASS;
         } else if (entry instanceof FieldEntry) {
-            return "field";
+            return SymbolKind.FIELD;
         } else if (entry instanceof MethodEntry method) {
-            return method.isConstructor() ? "constructor" : "method";
+            return method.isConstructor() ? SymbolKind.CONSTRUCTOR : SymbolKind.METHOD;
         } else if (entry instanceof LocalVariableEntry local) {
-            return local.isArgument() ? "parameter" : "local";
+            return local.isArgument() ? SymbolKind.PARAMETER : SymbolKind.LOCAL;
         }
 
-        return "unknown";
+        return SymbolKind.UNKNOWN;
     }
 
 }

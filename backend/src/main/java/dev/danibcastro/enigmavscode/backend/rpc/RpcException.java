@@ -1,11 +1,13 @@
 package dev.danibcastro.enigmavscode.backend.rpc;
 
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
+import dev.danibcastro.enigmavscode.backend.protocol.error.ErrorData;
+import dev.danibcastro.enigmavscode.backend.protocol.error.Problem;
 import lombok.Getter;
 import org.jspecify.annotations.Nullable;
+
+import java.util.Arrays;
+import java.util.List;
 
 /*
  * Project: enigma-vscode
@@ -33,13 +35,13 @@ public class RpcException extends RuntimeException {
 
     private final int code;
     @Nullable
-    private final transient JsonElement data;
+    private final transient ErrorData data;
 
     public RpcException(int code, String message) {
         this(code, message, null);
     }
 
-    public RpcException(int code, String message, @Nullable JsonElement data) {
+    public RpcException(int code, String message, @Nullable ErrorData data) {
         super(message);
         this.code = code;
         this.data = data;
@@ -53,34 +55,22 @@ public class RpcException extends RuntimeException {
      * @param key what happened, like {@code jar-not-found}; the client has a text for each
      * @param args what the text is about, in the order the client expects them
      */
-    public static RpcException said(String key, Object... args) {
-        return new RpcException(USER_ERROR, describe(key, args), data(key, args));
+    public static RpcException said(Problem problem, Object... args) {
+        return new RpcException(USER_ERROR, describe(problem, args), new ErrorData.Said(problem, Arrays.stream(args).map(String::valueOf).toList()));
     }
 
     /** No jar is open: the request needs one. */
     public static RpcException noProject() {
-        return new RpcException(NO_PROJECT, "no-jar", data("no-jar"));
+        return new RpcException(NO_PROJECT, describe(Problem.NO_JAR), new ErrorData.Said(Problem.NO_JAR, List.of()));
     }
 
-    public static String describe(String key, Object... args) {
-        StringBuilder text = new StringBuilder(key);
+    public static String describe(Problem problem, Object... args) {
+        StringBuilder text = new StringBuilder(problem.wireName());
         for (int i = 0; i < args.length; i++) {
             text.append(i == 0 ? ": " : ", ").append(args[i]);
         }
 
         return text.toString();
-    }
-
-    public static JsonObject data(String key, Object... args) {
-        JsonObject data = new JsonObject();
-        data.addProperty("key", key);
-        JsonArray values = new JsonArray();
-        for (Object arg : args) {
-            values.add(String.valueOf(arg));
-        }
-
-        data.add("args", values);
-        return data;
     }
 
     public static RpcException invalidParams(String message) {

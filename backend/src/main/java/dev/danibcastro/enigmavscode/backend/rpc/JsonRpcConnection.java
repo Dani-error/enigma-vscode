@@ -2,11 +2,17 @@ package dev.danibcastro.enigmavscode.backend.rpc;
 
 
 import com.google.gson.*;
+import com.google.gson.annotations.SerializedName;
+import dev.danibcastro.enigmavscode.backend.protocol.error.ErrorData;
+import dev.danibcastro.enigmavscode.backend.protocol.wire.EnumAdapterFactory;
+import dev.danibcastro.enigmavscode.backend.protocol.wire.IntTupleAdapterFactory;
+import dev.danibcastro.enigmavscode.backend.protocol.wire.RecordAdapterFactory;
 import lombok.Getter;
 import org.jspecify.annotations.Nullable;
 import org.tinylog.Logger;
 
 import java.io.*;
+import java.lang.reflect.RecordComponent;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -20,16 +26,19 @@ import java.util.concurrent.*;
  */
 public final class JsonRpcConnection implements Closeable {
 
-    public static final Gson GSON = new GsonBuilder()
-            .disableHtmlEscaping()
-            .serializeNulls()
+    public static final Gson GSON = new GsonBuilder().disableHtmlEscaping().serializeNulls()
+            // for maps whose keys are enums: the key is written like the enum is anywhere else
+            .enableComplexMapKeySerialization()
+            .registerTypeAdapterFactory(new EnumAdapterFactory())
+            .registerTypeAdapterFactory(new IntTupleAdapterFactory())
+            .registerTypeAdapterFactory(new RecordAdapterFactory())
             .create();
 
     private final InputStream in;
     private final OutputStream out;
 
     private final Object writeLock = new Object();
-    private final Map<String, Handler> handlers = new ConcurrentHashMap<>();
+    private final Map<String, Raw> handlers = new ConcurrentHashMap<>();
 
     @Getter
     private final ExecutorService sessionExecutor = Executors.newSingleThreadExecutor(runnable -> {
@@ -46,18 +55,110 @@ public final class JsonRpcConnection implements Closeable {
     }
 
     /**
-     * Handles a request or a notification. May return a {@link CompletableFuture} for results that are produced asynchronously.
+     * Answers a request.
+     * @param <P> what is sent with it: one of the records of the protocol packages whose names end in Params
+     * @param <R> what it answers with: a record of the protocol package, or a list of them
      */
     @FunctionalInterface
-    public interface Handler {
+    public interface Handler<P, R> {
+        @Nullable
+        R handle(P params) throws Exception;
+    }
+
+    /** Answers a request that nothing is sent with. */
+    @FunctionalInterface
+    public interface Call<R> {
+        @Nullable
+        R call() throws Exception;
+    }
+
+    /**
+     * Carries out a request that has nothing to answer but that it was done.
+     * @param <P> what is sent with it
+     */
+    @FunctionalInterface
+    public interface Action<P> {
+        void run(P params) throws Exception;
+    }
+
+    /** Carries out a request that nothing is sent with and that has nothing to answer. */
+    @FunctionalInterface
+    public interface Procedure {
+        void run() throws Exception;
+    }
+
+    /** A request as it arrives. Its answer is the value itself, or a future of it. */
+    @FunctionalInterface
+    private interface Raw {
         @Nullable
         Object handle(JsonObject params) throws Exception;
     }
 
-    public void register(String method, Handler handler) {
+    private void add(String method, Raw handler) {
         if (this.handlers.put(method, handler) != null) {
             throw new IllegalStateException("duplicate handler for " + method);
         }
+    }
+
+    /** Registers a request that is answered at once. */
+    public <P extends Record, R> void register(String method, Class<P> params, Handler<P, R> handler) {
+        this.add(method, json -> handler.handle(read(json, params)));
+    }
+
+    /** Registers a request that nothing is sent with. */
+    public <R> void register(String method, Call<R> handler) {
+        this.add(method, json -> handler.call());
+    }
+
+    /** Registers a request that is carried out and has nothing to answer. */
+    public <P extends Record> void registerAction(String method, Class<P> params, Action<P> action) {
+        this.add(method, json -> {
+            action.run(read(json, params));
+            return null;
+        });
+    }
+
+    /** Registers a request that nothing is sent with and that has nothing to answer. */
+    public void registerAction(String method, Procedure action) {
+        this.add(method, json -> {
+            action.run();
+            return null;
+        });
+    }
+
+    /** Registers a request whose answer takes a while to produce, like a class that has to be decompiled first. */
+    public <P extends Record, R> void registerLater(String method, Class<P> params, Handler<P, CompletableFuture<R>> handler) {
+        this.add(method, json -> handler.handle(read(json, params)));
+    }
+
+    /**
+     * Reads what was sent with a request, and makes sure that everything is there that has to be: every part that is
+     * not declared as one that may be left out.
+     */
+    static <P extends Record> P read(JsonObject json, Class<P> type) {
+        P params;
+        try {
+            params = GSON.fromJson(json, type);
+        } catch (JsonParseException | IllegalArgumentException e) {
+            throw RpcException.invalidParams("Malformed parameters: " + e.getMessage());
+        }
+
+        for (RecordComponent component : type.getRecordComponents()) {
+            if (component.getAnnotatedType().isAnnotationPresent(Nullable.class) || component.getType().isPrimitive()) {
+                continue;
+            }
+
+            try {
+                if (component.getAccessor().invoke(params) == null) {
+                    SerializedName name = type.getDeclaredField(component.getName()).getAnnotation(SerializedName.class);
+                    throw RpcException.invalidParams("Missing parameter: " + (name == null ? component.getName() : name.value()));
+                }
+            } catch (ReflectiveOperationException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+
+        return params;
     }
 
     /**
@@ -168,7 +269,7 @@ public final class JsonRpcConnection implements Closeable {
         JsonElement rawParams = message.get("params");
         JsonObject params = rawParams != null && rawParams.isJsonObject() ? rawParams.getAsJsonObject() : new JsonObject();
 
-        Handler handler = this.handlers.get(method);
+        Raw handler = this.handlers.get(method);
         if (handler == null) {
             if (id != null) {
                 this.sendError(id, RpcException.METHOD_NOT_FOUND, "Unknown method: " + method, null);
@@ -217,11 +318,11 @@ public final class JsonRpcConnection implements Closeable {
 
         if (id != null) {
             String message = cause.getMessage() == null ? cause.getClass().getSimpleName() : cause.getClass().getSimpleName() + ": " + cause.getMessage();
-            JsonObject data = new JsonObject();
+            ErrorData data = null;
             try {
                 StringWriter trace = new StringWriter();
                 cause.printStackTrace(new PrintWriter(trace));
-                data.addProperty("stackTrace", trace.toString());
+                data = new ErrorData.Internal(trace.toString());
             } catch (Throwable ignored) {
                 // the message alone will have to do
             }
@@ -251,12 +352,12 @@ public final class JsonRpcConnection implements Closeable {
         this.write(message);
     }
 
-    private void sendError(JsonElement id, int code, String text, @Nullable JsonElement data) {
+    private void sendError(JsonElement id, int code, String text, @Nullable ErrorData data) {
         JsonObject error = new JsonObject();
         error.addProperty("code", code);
         error.addProperty("message", text);
         if (data != null) {
-            error.add("data", data);
+            error.add("data", GSON.toJsonTree(data));
         }
 
         JsonObject message = new JsonObject();
@@ -267,13 +368,14 @@ public final class JsonRpcConnection implements Closeable {
     }
 
     /**
-     * Sends a notification to the client. May be called from any thread.
+     * Tells the client something it did not ask for. May be called from any thread.
+     * @param params what it is told: a record of the protocol packages
      */
-    public void notify(String method, @Nullable Object params) {
+    public void notify(Announcement announcement, Record params) {
         JsonObject message = new JsonObject();
         message.addProperty("jsonrpc", "2.0");
-        message.addProperty("method", method);
-        message.add("params", params == null ? new JsonObject() : GSON.toJsonTree(params));
+        message.addProperty("method", announcement.method());
+        message.add("params", GSON.toJsonTree(params));
         this.write(message);
     }
 
