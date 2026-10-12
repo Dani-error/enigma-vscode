@@ -24,6 +24,7 @@ public final class Backend {
         List.of(
                 entries = new EntryService(session),
                 sources = new SourceService(session, entries),
+                new NavigationService(session, sources),
                 new TreeService(session, entries),
                 new SearchService(session, entries),
                 new StatsService(session),
