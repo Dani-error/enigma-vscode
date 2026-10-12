@@ -33,6 +33,10 @@ dependencies {
 	testRuntimeOnly(libs.junit.engine)
 	testRuntimeOnly(libs.junit.launcher)
 	testImplementation(libs.hamcrest)
+
+	// lombok
+	compileOnly("org.projectlombok:lombok:1.18.48")
+	annotationProcessor("org.projectlombok:lombok:1.18.48")
 }
 
 java {
