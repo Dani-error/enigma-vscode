@@ -226,22 +226,9 @@ public final class EntryService implements Service {
                 new EntryInfo.Names(entry.getName(), deobf.getName(), simpleName, deobf.getFullName()),
                 new EntryInfo.Mapping(mapping.tokenType(), mapping.sourcePluginId(), remapper.getMapping(entry).javadoc(), mapping.tokenType() == TokenType.OBFUSCATED),
                 entryIndex.hasEntry(entry), project.isNavigable(entry), project.isRenamable(entry),
-                new EntryInfo.Renaming(renamable && this.session.isEditable(editableType(entry)), renamable && this.session.isEditable(Editable.JAVADOC),
+                new EntryInfo.Renaming(renamable && this.session.isEditable(SourceService.editableType(entry)), renamable && this.session.isEditable(Editable.JAVADOC),
                         EntryCodec.toRef(nameable), this.editableName(nameable, nameable.getName())),
                 entry.getTopLevelClass().getFullName(), modifiers(access), type, declaration);
-    }
-
-    private Editable editableType(Entry<?> entry) {
-        if (entry instanceof MethodEntry method) {
-            // renaming a constructor renames the class
-            return method.isConstructor() ? Editable.CLASS : Editable.METHOD;
-        } else if (entry instanceof FieldEntry) {
-            return Editable.FIELD;
-        } else if (entry instanceof LocalVariableEntry local) {
-            return local.isArgument() ? Editable.PARAMETER : Editable.LOCAL;
-        }
-
-        return Editable.CLASS;
     }
 
     /**
