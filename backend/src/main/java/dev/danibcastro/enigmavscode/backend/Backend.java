@@ -12,6 +12,8 @@ import dev.danibcastro.enigmavscode.backend.rpc.JsonRpcConnection;
 public final class Backend {
 
     public Backend(JsonRpcConnection rpc) {
+        Session session = new Session(rpc);
+
         // TODO: register services
     }
 
