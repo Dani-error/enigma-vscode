@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
  * Created by: Dani-error
  */
 @AllArgsConstructor
-public class EntryService implements Service {
+public final class EntryService implements Service {
 
     private final Session session;
 
