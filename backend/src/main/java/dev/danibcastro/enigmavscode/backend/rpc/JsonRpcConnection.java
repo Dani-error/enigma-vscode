@@ -24,7 +24,7 @@ import java.util.concurrent.*;
  *
  * Minimal JSON-RPC 2.0 endpoint.
  */
-public final class JsonRpcConnection implements Closeable {
+public final class JsonRpcConnection {
 
     public static final Gson GSON = new GsonBuilder().disableHtmlEscaping().serializeNulls()
             // for maps whose keys are enums: the key is written like the enum is anywhere else

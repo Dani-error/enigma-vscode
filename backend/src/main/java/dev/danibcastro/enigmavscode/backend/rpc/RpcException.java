@@ -52,7 +52,7 @@ public class RpcException extends RuntimeException {
     }
 
     /**
-     * @param key what happened, like {@code jar-not-found}; the client has a text for each
+     * @param problem what happened
      * @param args what the text is about, in the order the client expects them
      */
     public static RpcException said(Problem problem, Object... args) {
