@@ -19,14 +19,16 @@ public final class Backend {
         Session session = new Session(rpc);
 
         EntryService entries;
+        SourceService sources;
 
         List.of(
                 entries = new EntryService(session),
-                new SourceService(session, entries),
+                sources = new SourceService(session, entries),
                 new TreeService(session, entries),
                 new SearchService(session, entries),
                 new StatsService(session),
-                new ExportService(session)
+                new ExportService(session),
+                new MappingsService(session, sources)
                 // TODO: rest
         ).forEach(Service::register);
     }
