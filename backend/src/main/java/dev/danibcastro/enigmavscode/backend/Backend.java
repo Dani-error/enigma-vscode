@@ -1,7 +1,9 @@
 package dev.danibcastro.enigmavscode.backend;
 
 import dev.danibcastro.enigmavscode.backend.rpc.JsonRpcConnection;
+import dev.danibcastro.enigmavscode.backend.service.Service;
 import dev.danibcastro.enigmavscode.backend.service.impl.ExportService;
+import dev.danibcastro.enigmavscode.backend.service.impl.StatsService;
 
 import java.util.List;
 
@@ -18,9 +20,10 @@ public final class Backend {
         Session session = new Session(rpc);
 
         List.of(
+                new StatsService(session),
                 new ExportService(session)
                 // TODO: rest
-        ).forEach(ExportService::register);
+        ).forEach(Service::register);
     }
 
 }
