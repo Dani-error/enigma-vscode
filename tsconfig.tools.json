@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": ["bun"],
+    "noEmit": true,
+    "rootDir": "."
+  },
+  "include": ["scripts", "test/*.ts", "test/reload", "test/wire"],
+  "exclude": []
+}
