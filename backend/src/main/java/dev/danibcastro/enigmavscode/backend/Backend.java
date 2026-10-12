@@ -22,6 +22,7 @@ public final class Backend {
         SourceService sources;
         MappingsService mappings;
         EditService edits;
+        CollabService collab;
 
         List.of(
                 entries = new EntryService(session),
@@ -33,8 +34,8 @@ public final class Backend {
                 new ExportService(session),
                 mappings = new MappingsService(session, sources),
                 edits = new EditService(session, entries, sources, mappings),
-                new CollabService(session, edits, mappings)
-                // TODO: rest
+                collab = new CollabService(session, edits, mappings),
+                new ProjectService(session, sources, mappings, collab)
         ).forEach(Service::register);
     }
 
