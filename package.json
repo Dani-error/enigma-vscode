@@ -1,0 +1,38 @@
+{
+  "name": "enigma-vscode",
+  "displayName": "Enigma",
+  "description": "%extension.description%",
+  "version": "1.0.0",
+  "publisher": "danibcastro",
+  "engines": {
+    "vscode": "^1.141.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Other"
+  ],
+  "keywords": [
+    "enigma",
+    "deobfuscation",
+    "mappings",
+    "decompiler",
+    "java",
+    "bytecode"
+  ],
+  "main": "./dist/extension.js",
+  "dependencies": {
+    "vscode-jsonrpc": "^8.2.1"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.3",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^20.19.43",
+    "@types/vscode": "^1.140.0",
+    "@vscode/codicons": "^0.0.36",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.9.2",
+    "esbuild": "^0.24.2",
+    "mocha": "^10.8.2",
+    "typescript": "^5.9.3"
+  }
+}
