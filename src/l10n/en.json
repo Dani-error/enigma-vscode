@@ -28,5 +28,9 @@
   "messages.savingMappings": "Saving mappings",
   "messages.thisEntryCannotBeRenamed": "This entry cannot be renamed.",
   "messages.unknownDecompiler": "Unknown decompiler: {0}",
-  "messages.unknownMappingFormat": "Unknown mapping format: {0}"
+  "messages.unknownMappingFormat": "Unknown mapping format: {0}",
+
+  "backend.theEnigmaBackendIsNotRunning": "The Enigma backend is not running.",
+  "backend.theEnigmaBackendExitedUnexpectedlySee": "The Enigma backend exited unexpectedly ({0}). See the Enigma log for details.",
+  "backend.theEnigmaBackendIsMissingBuild": "The Enigma backend is missing: {0}. Build it with \"bun run build:backend\"."
 }
