@@ -26,7 +26,7 @@
   "devDependencies": {
     "@types/bun": "^1.4.3",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^20.19.43",
+    "@types/node": "^26.6.5",
     "@types/vscode": "^1.140.0",
     "@vscode/codicons": "^0.0.36",
     "@vscode/test-electron": "^2.5.2",
@@ -34,5 +34,9 @@
     "esbuild": "^0.24.2",
     "mocha": "^10.8.2",
     "typescript": "^5.9.3"
+  },
+  "scripts": {
+    "build:backend": "bun scripts/gradle.ts installJar --console=plain -q",
+    "test:backend": "bun scripts/gradle.ts test --console=plain"
   }
 }
