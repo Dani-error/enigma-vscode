@@ -36,5 +36,18 @@
 
   "documents.enigmaCouldNotShowThisClass": "Enigma could not show this class ({0}): {1}",
   "documents.enigmaCouldNotShowThisClassNoReason": "Enigma could not show this class ({0}).",
-  "documents.noEnigmaProjectIsOpenOpen": "No Enigma project is open. Open the jar this class belongs to and try again."
+  "documents.noEnigmaProjectIsOpenOpen": "No Enigma project is open. Open the jar this class belongs to and try again.",
+
+  "decorations.enterToRenameAnyway": "Enter to rename anyway",
+  "decorations.enterToRenameEscToCancel": "Enter to rename · Esc to cancel",
+  "decorations.renaming": "Renaming…",
+
+  "controller.enigmaDidNotRenameTo": "Enigma did not rename {0} to {1}: {2}",
+  "controller.finishTheNameYouAreEditing": "Finish the name you are editing first: Enter to apply, Escape to cancel",
+  "controller.onlyTheHighlightedNamesCanBe": "Only the highlighted names can be edited",
+  "controller.renameToAnyway": "Rename {0} to {1} anyway?",
+  "controller.theEngineRejectedTheName": "The engine rejected the name",
+  "controller.theNameCannotBeEmpty": "The name cannot be empty",
+
+  "common.rename": "Rename"
 }

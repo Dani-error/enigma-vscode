@@ -38,5 +38,469 @@
   "scripts": {
     "build:backend": "bun scripts/gradle.ts installJar --console=plain -q",
     "test:backend": "bun scripts/gradle.ts test --console=plain"
+  },
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "enigma",
+          "title": "Enigma",
+          "icon": "resources/enigma.svg"
+        }
+      ]
+    },
+    "colors": [
+      {
+        "id": "enigma.obfuscatedBackground",
+        "description": "%color.enigma.obfuscatedBackground%",
+        "defaults": {
+          "dark": "#FF55554D",
+          "light": "#FF50503A",
+          "highContrast": "#00000000",
+          "highContrastLight": "#00000000"
+        }
+      },
+      {
+        "id": "enigma.obfuscatedBorder",
+        "description": "%color.enigma.obfuscatedBorder%",
+        "defaults": {
+          "dark": "#FF555580",
+          "light": "#A05050",
+          "highContrast": "#FF5555",
+          "highContrastLight": "#A02020"
+        }
+      },
+      {
+        "id": "enigma.deobfuscatedBackground",
+        "description": "%color.enigma.deobfuscatedBackground%",
+        "defaults": {
+          "dark": "#50FA7B4D",
+          "light": "#50C8503A",
+          "highContrast": "#00000000",
+          "highContrastLight": "#00000000"
+        }
+      },
+      {
+        "id": "enigma.deobfuscatedBorder",
+        "description": "%color.enigma.deobfuscatedBorder%",
+        "defaults": {
+          "dark": "#50FA7B80",
+          "light": "#50A050",
+          "highContrast": "#50FA7B",
+          "highContrastLight": "#207020"
+        }
+      },
+      {
+        "id": "enigma.proposedBackground",
+        "description": "%color.enigma.proposedBackground%",
+        "defaults": {
+          "dark": "#6063664D",
+          "light": "#00000027",
+          "highContrast": "#00000000",
+          "highContrastLight": "#00000000"
+        }
+      },
+      {
+        "id": "enigma.proposedBorder",
+        "description": "%color.enigma.proposedBorder%",
+        "defaults": {
+          "dark": "#A0A3A680",
+          "light": "#000000BF",
+          "highContrast": "#FFFFFF",
+          "highContrastLight": "#000000"
+        }
+      },
+      {
+        "id": "enigma.fallbackBackground",
+        "description": "%color.enigma.fallbackBackground%",
+        "defaults": {
+          "dark": "#AA55004D",
+          "light": "#FFAA4450",
+          "highContrast": "#00000000",
+          "highContrastLight": "#00000000"
+        }
+      },
+      {
+        "id": "enigma.fallbackBorder",
+        "description": "%color.enigma.fallbackBorder%",
+        "defaults": {
+          "dark": "#D86F0680",
+          "light": "#D86F06",
+          "highContrast": "#D86F06",
+          "highContrastLight": "#A04800"
+        }
+      },
+      {
+        "id": "enigma.debugBackground",
+        "description": "%color.enigma.debugBackground%",
+        "defaults": {
+          "dark": "#BD93F94D",
+          "light": "#D9BEF9",
+          "highContrast": "#00000000",
+          "highContrastLight": "#00000000"
+        }
+      },
+      {
+        "id": "enigma.debugBorder",
+        "description": "%color.enigma.debugBorder%",
+        "defaults": {
+          "dark": "#BD93F980",
+          "light": "#BD93F9",
+          "highContrast": "#BD93F9",
+          "highContrastLight": "#6040A0"
+        }
+      },
+      {
+        "id": "enigma.editingBackground",
+        "description": "%color.enigma.editingBackground%",
+        "defaults": {
+          "dark": "#0078D455",
+          "light": "#005FB833",
+          "highContrast": "#00000000",
+          "highContrastLight": "#00000000"
+        }
+      },
+      {
+        "id": "enigma.editingBorder",
+        "description": "%color.enigma.editingBorder%",
+        "defaults": {
+          "dark": "#3794FF",
+          "light": "#005FB8",
+          "highContrast": "#F38518",
+          "highContrastLight": "#B5200D"
+        }
+      }
+    ],
+    "configuration": {
+      "title": "Enigma",
+      "properties": {
+        "enigma.java.home": {
+          "type": "string",
+          "default": "",
+          "scope": "machine-overridable",
+          "markdownDescription": "%setting.enigma.java.home%"
+        },
+        "enigma.java.vmArgs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "scope": "machine-overridable",
+          "markdownDescription": "%setting.enigma.java.vmArgs%"
+        },
+        "enigma.profile": {
+          "type": "string",
+          "default": "",
+          "scope": "resource",
+          "markdownDescription": "%setting.enigma.profile%"
+        },
+        "enigma.pluginJars": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "scope": "resource",
+          "markdownDescription": "%setting.enigma.pluginJars%"
+        },
+        "enigma.libraries": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "scope": "resource",
+          "markdownDescription": "%setting.enigma.libraries%"
+        },
+        "enigma.decompiler": {
+          "type": "string",
+          "enum": [
+            "enigma:vineflower",
+            "enigma:cfr",
+            "enigma:procyon",
+            "enigma:bytecode"
+          ],
+          "enumItemLabels": [
+            "Vineflower",
+            "CFR",
+            "Procyon",
+            "Bytecode"
+          ],
+          "default": "enigma:vineflower",
+          "description": "%setting.enigma.decompiler%"
+        },
+        "enigma.vineflower": {
+          "type": "object",
+          "default": {},
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number",
+              "boolean"
+            ]
+          },
+          "markdownDescription": "%setting.enigma.vineflower%"
+        },
+        "enigma.editable": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "class",
+              "method",
+              "field",
+              "parameter",
+              "local",
+              "javadoc"
+            ]
+          },
+          "uniqueItems": true,
+          "default": [
+            "class",
+            "method",
+            "field",
+            "parameter",
+            "local",
+            "javadoc"
+          ],
+          "markdownDescription": "%setting.enigma.editable%"
+        },
+        "enigma.autoSaveMappings": {
+          "type": "boolean",
+          "default": false,
+          "description": "%setting.enigma.autoSaveMappings%"
+        },
+        "enigma.reopenLastProject": {
+          "type": "string",
+          "enum": [
+            "ask",
+            "always",
+            "never"
+          ],
+          "enumDescriptions": [
+            "%setting.enigma.reopenLastProject.ask%",
+            "%setting.enigma.reopenLastProject.always%",
+            "%setting.enigma.reopenLastProject.never%"
+          ],
+          "default": "ask",
+          "description": "%setting.enigma.reopenLastProject%"
+        },
+        "enigma.maxRecentProjects": {
+          "type": "integer",
+          "default": 10,
+          "minimum": 0,
+          "description": "%setting.enigma.maxRecentProjects%"
+        },
+        "enigma.references.maxClasses": {
+          "type": "integer",
+          "default": 150,
+          "minimum": 1,
+          "description": "%setting.enigma.references.maxClasses%"
+        },
+        "enigma.stats.includeSynthetic": {
+          "type": "boolean",
+          "default": false,
+          "description": "%setting.enigma.stats.includeSynthetic%"
+        },
+        "enigma.stats.countFallback": {
+          "type": "boolean",
+          "default": false,
+          "description": "%setting.enigma.stats.countFallback%"
+        },
+        "enigma.notifications.server": {
+          "type": "string",
+          "enum": [
+            "none",
+            "no_chat",
+            "full"
+          ],
+          "default": "full",
+          "description": "%setting.enigma.notifications.server%",
+          "enumDescriptions": [
+            "%setting.enigma.notifications.server.none%",
+            "%setting.enigma.notifications.server.no_chat%",
+            "%setting.enigma.notifications.server.full%"
+          ]
+        },
+        "enigma.editor.inlineRename": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "%setting.enigma.editor.inlineRename%"
+        },
+        "enigma.editor.replaceObfuscatedNames": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "%setting.enigma.editor.replaceObfuscatedNames%"
+        },
+        "enigma.classTree.compactPackages": {
+          "type": "boolean",
+          "default": true,
+          "description": "%setting.enigma.classTree.compactPackages%"
+        },
+        "enigma.classTree.mode": {
+          "type": "string",
+          "enum": [
+            "split",
+            "all"
+          ],
+          "enumDescriptions": [
+            "%setting.enigma.classTree.mode.split%",
+            "%setting.enigma.classTree.mode.all%"
+          ],
+          "default": "split",
+          "description": "%setting.enigma.classTree.mode%"
+        },
+        "enigma.layout.revealPanes": {
+          "type": "boolean",
+          "default": true,
+          "description": "%setting.enigma.layout.revealPanes%"
+        },
+        "enigma.mcp.enabled": {
+          "type": "boolean",
+          "default": false,
+          "scope": "application",
+          "markdownDescription": "%setting.enigma.mcp.enabled%"
+        },
+        "enigma.mcp.port": {
+          "type": "number",
+          "default": 34713,
+          "minimum": 1024,
+          "maximum": 65535,
+          "scope": "application",
+          "description": "%setting.enigma.mcp.port%"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "enigma.inlineRename.commit",
+        "title": "%command.enigma.inlineRename.commit%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.inlineRename.cancel",
+        "title": "%command.enigma.inlineRename.cancel%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.inlineRename.start",
+        "title": "%command.enigma.inlineRename.start%",
+        "category": "Enigma"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "enigma.inlineRename.commit",
+          "when": "false"
+        },
+        {
+          "command": "enigma.inlineRename.cancel",
+          "when": "false"
+        },
+        {
+          "command": "enigma.inlineRename.start",
+          "when": "false"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "enigma.inlineRename.commit",
+        "key": "enter",
+        "when": "editorTextFocus && resourceScheme == enigma && editorLangId == enigma-java && enigma.renaming && !suggestWidgetVisible && !renameInputVisible"
+      },
+      {
+        "command": "enigma.inlineRename.commit",
+        "key": "tab",
+        "when": "editorTextFocus && resourceScheme == enigma && editorLangId == enigma-java && enigma.renaming && !suggestWidgetVisible && !inlineSuggestionVisible"
+      },
+      {
+        "command": "enigma.inlineRename.cancel",
+        "key": "escape",
+        "when": "editorTextFocus && resourceScheme == enigma && editorLangId == enigma-java && enigma.renaming && !suggestWidgetVisible && !findWidgetVisible"
+      },
+      {
+        "command": "enigma.inlineRename.start",
+        "key": "enter",
+        "when": "editorTextFocus && resourceScheme == enigma && editorLangId == enigma-java && !enigma.renaming && !editorReadonly && !suggestWidgetVisible && !renameInputVisible"
+      }
+    ],
+    "languages": [
+      {
+        "id": "enigma-java",
+        "aliases": [
+          "Java (Enigma)",
+          "Decompiled Java"
+        ],
+        "filenamePatterns": [
+          "**/*.jar!/**/*.java"
+        ],
+        "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "enigma-bytecode",
+        "aliases": [
+          "Java Bytecode (Enigma)",
+          "Java Bytecode"
+        ],
+        "filenamePatterns": [
+          "**/*.jar!/**/*.bytecode"
+        ],
+        "extensions": [
+          ".bytecode"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "enigma-java",
+        "scopeName": "source.enigma.java",
+        "path": "./syntaxes/enigma-java.tmLanguage.json"
+      },
+      {
+        "language": "enigma-bytecode",
+        "scopeName": "source.enigma.bytecode",
+        "path": "./syntaxes/enigma-bytecode.tmLanguage.json"
+      }
+    ],
+    "configurationDefaults": {
+      "[enigma-java]": {
+        "editor.linkedEditing": false,
+        "editor.quickSuggestions": {
+          "other": "off",
+          "comments": "off",
+          "strings": "off"
+        },
+        "editor.wordBasedSuggestions": "off",
+        "editor.suggestOnTriggerCharacters": false,
+        "editor.inlineSuggest.enabled": false,
+        "editor.parameterHints.enabled": false,
+        "editor.snippetSuggestions": "none",
+        "editor.tabCompletion": "off",
+        "editor.acceptSuggestionOnEnter": "off",
+        "editor.autoClosingBrackets": "never",
+        "editor.autoClosingQuotes": "never",
+        "editor.autoSurround": "never",
+        "editor.autoIndent": "none",
+        "editor.formatOnSave": false,
+        "editor.formatOnType": false,
+        "editor.formatOnPaste": false,
+        "editor.codeActionsOnSave": {},
+        "editor.dragAndDrop": false,
+        "editor.dropIntoEditor.enabled": false,
+        "editor.pasteAs.enabled": false,
+        "editor.occurrencesHighlight": "singleFile",
+        "files.trimTrailingWhitespace": false,
+        "files.insertFinalNewline": false,
+        "files.trimFinalNewlines": false,
+        "files.saveConflictResolution": "overwriteFileOnDisk"
+      },
+      "[enigma-bytecode]": {
+        "editor.wordBasedSuggestions": "off"
+      }
+    }
   }
 }
