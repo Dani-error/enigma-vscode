@@ -3,10 +3,12 @@ import { Backend } from './engine/backend';
 import { Enigma } from "./enigma";
 import { discoverInstallations, JavaRuntime, MINIMUM_JAVA } from "./engine/java";
 import { useIcons } from "./kinds";
+import { ClassIndex } from "./documents/classIndex";
 
 /** What the extension exposes to its integration tests. */
 export interface EnigmaApi {
     backend: Backend;
+    index: ClassIndex;
     /** Installed Java runtimes that can run the engine. */
     javaInstallations(): JavaRuntime[];
 }
@@ -18,14 +20,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<Enigma
     const output = vscode.window.createOutputChannel('Enigma', { log: true });
     useIcons(vscode.Uri.joinPath(context.extensionUri, 'resources', 'icons'));
     const backend = new Backend(context, output);
+    const index = new ClassIndex(backend);
 
     context.subscriptions.push(
-        output, backend
+        output, backend, index
     )
 
     // @ts-ignore
     const enigma: Enigma = {
-        context, output, backend
+        context, output, backend, index
     };
 
     shutdown = async () => {
@@ -33,7 +36,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Enigma
     };
 
     return {
-        backend,
+        backend, index,
         javaInstallations: () => discoverInstallations().filter(installation => installation.version >= MINIMUM_JAVA),
     };
 }
