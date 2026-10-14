@@ -50,10 +50,13 @@
   "controller.theNameCannotBeEmpty": "The name cannot be empty",
 
   "common.rename": "Rename",
+  "common.enigmaCannotRenameLocalVariablesOnly": "Enigma cannot rename local variables, only parameters.",
   "common.showLog": "Show Log",
   "common.mappings": "Mappings",
   "common.decompiler": "Decompiler",
   "common.javaArchives": "Java archives",
+  "common.inheritance": "Inheritance",
+  "common.calls": "Calls",
 
   "status.none": "none",
   "status.unsavedMappingChangesClickToSave": "Unsaved mapping changes — click to save",
@@ -130,6 +133,28 @@
   "project.theEnigmaEngineStoppedUnexpectedlyChanges": "The Enigma engine stopped unexpectedly. Changes made in the last few seconds may be lost; the rest can be restored.",
   "project.thisEnigmaSettingTakesEffectAfter": "This Enigma setting takes effect after the backend is restarted.",
   "project.whichFormat": "Which format?",
-  "project.yourMappingsHaveUnsavedChanges": "Your mappings have unsaved changes."
+  "project.yourMappingsHaveUnsavedChanges": "Your mappings have unsaved changes.",
+
+  "hover.declaredIn": "Declared in {0}",
+  "hover.declaredInMethod": "Declared in {0}, method {1}",
+  "hover.extends": "Extends {0}",
+  "hover.implements": "Implements {0}",
+  "hover.index": "index {0}",
+  "hover.mapped": "mapped",
+  "hover.markAsDeobfuscated": "Mark as deobfuscated",
+  "hover.notMapped": "not mapped",
+  "hover.notPartOfTheJarCannot": "Not part of the jar; cannot be renamed.",
+  "hover.obfuscated": "Obfuscated: {0} — {1}",
+  "hover.proposedFromOtherMappings": "proposed from other mappings",
+  "hover.proposedFromOtherMappingsBy": "proposed from other mappings by {0}",
+  "hover.proposedFromTheBytecode": "proposed from the bytecode",
+  "hover.proposedFromTheBytecodeBy": "proposed from the bytecode by {0}",
+  "hover.reset": "Reset",
+
+  "navigation.enigmaOnlyTheFirstReferencingClasses": "Enigma: only the first {0} referencing classes were searched (enigma.references.maxClasses)",
+
+  "rename.cannotBeRenamedItIsA": "{0} cannot be renamed: it is a constructor of an unnamed class, a library override, or editing it is disabled.",
+  "rename.isNotPartOfTheJar": "{0} is not part of the jar and cannot be renamed.",
+  "rename.thereIsNothingHereThatCan": "There is nothing here that can be renamed."
 
 }
