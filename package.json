@@ -387,6 +387,27 @@
         "command": "enigma.inlineRename.start",
         "title": "%command.enigma.inlineRename.start%",
         "category": "Enigma"
+      },
+      {
+        "command": "enigma.selectJava",
+        "title": "%command.enigma.selectJava%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.saveMappings",
+        "title": "%command.enigma.saveMappings%",
+        "category": "Enigma",
+        "icon": "$(save)"
+      },
+      {
+        "command": "enigma.showClasses",
+        "title": "%command.enigma.showClasses%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.restartBackend",
+        "title": "%command.enigma.restartBackend%",
+        "category": "Enigma"
       }
     ],
     "menus": {
@@ -402,6 +423,29 @@
         {
           "command": "enigma.inlineRename.start",
           "when": "false"
+        },
+        {
+          "command": "enigma.saveMappings",
+          "when": "enigma.projectOpen"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "enigma.saveMappings",
+          "when": "resourceScheme == enigma && enigma.dirty",
+          "group": "navigation@2"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "enigma.saveMappings",
+          "when": "(view == enigma.classes.deobfuscated || view == enigma.classes.all) && enigma.projectOpen && enigma.dirty",
+          "group": "navigation@3"
+        },
+        {
+          "command": "enigma.saveMappings",
+          "when": "view =~ /^enigma\\.classes\\./ && enigma.projectOpen",
+          "group": "2_mappings@3"
         }
       ]
     },
@@ -425,6 +469,12 @@
         "command": "enigma.inlineRename.start",
         "key": "enter",
         "when": "editorTextFocus && resourceScheme == enigma && editorLangId == enigma-java && !enigma.renaming && !editorReadonly && !suggestWidgetVisible && !renameInputVisible"
+      },
+      {
+        "command": "enigma.saveMappings",
+        "key": "ctrl+s",
+        "mac": "cmd+s",
+        "when": "resourceScheme == enigma"
       }
     ],
     "languages": [
