@@ -187,6 +187,10 @@
   "analysis.implementationsOf": "Implementations of {0}",
   "analysis.implementationsOfNothingInTheJar": "Implementations of {0}: nothing in the jar implements it.",
   "analysis.inheritanceOf": "Inheritance of {0}",
-  "analysis.inheritanceOfNothingInheritsFromIt": "Inheritance of {0}: nothing inherits from it and it inherits from nothing in the jar."
+  "analysis.inheritanceOfNothingInheritsFromIt": "Inheritance of {0}: nothing inherits from it and it inherits from nothing in the jar.",
+
+  "registry.enigmaOpenAJarFirst": "Enigma: open a jar first.",
+  "registry.enigmaPlaceTheCursorOnA": "Enigma: place the cursor on a class, method, field or parameter name.",
+  "registry.openJar": "Open Jar..."
 
 }
