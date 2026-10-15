@@ -35,7 +35,7 @@ export const useIcons = (folder: vscode.Uri) => {
     iconFolder = folder;
 }
 
-export const treeIcon: (kind: SymbolKind) => vscode.Uri | vscode.ThemeIcon = (kind: SymbolKind | undefined) => {
+export const treeIcon: (kind: SymbolKind | undefined) => vscode.Uri | vscode.ThemeIcon = (kind: SymbolKind | undefined) => {
     const name = kind && OWN_ICONS[kind];
     return name && iconFolder ? vscode.Uri.joinPath(iconFolder, `${name}.svg`) : themeIcon(kind);
 }

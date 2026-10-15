@@ -57,6 +57,16 @@
   "common.javaArchives": "Java archives",
   "common.inheritance": "Inheritance",
   "common.calls": "Calls",
+  "common.class": "Class",
+  "common.enum": "Enum",
+  "common.interface": "Interface",
+  "common.annotation": "Annotation",
+  "common.record": "Record",
+  "common.notMapped": "Not mapped",
+  "common.mapped": "Mapped",
+  "common.proposed": "Proposed",
+  "common.obfuscated": "Obfuscated",
+  "common.implementations": "Implementations",
 
   "status.none": "none",
   "status.unsavedMappingChangesClickToSave": "Unsaved mapping changes — click to save",
@@ -155,6 +165,28 @@
 
   "rename.cannotBeRenamedItIsA": "{0} cannot be renamed: it is a constructor of an unnamed class, a library override, or editing it is disabled.",
   "rename.isNotPartOfTheJar": "{0} is not part of the jar and cannot be renamed.",
-  "rename.thereIsNothingHereThatCan": "There is nothing here that can be renamed."
+  "rename.thereIsNothingHereThatCan": "There is nothing here that can be renamed.",
+
+  "classDecorations.fullyMapped": "Fully mapped",
+  "classDecorations.notMappedNoneOfNames": "Not mapped: none of {0} names",
+  "classDecorations.partiallyMappedOfNames": "Partially mapped: {0} of {1} names",
+
+  "classTree.abstractClass": "Abstract class",
+  "classTree.exception": "Exception",
+  "classTree.mappedOfNames": "Mapped: {0} of {1} names",
+
+  "structure.deobfuscatedOnly": "deobfuscated only",
+  "structure.documentedOnly": "documented only",
+  "structure.obfuscatedOnly": "obfuscated only",
+  "structure.undocumentedOnly": "undocumented only",
+
+  "analysis.callsOf": "Calls of {0}",
+  "analysis.callsOfNothingInTheJar": "Calls of {0}: nothing in the jar references it.",
+  "analysis.callsOfThisMethodOnly": "Calls of this method only",
+  "analysis.callsOfThisMethodOnlyOf": "Calls of this method only, {0}",
+  "analysis.implementationsOf": "Implementations of {0}",
+  "analysis.implementationsOfNothingInTheJar": "Implementations of {0}: nothing in the jar implements it.",
+  "analysis.inheritanceOf": "Inheritance of {0}",
+  "analysis.inheritanceOfNothingInheritsFromIt": "Inheritance of {0}: nothing inherits from it and it inherits from nothing in the jar."
 
 }
