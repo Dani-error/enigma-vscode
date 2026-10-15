@@ -204,6 +204,8 @@
   "engineCommands.clearTheSettingAndUseJava": "Clear the setting and use JAVA_HOME, the PATH or an installed JDK",
   "engineCommands.detectAutomatically": "Detect automatically",
   "engineCommands.javaInstallationDirectory": "Java Installation Directory",
-  "engineCommands.selectJavaOrNewerForThe": "Select Java ({0} or newer) for the Enigma Engine"
+  "engineCommands.selectJavaOrNewerForThe": "Select Java ({0} or newer) for the Enigma Engine",
+
+  "searchCommands.typePartOfAnObfuscatedOr": "Type part of an obfuscated or deobfuscated name"
 
 }
