@@ -1,1 +1,25 @@
-[]
+[
+	"common.mapped",
+	"common.mappingStatistics",
+	"statsPage.classes",
+	"statsPage.count",
+	"statsPage.countAgain",
+	"statsPage.countEntriesGeneratedByTheCompiler",
+	"statsPage.counting",
+	"statsPage.defaultPackage",
+	"statsPage.everythingInScopeIsMapped",
+	"statsPage.fallbackNamesCountAsMapped",
+	"statsPage.fields",
+	"statsPage.methods",
+	"statsPage.onlyInPackage",
+	"statsPage.open",
+	"statsPage.options",
+	"statsPage.overall",
+	"statsPage.package",
+	"statsPage.parameters",
+	"statsPage.refresh",
+	"statsPage.stillUnmapped",
+	"statsPage.syntheticEntries",
+	"statsPage.theWholeJar",
+	"statsPage.treatLowQualityNamesProposedBy"
+]
