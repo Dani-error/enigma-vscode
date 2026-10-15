@@ -195,6 +195,15 @@
 
   "classCommands.copied": "Copied {0}",
   "classCommands.enigmaThatEntryIsNotPart": "Enigma: that entry is not part of the jar",
-  "classCommands.noObfuscatedNamesLeftInThis": "No obfuscated names left in this class"
+  "classCommands.noObfuscatedNamesLeftInThis": "No obfuscated names left in this class",
+
+  "engineCommands.aToolForDeobfuscationOfJava": "A tool for deobfuscation of Java bytecode, by the Quilt Project and contributors (LGPL-3.0). VS Code port by @danibcastro.",
+  "engineCommands.annotatedBytecodeInsteadOfSource": "annotated bytecode instead of source",
+  "engineCommands.browse": "Browse...",
+  "engineCommands.chooseTheInstallationDirectoryOfA": "Choose the installation directory of a JDK",
+  "engineCommands.clearTheSettingAndUseJava": "Clear the setting and use JAVA_HOME, the PATH or an installed JDK",
+  "engineCommands.detectAutomatically": "Detect automatically",
+  "engineCommands.javaInstallationDirectory": "Java Installation Directory",
+  "engineCommands.selectJavaOrNewerForThe": "Select Java ({0} or newer) for the Enigma Engine"
 
 }
