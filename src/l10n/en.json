@@ -191,6 +191,10 @@
 
   "registry.enigmaOpenAJarFirst": "Enigma: open a jar first.",
   "registry.enigmaPlaceTheCursorOnA": "Enigma: place the cursor on a class, method, field or parameter name.",
-  "registry.openJar": "Open Jar..."
+  "registry.openJar": "Open Jar...",
+
+  "classCommands.copied": "Copied {0}",
+  "classCommands.enigmaThatEntryIsNotPart": "Enigma: that entry is not part of the jar",
+  "classCommands.noObfuscatedNamesLeftInThis": "No obfuscated names left in this class"
 
 }
