@@ -330,6 +330,17 @@
   "entryPane.identifier": "Identifier",
   "entryPane.notRenamed": "Not renamed.",
   "entryPane.notSaved": "Not saved.",
-  "entryPane.openAJarToStartNaming": "Open a jar to start naming things."
+  "entryPane.openAJarToStartNaming": "Open a jar to start naming things.",
+
+  "editCommands.enigmaNothingToRedo": "Enigma: nothing to redo",
+  "editCommands.enigmaNothingToUndo": "Enigma: nothing to undo",
+  "editCommands.movePackage": "Move Package",
+  "editCommands.newNameOfThePackageClasses": "New name of the package. Classes in its sub-packages are renamed too.",
+  "editCommands.packageToChangeWithBetweenIts": "Package to change, with / between its parts",
+  "editCommands.rename": "Rename {0}",
+  "editCommands.renamePackage": "Rename Package",
+  "editCommands.useLettersDigitsAndWithBetween": "Use letters, digits and _, with / between the parts",
+  "editCommands.useToSeparatePackagesForExample": "Use / to separate packages, for example com/example/MyClass",
+  "editCommands.whereToMoveTheClassesThat": "Where to move the classes that are directly in this package"
 
 }
