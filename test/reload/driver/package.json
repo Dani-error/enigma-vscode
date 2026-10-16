@@ -1,0 +1,11 @@
+{
+  "name": "enigma-reload-driver",
+  "displayName": "Enigma reload test driver",
+  "description": "Runs what test/reload/run.ts asks for inside the window it tests. Never packaged.",
+  "publisher": "enigma-vscode",
+  "version": "0.0.0",
+  "private": true,
+  "engines": { "vscode": "^1.106.0" },
+  "main": "./extension.js",
+  "activationEvents": ["*"]
+}

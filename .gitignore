@@ -6,6 +6,7 @@ server/
 .vscode-test/
 test/e2e/out/
 test/out/
+test/reload/driver/extension.js
 
 # Gradle
 .gradle/
