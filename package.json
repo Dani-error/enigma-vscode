@@ -38,6 +38,7 @@
   "scripts": {
     "build:backend": "bun scripts/gradle.ts installJar --console=plain -q",
     "test:backend": "bun scripts/gradle.ts test --console=plain",
+    "sync:ai": "bun scripts/sync-ai-tools.ts",
     "l10n": "bun scripts/l10n.ts",
     "l10n:check": "bun scripts/l10n.ts --check"
   },
@@ -1703,6 +1704,367 @@
           }
         ],
         "priority": "option"
+      }
+    ],
+    "languageModelTools": [
+      {
+        "name": "enigma_overview",
+        "displayName": "Enigma: Overview",
+        "toolReferenceName": "enigmaOverview",
+        "icon": "$(info)",
+        "canBeReferencedInPrompt": true,
+        "userDescription": "What jar is open in Enigma and how far it is named.",
+        "modelDescription": "Describes the jar open in Enigma: its file, the mappings in use, how many classes are named, and its packages with their numbers of classes. Call this first. It also explains how to work with the other Enigma tools.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
+      },
+      {
+        "name": "enigma_list_classes",
+        "displayName": "Enigma: List Classes",
+        "toolReferenceName": "enigmaListClasses",
+        "icon": "$(symbol-class)",
+        "canBeReferencedInPrompt": true,
+        "userDescription": "Lists the classes of the jar open in Enigma.",
+        "modelDescription": "Lists classes of the jar open in Enigma: for each its name in the jar (obfuscatedName), its current name, its kind and whether it was named already. Ask for one package at a time in a large jar.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "package": {
+              "type": "string",
+              "description": "Only classes in this package (and below), like com/example."
+            },
+            "onlyUnnamed": {
+              "type": "boolean",
+              "description": "Only classes that have no readable name yet."
+            },
+            "limit": {
+              "type": "number",
+              "description": "At most this many (400 at most)."
+            }
+          }
+        }
+      },
+      {
+        "name": "enigma_read_class",
+        "displayName": "Enigma: Read Class",
+        "toolReferenceName": "enigmaReadClass",
+        "icon": "$(file-code)",
+        "canBeReferencedInPrompt": true,
+        "userDescription": "Reads the decompiled source of a class.",
+        "modelDescription": "Returns the decompiled Java source of a class of the jar open in Enigma, with the names given so far. Read a class before naming it or its members. A long class comes in parts: the answer says how many lines there are, and \"fromLine\" continues.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "class": {
+              "type": "string",
+              "description": "The class, with its package and slashes: com/example/Thing. Either its current name or its name in the jar."
+            },
+            "fromLine": {
+              "type": "number",
+              "description": "The first line to return, counting from 1. For continuing a long class."
+            }
+          },
+          "required": [
+            "class"
+          ]
+        }
+      },
+      {
+        "name": "enigma_list_members",
+        "displayName": "Enigma: List Members",
+        "toolReferenceName": "enigmaListMembers",
+        "icon": "$(symbol-method)",
+        "canBeReferencedInPrompt": true,
+        "userDescription": "Lists the fields and methods of a class.",
+        "modelDescription": "Lists the fields, methods, constructors and inner classes of a class of the jar open in Enigma, each with the \"entry\" the other tools need to act on it, and whether it was named already.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "class": {
+              "type": "string",
+              "description": "The class, with its package and slashes: com/example/Thing. Either its current name or its name in the jar."
+            }
+          },
+          "required": [
+            "class"
+          ]
+        }
+      },
+      {
+        "name": "enigma_search",
+        "displayName": "Enigma: Search",
+        "toolReferenceName": "enigmaSearch",
+        "icon": "$(search)",
+        "canBeReferencedInPrompt": true,
+        "userDescription": "Searches classes, methods and fields by name.",
+        "modelDescription": "Searches the jar open in Enigma for classes, methods and fields by name (current or obfuscated). Each result has its \"entry\".",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "Part of a name."
+            },
+            "kinds": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "class",
+                  "method",
+                  "field"
+                ]
+              },
+              "description": "Only these kinds; all if left out."
+            }
+          },
+          "required": [
+            "query"
+          ]
+        }
+      },
+      {
+        "name": "enigma_describe",
+        "displayName": "Enigma: Describe",
+        "toolReferenceName": "enigmaDescribe",
+        "icon": "$(symbol-property)",
+        "canBeReferencedInPrompt": true,
+        "userDescription": "Details of a class, method or field.",
+        "modelDescription": "Describes one entry of the jar open in Enigma: both of its names, its modifiers, its type or signature, its javadoc, where it is declared, and for a class what it extends and implements.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "entry": {
+              "type": "object",
+              "description": "What to act on, exactly as given in the \"entry\" of a result of another tool. Names inside it are the names in the jar (obfuscated), never new ones. A class: {\"kind\":\"class\",\"name\":\"a/b\"}. A field or method: {\"kind\":\"method\",\"owner\":\"a/b\",\"name\":\"c\",\"desc\":\"(I)V\"}.",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "class",
+                    "field",
+                    "method",
+                    "local"
+                  ]
+                }
+              },
+              "required": [
+                "kind"
+              ]
+            }
+          },
+          "required": [
+            "entry"
+          ]
+        }
+      },
+      {
+        "name": "enigma_references",
+        "displayName": "Enigma: References",
+        "toolReferenceName": "enigmaReferences",
+        "icon": "$(references)",
+        "canBeReferencedInPrompt": true,
+        "userDescription": "Where a class, method or field is used.",
+        "modelDescription": "Lists where in the jar a class, method or field is used: the methods that call a method, read or write a field, or create or mention a class. How something is used is evidence for what it is.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "entry": {
+              "type": "object",
+              "description": "What to act on, exactly as given in the \"entry\" of a result of another tool. Names inside it are the names in the jar (obfuscated), never new ones. A class: {\"kind\":\"class\",\"name\":\"a/b\"}. A field or method: {\"kind\":\"method\",\"owner\":\"a/b\",\"name\":\"c\",\"desc\":\"(I)V\"}.",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "class",
+                    "field",
+                    "method",
+                    "local"
+                  ]
+                }
+              },
+              "required": [
+                "kind"
+              ]
+            }
+          },
+          "required": [
+            "entry"
+          ]
+        }
+      },
+      {
+        "name": "enigma_callers",
+        "displayName": "Enigma: Callers",
+        "toolReferenceName": "enigmaCallers",
+        "icon": "$(call-incoming)",
+        "canBeReferencedInPrompt": true,
+        "userDescription": "The methods that call a method.",
+        "modelDescription": "Lists the methods of the jar that call a method, each with its \"entry\", so that they can be read or followed further.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "entry": {
+              "type": "object",
+              "description": "What to act on, exactly as given in the \"entry\" of a result of another tool. Names inside it are the names in the jar (obfuscated), never new ones. A class: {\"kind\":\"class\",\"name\":\"a/b\"}. A field or method: {\"kind\":\"method\",\"owner\":\"a/b\",\"name\":\"c\",\"desc\":\"(I)V\"}.",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "class",
+                    "field",
+                    "method",
+                    "local"
+                  ]
+                }
+              },
+              "required": [
+                "kind"
+              ]
+            }
+          },
+          "required": [
+            "entry"
+          ]
+        }
+      },
+      {
+        "name": "enigma_callees",
+        "displayName": "Enigma: Callees",
+        "toolReferenceName": "enigmaCallees",
+        "icon": "$(call-outgoing)",
+        "canBeReferencedInPrompt": true,
+        "userDescription": "What a method calls and accesses.",
+        "modelDescription": "Lists what a method of the jar calls and which fields it accesses, including those of libraries. What a method relies on is evidence for what it does.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "entry": {
+              "type": "object",
+              "description": "What to act on, exactly as given in the \"entry\" of a result of another tool. Names inside it are the names in the jar (obfuscated), never new ones. A class: {\"kind\":\"class\",\"name\":\"a/b\"}. A field or method: {\"kind\":\"method\",\"owner\":\"a/b\",\"name\":\"c\",\"desc\":\"(I)V\"}.",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "class",
+                    "field",
+                    "method",
+                    "local"
+                  ]
+                }
+              },
+              "required": [
+                "kind"
+              ]
+            }
+          },
+          "required": [
+            "entry"
+          ]
+        }
+      },
+      {
+        "name": "enigma_hierarchy",
+        "displayName": "Enigma: Hierarchy",
+        "toolReferenceName": "enigmaHierarchy",
+        "icon": "$(type-hierarchy)",
+        "canBeReferencedInPrompt": true,
+        "userDescription": "What a class extends and what extends it.",
+        "modelDescription": "For a class of the jar open in Enigma: the classes and interfaces it extends or implements, and those in the jar that extend or implement it. Related classes are often named after each other.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "class": {
+              "type": "string",
+              "description": "The class, with its package and slashes: com/example/Thing. Either its current name or its name in the jar."
+            }
+          },
+          "required": [
+            "class"
+          ]
+        }
+      },
+      {
+        "name": "enigma_rename",
+        "displayName": "Enigma: Rename",
+        "toolReferenceName": "enigmaRename",
+        "icon": "$(edit)",
+        "canBeReferencedInPrompt": true,
+        "userDescription": "Renames a class, method, field or variable in the mappings. Asks first.",
+        "modelDescription": "Gives a class, method, field, parameter or local variable of the jar open in Enigma a new name, everywhere it is used. Only rename what you have read the code of. The new name of a class is its full name with package and slashes (com/example/Thing): to keep it in its package, keep the package. A method that overrides another is renamed together with it. The result says whether the name was accepted, and why not.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "entry": {
+              "type": "object",
+              "description": "What to act on, exactly as given in the \"entry\" of a result of another tool. Names inside it are the names in the jar (obfuscated), never new ones. A class: {\"kind\":\"class\",\"name\":\"a/b\"}. A field or method: {\"kind\":\"method\",\"owner\":\"a/b\",\"name\":\"c\",\"desc\":\"(I)V\"}.",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "class",
+                    "field",
+                    "method",
+                    "local"
+                  ]
+                }
+              },
+              "required": [
+                "kind"
+              ]
+            },
+            "newName": {
+              "type": "string",
+              "description": "The new name. For a class, with its package and slashes."
+            }
+          },
+          "required": [
+            "entry",
+            "newName"
+          ]
+        }
+      },
+      {
+        "name": "enigma_set_javadoc",
+        "displayName": "Enigma: Write Javadoc",
+        "toolReferenceName": "enigmaSetJavadoc",
+        "icon": "$(comment)",
+        "canBeReferencedInPrompt": true,
+        "userDescription": "Writes the javadoc of a class, method or field into the mappings. Asks first.",
+        "modelDescription": "Sets the javadoc of a class, method or field of the jar open in Enigma, replacing what it had; an empty text removes it. Plain text of the comment, without the comment markers.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "entry": {
+              "type": "object",
+              "description": "What to act on, exactly as given in the \"entry\" of a result of another tool. Names inside it are the names in the jar (obfuscated), never new ones. A class: {\"kind\":\"class\",\"name\":\"a/b\"}. A field or method: {\"kind\":\"method\",\"owner\":\"a/b\",\"name\":\"c\",\"desc\":\"(I)V\"}.",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "class",
+                    "field",
+                    "method",
+                    "local"
+                  ]
+                }
+              },
+              "required": [
+                "kind"
+              ]
+            },
+            "javadoc": {
+              "type": "string",
+              "description": "The text of the comment, without /** and */."
+            }
+          },
+          "required": [
+            "entry",
+            "javadoc"
+          ]
+        }
       }
     ]
   }
