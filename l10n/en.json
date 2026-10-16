@@ -31,7 +31,7 @@
     "messages.unknownMappingFormat": "Unknown mapping format: {0}",
     "backend.theEnigmaBackendIsNotRunning": "The Enigma backend is not running.",
     "backend.theEnigmaBackendExitedUnexpectedlySee": "The Enigma backend exited unexpectedly ({0}). See the Enigma log for details.",
-    "backend.theEnigmaBackendIsMissingBuild": "The Enigma backend is missing: {0}. Build it with \"bun run build:backend\".",
+    "backend.theEnigmaBackendIsMissingBuild": "The Enigma backend is missing: {0}. Build it with \"npm run build:backend\".",
     "documents.enigmaCouldNotShowThisClass": "Enigma could not show this class ({0}): {1}",
     "documents.enigmaCouldNotShowThisClassNoReason": "Enigma could not show this class ({0}).",
     "documents.noEnigmaProjectIsOpenOpen": "No Enigma project is open. Open the jar this class belongs to and try again.",

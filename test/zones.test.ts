@@ -1,5 +1,5 @@
 // Unit tests of the constrained editor's rules (src/editor/zones.ts).
-// Run with: bun run test:unit
+// Run with: npm run test:unit
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 

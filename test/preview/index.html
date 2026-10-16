@@ -2,7 +2,7 @@
 <!--
 	Development preview of the Enigma panes outside VS Code: a stand-in for the webview host with the colours of the
 	default dark and light themes, and sample data. Not shipped with the extension.
-	Build the pages (bun run bundle, or bun run watch), serve the repository root over HTTP and open /test/preview/index.html?pane=entry&theme=dark&width=320 (add &height=260 for the panel)
+	Build the pages (npm run bundle, or npm run watch), serve the repository root over HTTP and open /test/preview/index.html?pane=entry&theme=dark&width=320 (add &height=260 for the panel)
 -->
 <html lang="en">
     <head>
@@ -475,7 +475,7 @@
                 link.href = `${link.getAttribute('href')}?v=${Date.now()}`;
             }
 
-            // the page as it is built ("bun run watch" keeps it current), with the English texts
+            // the page as it is built ("npm run watch" keeps it current), with the English texts
             fetch('../../l10n/en.json')
                 .then(response => response.json())
                 .then(texts => {

@@ -1,5 +1,5 @@
 {
-    // format on save the way "bun run format" does, and show what "bun run lint" finds while typing
+    // format on save the way "npm run format" does, and show what "npm run lint" finds while typing
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.codeActionsOnSave": {

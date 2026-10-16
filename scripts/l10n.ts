@@ -2,7 +2,7 @@
 // translation has all texts, with the same values in them. The completions of Enigma's translations are checked
 // against Enigma's English texts.
 //
-// Usage: bun scripts/l10n.ts [--check]   (--check fails if anything is wrong, as the tests do)
+// Usage: npx tsx scripts/l10n.ts [--check]   (--check fails if anything is wrong, as the tests do)
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { SOURCE_LANGUAGE, codeKeys, languages, manifestKeys, readTexts } from './texts';

@@ -31,7 +31,7 @@
     "messages.unknownMappingFormat": "不明なマッピング形式: {0}",
     "backend.theEnigmaBackendIsNotRunning": "Enigma エンジンが起動していません。",
     "backend.theEnigmaBackendExitedUnexpectedlySee": "Enigma エンジンが予期せず終了しました ({0})。詳しくは Enigma のログを確認してください。",
-    "backend.theEnigmaBackendIsMissingBuild": "Enigma エンジンが見つかりません: {0}。「bun run build:backend」でビルドしてください。",
+    "backend.theEnigmaBackendIsMissingBuild": "Enigma エンジンが見つかりません: {0}。「npm run build:backend」でビルドしてください。",
     "documents.enigmaCouldNotShowThisClass": "このクラスを表示できませんでした ({0}): {1}",
     "documents.enigmaCouldNotShowThisClassNoReason": "このクラスを表示できませんでした ({0})。",
     "documents.noEnigmaProjectIsOpenOpen": "Enigma プロジェクトが開かれていません。このクラスの Jar を開いてから、もう一度お試しください。",

@@ -31,7 +31,7 @@
     "messages.unknownMappingFormat": "未知的映射格式：{0}",
     "backend.theEnigmaBackendIsNotRunning": "Enigma 引擎未运行。",
     "backend.theEnigmaBackendExitedUnexpectedlySee": "Enigma 引擎意外退出（{0}）。详细信息请查看 Enigma 日志。",
-    "backend.theEnigmaBackendIsMissingBuild": "缺少 Enigma 引擎：{0}。请使用“bun run build:backend”构建。",
+    "backend.theEnigmaBackendIsMissingBuild": "缺少 Enigma 引擎：{0}。请使用“npm run build:backend”构建。",
     "documents.enigmaCouldNotShowThisClass": "无法显示此类（{0}）：{1}",
     "documents.enigmaCouldNotShowThisClassNoReason": "无法显示此类（{0}）。",
     "documents.noEnigmaProjectIsOpenOpen": "未打开 Enigma 项目。请打开此类所属的 Jar 后重试。",

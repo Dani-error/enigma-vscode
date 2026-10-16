@@ -15,3 +15,5 @@ vendor/enigma/.gradle/
 vendor/enigma/**/build/
 .DS_Store
 .idea/
+# the lockfile is bun.lock; npm works without its own
+package-lock.json

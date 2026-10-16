@@ -48,10 +48,10 @@ export class Engine {
      * @param directory where it runs, which it must leave alone
      */
     constructor(directory: string, java?: string) {
-        assert.ok(fs.existsSync(backendJar), `backend jar not built: ${backendJar} (run "bun run build:backend")`);
+        assert.ok(fs.existsSync(backendJar), `backend jar not built: ${backendJar} (run "npm run build:backend")`);
         assert.ok(
             fs.existsSync(path.join(fixtures, 'inheritance_tree.jar')),
-            'Enigma test fixtures not built (run "bun run test:backend" once)',
+            'Enigma test fixtures not built (run "npm run test:backend" once)',
         );
 
         const executable =

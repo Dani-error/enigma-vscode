@@ -29,6 +29,7 @@
     "bytecode"
   ],
   "main": "./dist/extension.js",
+  "type": "module",
   "extensionKind": [
     "workspace"
   ],
@@ -52,7 +53,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/bun": "^1.4.3",
     "@types/mocha": "^10.0.10",
     "@types/node": "^26.6.5",
     "@types/vscode": "^1.140.0",
@@ -65,33 +65,34 @@
     "jiti": "^2.7.0",
     "mocha": "^10.8.2",
     "prettier": "^3.9.10",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.71.2"
   },
   "scripts": {
-    "build:backend": "bun scripts/gradle.ts installJar --console=plain -q",
-    "test:backend": "bun scripts/gradle.ts test --console=plain",
+    "build:backend": "tsx scripts/gradle.ts installJar --console=plain -q",
+    "test:backend": "tsx scripts/gradle.ts test --console=plain",
     "typecheck": "tsc --noEmit -p . && tsc -p src/pages && tsc -p tsconfig.tools.json && tsc -p test/e2e",
-    "bundle": "bun scripts/build.ts",
-    "build": "bun run typecheck && bun run bundle",
-    "watch": "bun scripts/build.ts --watch",
-    "test": "bun run check && bun run test:unit && bun run test:protocol && bun run test:e2e && bun run test:reload",
-    "test:unit": "bun test test/java.test.ts test/zones.test.ts",
-    "test:protocol": "bun test/protocol.test.ts",
-    "pretest:e2e": "bun run build && bun scripts/build.ts --tests",
+    "bundle": "tsx scripts/build.ts",
+    "build": "npm run typecheck && npm run bundle",
+    "watch": "tsx scripts/build.ts --watch",
+    "test": "npm run check && npm run test:unit && npm run test:protocol && npm run test:e2e && npm run test:reload",
+    "test:unit": "tsx --test test/java.test.ts test/zones.test.ts",
+    "test:protocol": "tsx test/protocol.test.ts",
+    "pretest:e2e": "npm run build && tsx scripts/build.ts --tests",
     "test:e2e": "node build/extension/test/e2e/runTest.js",
-    "pretest:reload": "bun run build",
-    "test:reload": "bun test/reload/run.ts",
-    "package": "bun run build:backend && bun run build && bun scripts/package.ts",
-    "vscode:prepublish": "bun run build",
-    "sync:ai": "bun scripts/sync-ai-tools.ts",
-    "l10n": "bun scripts/l10n.ts",
-    "l10n:check": "bun scripts/l10n.ts --check",
+    "pretest:reload": "npm run build",
+    "test:reload": "tsx test/reload/run.ts",
+    "package": "npm run build:backend && npm run build && tsx scripts/package.ts",
+    "vscode:prepublish": "npm run build",
+    "sync:ai": "tsx scripts/sync-ai-tools.ts",
+    "l10n": "tsx scripts/l10n.ts",
+    "l10n:check": "tsx scripts/l10n.ts --check",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
-    "check": "bun run typecheck && bun run lint && bun run format:check && bun run l10n:check"
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm run l10n:check"
   },
   "contributes": {
     "viewsContainers": {

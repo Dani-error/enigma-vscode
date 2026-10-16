@@ -4,7 +4,7 @@ import { defineConfig } from 'eslint/config';
 import tseslint from 'typescript-eslint';
 
 // What is checked beyond the compiler: mistakes the types allow, like promises nobody waits for. How the code is laid
-// out is Prettier's (bun run format), so nothing here is about style.
+// out is Prettier's (npm run format), so nothing here is about style.
 export default defineConfig(
     {
         // what the build makes, and what is not ours
@@ -15,7 +15,7 @@ export default defineConfig(
     {
         languageOptions: {
             parserOptions: {
-                // every part of the project is compiled on its own (see bun run typecheck)
+                // every part of the project is compiled on its own (see npm run typecheck)
                 project: ['./tsconfig.json', './src/pages/tsconfig.json', './tsconfig.tools.json', './test/e2e/tsconfig.json'],
                 tsconfigRootDir: import.meta.dirname,
             },

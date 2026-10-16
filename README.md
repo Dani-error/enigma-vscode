@@ -26,20 +26,20 @@ For assistants outside VS Code, such as Claude Code, run **Enigma: Connect an As
 
 ## Building
 
-Requires [bun](https://bun.sh) and JDK 17 or newer.
+Requires Node.js 22 or newer and JDK 17 or newer.
 
 ```bash
 git clone --recursive https://github.com/Dani-error/enigma-vscode.git
 cd enigma-vscode
-bun install
-bun run package
+npm install
+npm run package
 ```
 
 The extension is written to `build/enigma-vscode-<version>.vsix`.
 
 ## Contributing
 
-Run `bun run check`, `bun run test:backend` and `bun run test` before opening a pull request. Translations are in
+Run `npm run check`, `npm run test:backend` and `npm test` before opening a pull request. Translations are in
 `l10n/`.
 
 ## License

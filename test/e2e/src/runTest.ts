@@ -81,11 +81,11 @@ async function main(): Promise<void> {
     const extension = path.join(root, 'build', 'extension');
     const fixtures = path.join(root, 'vendor', 'enigma', 'enigma', 'build', 'test-obf');
     if (!fs.existsSync(path.join(fixtures, 'inheritance_tree.jar'))) {
-        throw new Error('Enigma test fixtures are missing. Run "bun run test:backend" once to build them.');
+        throw new Error('Enigma test fixtures are missing. Run "npm run test:backend" once to build them.');
     }
 
     if (!fs.existsSync(path.join(extension, 'server', 'enigma-backend.jar'))) {
-        throw new Error('The backend jar is missing. Run "bun run build:backend".');
+        throw new Error('The backend jar is missing. Run "npm run build:backend".');
     }
 
     const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'enigma-vscode-e2e-'));

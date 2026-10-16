@@ -6,7 +6,7 @@
 // window itself is looked at through the debugging protocol of its browser engine: its notifications, its web views,
 // and pictures of it (ENIGMA_RELOAD_SHOTS=<folder> keeps them).
 //
-// Run with: bun run test:reload
+// Run with: npm run test:reload
 import { buildSync } from 'esbuild';
 import { ChildProcess, spawn } from 'node:child_process';
 import * as fs from 'node:fs';
@@ -68,7 +68,7 @@ const executable = [
 ].find(candidate => candidate && fs.existsSync(candidate));
 
 if (!fs.existsSync(fixture)) {
-    throw new Error('Enigma test fixtures are missing. Run "bun run test:backend" once to build them.');
+    throw new Error('Enigma test fixtures are missing. Run "npm run test:backend" once to build them.');
 }
 
 if (!executable) {

@@ -31,7 +31,7 @@
     "messages.unknownMappingFormat": "Format de mappings inconnu : {0}",
     "backend.theEnigmaBackendIsNotRunning": "Le moteur Enigma n'est pas lancé.",
     "backend.theEnigmaBackendExitedUnexpectedlySee": "Le moteur Enigma s'est arrêté de façon inattendue ({0}). Consultez le journal Enigma pour plus de détails.",
-    "backend.theEnigmaBackendIsMissingBuild": "Moteur Enigma introuvable : {0}. Compilez-le avec « bun run build:backend ».",
+    "backend.theEnigmaBackendIsMissingBuild": "Moteur Enigma introuvable : {0}. Compilez-le avec « npm run build:backend ».",
     "documents.enigmaCouldNotShowThisClass": "Enigma ne peut pas afficher cette classe ({0}) : {1}",
     "documents.enigmaCouldNotShowThisClassNoReason": "Enigma ne peut pas afficher cette classe ({0}).",
     "documents.noEnigmaProjectIsOpenOpen": "Aucun projet Enigma ouvert. Ouvrez le jar de cette classe, puis réessayez.",

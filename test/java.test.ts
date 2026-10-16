@@ -1,5 +1,5 @@
 // Unit tests of the Java runtime discovery (src/engine/java.ts), on fake installations.
-// Run with: bun run test:unit
+// Run with: npm run test:unit
 import assert from 'node:assert/strict';
 import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';

@@ -1,6 +1,6 @@
 // Compares two recordings of test/wire/record.ts: what the engine said before a change of its code and after.
 //
-// Usage: bun test/wire/compare.ts before.json after.json   (fails if a request is answered differently)
+// Usage: npx tsx test/wire/compare.ts before.json after.json   (fails if a request is answered differently)
 import * as fs from 'node:fs';
 import type { Recorded, Recording } from './record';
 
@@ -57,7 +57,7 @@ function read(file: string): Recording {
 
 const [beforeFile, afterFile] = process.argv.slice(2);
 if (!beforeFile || !afterFile) {
-    console.error('Usage: bun test/wire/compare.ts <before> <after>');
+    console.error('Usage: npx tsx test/wire/compare.ts <before> <after>');
     process.exit(2);
 }
 

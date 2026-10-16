@@ -1,5 +1,5 @@
 # How every editor indents this project, before any formatter runs. Prettier formats the TypeScript, JSON, CSS and
-# Markdown (bun run format); the Java of backend/ follows the same rules.
+# Markdown (npm run format); the Java of backend/ follows the same rules.
 root = true
 
 [*]

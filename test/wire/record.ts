@@ -1,9 +1,9 @@
 // Records what the engine sends for a fixed session of every kind of request, to compare before and after a change
 // of its code that should not change what it says:
 //
-//   bun test/wire/record.ts before.json     then change the engine, build it, and
-//   bun test/wire/record.ts after.json
-//   bun test/wire/compare.ts before.json after.json
+//   npx tsx test/wire/record.ts before.json     then change the engine, build it, and
+//   npx tsx test/wire/record.ts after.json
+//   npx tsx test/wire/compare.ts before.json after.json
 //
 // Some of what is sent is wrong on purpose: what the engine refuses is part of what it says.
 import * as fs from 'node:fs';
@@ -31,7 +31,7 @@ const SETTLE_MS = 700;
 
 const out = process.argv[2];
 if (!out) {
-    console.error('Usage: bun test/wire/record.ts <file to write>');
+    console.error('Usage: npx tsx test/wire/record.ts <file to write>');
     process.exit(1);
 }
 

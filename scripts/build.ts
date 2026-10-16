@@ -1,8 +1,8 @@
 // Builds what the editor loads into build/extension: the extension, the pages of its panes, what those pages are
 // styled with, and the files of the repository that ship as they are (see layout.ts).
 //
-// Usage: bun scripts/build.ts [--watch]
-//        bun scripts/build.ts --tests    the end-to-end tests instead, into build/extension/test (see tests())
+// Usage: npx tsx scripts/build.ts [--watch]
+//        npx tsx scripts/build.ts --tests    the end-to-end tests instead, into build/extension/test (see tests())
 import * as esbuild from 'esbuild';
 import * as fs from 'node:fs';
 import * as path from 'node:path';

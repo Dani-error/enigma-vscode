@@ -1,5 +1,5 @@
 // Drives the packaged backend jar as a real child process over stdio, the way the extension does.
-// Run with: bun run test:protocol
+// Run with: npm run test:protocol
 import assert from 'node:assert/strict';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';

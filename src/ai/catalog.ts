@@ -1,5 +1,5 @@
 // The tools assistants get, described once. This is plain data, without anything of the editor: it is what
-// package.json declares to the editor's own chat ("languageModelTools", written from here by "bun run sync:ai"), what
+// package.json declares to the editor's own chat ("languageModelTools", written from here by "npm run sync:ai"), what
 // the MCP server lists to other assistants, and what tools.ts implements.
 
 export interface ToolDescription {
