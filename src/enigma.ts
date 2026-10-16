@@ -4,6 +4,9 @@ import { ClassIndex } from './documents/classIndex';
 import { ClassEditors } from './documents/classEditors';
 import { EnigmaDocuments } from './documents/documents';
 import { EditorController } from './editor/controller';
+import { CollabPane } from './panes/collabPane';
+import { EntryPane } from './panes/entryPane';
+import { StatsPanel } from './panes/statsPanel';
 import { JarOpener } from './project/jarOpener';
 import { Editing } from './project/editing';
 import { ErrorReporter } from './project/errors';
@@ -28,5 +31,8 @@ export interface Enigma {
     classProgress: ClassProgress;
     structure: StructureProvider;
     analysis: AnalysisView;
+    entryPane: EntryPane;
+    collabPane: CollabPane;
+    statsPanel: StatsPanel;
     jarOpener: JarOpener;
 }
