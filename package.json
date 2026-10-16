@@ -5,6 +5,10 @@
   "version": "1.0.0",
   "publisher": "danibcastro",
   "icon": "resources/icon.png",
+  "galleryBanner": {
+    "color": "#1E1F29",
+    "theme": "dark"
+  },
   "license": "LGPL-3.0-or-later",
   "repository": {
     "type": "git",
