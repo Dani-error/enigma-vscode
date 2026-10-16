@@ -49,6 +49,25 @@
           "title": "Enigma",
           "icon": "resources/enigma.svg"
         }
+      ],
+      "panel": [
+        {
+          "id": "enigma-identifier",
+          "title": "%container.enigma-identifier%",
+          "icon": "$(symbol-field)"
+        }
+      ],
+      "secondarySidebar": [
+        {
+          "id": "enigma-analysis",
+          "title": "%container.enigma-analysis%",
+          "icon": "$(list-tree)"
+        },
+        {
+          "id": "enigma-collaboration",
+          "title": "%container.enigma-collaboration%",
+          "icon": "$(organization)"
+        }
       ]
     },
     "colors": [
@@ -376,6 +395,312 @@
     },
     "commands": [
       {
+        "command": "enigma.openJar",
+        "title": "%command.enigma.openJar%",
+        "category": "Enigma",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "enigma.openJarFile",
+        "title": "%command.enigma.openJarFile%",
+        "category": "Enigma",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "enigma.closeJar",
+        "title": "%command.enigma.closeJar%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.openRecent",
+        "title": "%command.enigma.openRecent%",
+        "category": "Enigma",
+        "icon": "$(history)"
+      },
+      {
+        "command": "enigma.openMappings",
+        "title": "%command.enigma.openMappings%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.openMappingsFolder",
+        "title": "%command.enigma.openMappingsFolder%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.saveMappings",
+        "title": "%command.enigma.saveMappings%",
+        "category": "Enigma",
+        "icon": "$(save)"
+      },
+      {
+        "command": "enigma.saveMappingsAs",
+        "title": "%command.enigma.saveMappingsAs%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.closeMappings",
+        "title": "%command.enigma.closeMappings%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.dropMappings",
+        "title": "%command.enigma.dropMappings%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.reloadMappings",
+        "title": "%command.enigma.reloadMappings%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.reloadAll",
+        "title": "%command.enigma.reloadAll%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.exportSource",
+        "title": "%command.enigma.exportSource%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.exportJar",
+        "title": "%command.enigma.exportJar%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.showStats",
+        "title": "%command.enigma.showStats%",
+        "category": "Enigma",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "enigma.classTree.showAll",
+        "title": "%command.enigma.classTree.showAll%",
+        "category": "Enigma",
+        "icon": "$(list-tree)"
+      },
+      {
+        "command": "enigma.classTree.showSplit",
+        "title": "%command.enigma.classTree.showSplit%",
+        "category": "Enigma",
+        "icon": "$(split-vertical)"
+      },
+      {
+        "command": "enigma.generateClassStats",
+        "title": "%command.enigma.generateClassStats%",
+        "category": "Enigma",
+        "icon": "$(pie-chart)"
+      },
+      {
+        "command": "enigma.hideClassStats",
+        "title": "%command.enigma.hideClassStats%",
+        "category": "Enigma",
+        "icon": "$(pie-chart)"
+      },
+      {
+        "command": "enigma.search",
+        "title": "%command.enigma.search%",
+        "category": "Enigma",
+        "icon": "$(search)"
+      },
+      {
+        "command": "enigma.searchClasses",
+        "title": "%command.enigma.searchClasses%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.searchMethods",
+        "title": "%command.enigma.searchMethods%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.searchFields",
+        "title": "%command.enigma.searchFields%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.editName",
+        "title": "%command.enigma.editName%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.editJavadoc",
+        "title": "%command.enigma.editJavadoc%",
+        "category": "Enigma",
+        "icon": "$(book)"
+      },
+      {
+        "command": "enigma.toggleMapping",
+        "title": "%command.enigma.toggleMapping%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.showInheritance",
+        "title": "%command.enigma.showInheritance%",
+        "category": "Enigma",
+        "icon": "$(type-hierarchy-sub)"
+      },
+      {
+        "command": "enigma.showImplementations",
+        "title": "%command.enigma.showImplementations%",
+        "category": "Enigma",
+        "icon": "$(symbol-interface)"
+      },
+      {
+        "command": "enigma.showCalls",
+        "title": "%command.enigma.showCalls%",
+        "category": "Enigma",
+        "icon": "$(call-incoming)"
+      },
+      {
+        "command": "enigma.showCallsSpecific",
+        "title": "%command.enigma.showCallsSpecific%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.showStructure",
+        "title": "%command.enigma.showStructure%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.undo",
+        "title": "%command.enigma.undo%",
+        "category": "Enigma",
+        "icon": "$(discard)"
+      },
+      {
+        "command": "enigma.redo",
+        "title": "%command.enigma.redo%",
+        "category": "Enigma",
+        "icon": "$(redo)"
+      },
+      {
+        "command": "enigma.selectDecompiler",
+        "title": "%command.enigma.selectDecompiler%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.showBytecode",
+        "title": "%command.enigma.showBytecode%",
+        "category": "Enigma",
+        "icon": "$(file-binary)"
+      },
+      {
+        "command": "enigma.showSource",
+        "title": "%command.enigma.showSource%",
+        "category": "Enigma",
+        "icon": "$(file-code)"
+      },
+      {
+        "command": "enigma.reloadClass",
+        "title": "%command.enigma.reloadClass%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.nextObfuscated",
+        "title": "%command.enigma.nextObfuscated%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.previousObfuscated",
+        "title": "%command.enigma.previousObfuscated%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.copyObfuscatedName",
+        "title": "%command.enigma.copyObfuscatedName%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.renameClass",
+        "title": "%command.enigma.renameClass%",
+        "category": "Enigma",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "enigma.renamePackage",
+        "title": "%command.enigma.renamePackage%",
+        "category": "Enigma",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "enigma.movePackage",
+        "title": "%command.enigma.movePackage%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.showClasses",
+        "title": "%command.enigma.showClasses%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.revealInClassTree",
+        "title": "%command.enigma.revealInClassTree%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.collab.open",
+        "title": "%command.enigma.collab.open%",
+        "category": "Enigma",
+        "icon": "$(organization)"
+      },
+      {
+        "command": "enigma.collab.disconnect",
+        "title": "%command.enigma.collab.disconnect%",
+        "category": "Enigma",
+        "icon": "$(debug-disconnect)"
+      },
+      {
+        "command": "enigma.startDedicatedServer",
+        "title": "%command.enigma.startDedicatedServer%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.selectJava",
+        "title": "%command.enigma.selectJava%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.restartBackend",
+        "title": "%command.enigma.restartBackend%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.showOutput",
+        "title": "%command.enigma.showOutput%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.about",
+        "title": "%command.enigma.about%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.analysis.inheritance",
+        "title": "%command.enigma.analysis.inheritance%",
+        "category": "Enigma",
+        "icon": "$(type-hierarchy-sub)"
+      },
+      {
+        "command": "enigma.analysis.implementations",
+        "title": "%command.enigma.analysis.implementations%",
+        "category": "Enigma",
+        "icon": "$(symbol-interface)"
+      },
+      {
+        "command": "enigma.analysis.calls",
+        "title": "%command.enigma.analysis.calls%",
+        "category": "Enigma",
+        "icon": "$(call-incoming)"
+      },
+      {
+        "command": "enigma.analysis.clear",
+        "title": "%command.enigma.analysis.clear%",
+        "category": "Enigma",
+        "icon": "$(clear-all)"
+      },
+      {
         "command": "enigma.inlineRename.commit",
         "title": "%command.enigma.inlineRename.commit%",
         "category": "Enigma"
@@ -391,29 +716,107 @@
         "category": "Enigma"
       },
       {
-        "command": "enigma.selectJava",
-        "title": "%command.enigma.selectJava%",
+        "command": "enigma.structure.obfuscation.all",
+        "title": "%command.enigma.structure.obfuscation.all%",
         "category": "Enigma"
       },
       {
-        "command": "enigma.saveMappings",
-        "title": "%command.enigma.saveMappings%",
-        "category": "Enigma",
-        "icon": "$(save)"
-      },
-      {
-        "command": "enigma.showClasses",
-        "title": "%command.enigma.showClasses%",
+        "command": "enigma.structure.obfuscation.all.checked",
+        "title": "%command.enigma.structure.obfuscation.all.checked%",
         "category": "Enigma"
       },
       {
-        "command": "enigma.restartBackend",
-        "title": "%command.enigma.restartBackend%",
+        "command": "enigma.structure.obfuscation.obfuscated",
+        "title": "%command.enigma.structure.obfuscation.obfuscated%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.structure.obfuscation.obfuscated.checked",
+        "title": "%command.enigma.structure.obfuscation.obfuscated.checked%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.structure.obfuscation.deobfuscated",
+        "title": "%command.enigma.structure.obfuscation.deobfuscated%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.structure.obfuscation.deobfuscated.checked",
+        "title": "%command.enigma.structure.obfuscation.deobfuscated.checked%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.structure.documentation.all",
+        "title": "%command.enigma.structure.documentation.all%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.structure.documentation.all.checked",
+        "title": "%command.enigma.structure.documentation.all.checked%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.structure.documentation.documented",
+        "title": "%command.enigma.structure.documentation.documented%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.structure.documentation.documented.checked",
+        "title": "%command.enigma.structure.documentation.documented.checked%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.structure.documentation.non_documented",
+        "title": "%command.enigma.structure.documentation.non_documented%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.structure.documentation.non_documented.checked",
+        "title": "%command.enigma.structure.documentation.non_documented.checked%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.structure.sorting.default",
+        "title": "%command.enigma.structure.sorting.default%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.structure.sorting.default.checked",
+        "title": "%command.enigma.structure.sorting.default.checked%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.structure.sorting.a_z",
+        "title": "%command.enigma.structure.sorting.a_z%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.structure.sorting.a_z.checked",
+        "title": "%command.enigma.structure.sorting.a_z.checked%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.structure.sorting.z_a",
+        "title": "%command.enigma.structure.sorting.z_a%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.structure.sorting.z_a.checked",
+        "title": "%command.enigma.structure.sorting.z_a.checked%",
+        "category": "Enigma"
+      },
+      {
+        "command": "enigma.mcp.connect",
+        "title": "%command.enigma.mcp.connect%",
         "category": "Enigma"
       }
     ],
     "menus": {
       "commandPalette": [
+        {
+          "command": "enigma.renameClass",
+          "when": "false"
+        },
         {
           "command": "enigma.inlineRename.commit",
           "when": "false"
@@ -427,27 +830,604 @@
           "when": "false"
         },
         {
+          "command": "enigma.analysis.inheritance",
+          "when": "false"
+        },
+        {
+          "command": "enigma.analysis.implementations",
+          "when": "false"
+        },
+        {
+          "command": "enigma.analysis.calls",
+          "when": "false"
+        },
+        {
+          "command": "enigma.analysis.clear",
+          "when": "false"
+        },
+        {
+          "command": "enigma.structure.obfuscation.all",
+          "when": "false"
+        },
+        {
+          "command": "enigma.structure.obfuscation.all.checked",
+          "when": "false"
+        },
+        {
+          "command": "enigma.structure.obfuscation.obfuscated",
+          "when": "false"
+        },
+        {
+          "command": "enigma.structure.obfuscation.obfuscated.checked",
+          "when": "false"
+        },
+        {
+          "command": "enigma.structure.obfuscation.deobfuscated",
+          "when": "false"
+        },
+        {
+          "command": "enigma.structure.obfuscation.deobfuscated.checked",
+          "when": "false"
+        },
+        {
+          "command": "enigma.structure.documentation.all",
+          "when": "false"
+        },
+        {
+          "command": "enigma.structure.documentation.all.checked",
+          "when": "false"
+        },
+        {
+          "command": "enigma.structure.documentation.documented",
+          "when": "false"
+        },
+        {
+          "command": "enigma.structure.documentation.documented.checked",
+          "when": "false"
+        },
+        {
+          "command": "enigma.structure.documentation.non_documented",
+          "when": "false"
+        },
+        {
+          "command": "enigma.structure.documentation.non_documented.checked",
+          "when": "false"
+        },
+        {
+          "command": "enigma.structure.sorting.default",
+          "when": "false"
+        },
+        {
+          "command": "enigma.structure.sorting.default.checked",
+          "when": "false"
+        },
+        {
+          "command": "enigma.structure.sorting.a_z",
+          "when": "false"
+        },
+        {
+          "command": "enigma.structure.sorting.a_z.checked",
+          "when": "false"
+        },
+        {
+          "command": "enigma.structure.sorting.z_a",
+          "when": "false"
+        },
+        {
+          "command": "enigma.structure.sorting.z_a.checked",
+          "when": "false"
+        },
+        {
+          "command": "enigma.closeJar",
+          "when": "enigma.projectOpen"
+        },
+        {
+          "command": "enigma.openMappings",
+          "when": "enigma.projectOpen"
+        },
+        {
+          "command": "enigma.openMappingsFolder",
+          "when": "enigma.projectOpen"
+        },
+        {
           "command": "enigma.saveMappings",
           "when": "enigma.projectOpen"
+        },
+        {
+          "command": "enigma.saveMappingsAs",
+          "when": "enigma.projectOpen"
+        },
+        {
+          "command": "enigma.closeMappings",
+          "when": "enigma.projectOpen"
+        },
+        {
+          "command": "enigma.dropMappings",
+          "when": "enigma.projectOpen"
+        },
+        {
+          "command": "enigma.reloadAll",
+          "when": "enigma.projectOpen"
+        },
+        {
+          "command": "enigma.exportSource",
+          "when": "enigma.projectOpen"
+        },
+        {
+          "command": "enigma.exportJar",
+          "when": "enigma.projectOpen"
+        },
+        {
+          "command": "enigma.showStats",
+          "when": "enigma.projectOpen"
+        },
+        {
+          "command": "enigma.search",
+          "when": "enigma.projectOpen"
+        },
+        {
+          "command": "enigma.searchClasses",
+          "when": "enigma.projectOpen"
+        },
+        {
+          "command": "enigma.searchMethods",
+          "when": "enigma.projectOpen"
+        },
+        {
+          "command": "enigma.searchFields",
+          "when": "enigma.projectOpen"
+        },
+        {
+          "command": "enigma.undo",
+          "when": "enigma.projectOpen"
+        },
+        {
+          "command": "enigma.redo",
+          "when": "enigma.projectOpen"
+        },
+        {
+          "command": "enigma.renamePackage",
+          "when": "enigma.projectOpen"
+        },
+        {
+          "command": "enigma.movePackage",
+          "when": "enigma.projectOpen"
+        },
+        {
+          "command": "enigma.collab.open",
+          "when": "enigma.projectOpen"
+        },
+        {
+          "command": "enigma.reloadMappings",
+          "when": "enigma.projectOpen && enigma.mappingsOpen"
+        },
+        {
+          "command": "enigma.generateClassStats",
+          "when": "enigma.projectOpen && !enigma.classStats"
+        },
+        {
+          "command": "enigma.hideClassStats",
+          "when": "enigma.projectOpen && enigma.classStats"
+        },
+        {
+          "command": "enigma.collab.disconnect",
+          "when": "enigma.connection != 'not_connected'"
+        },
+        {
+          "command": "enigma.editName",
+          "when": "resourceScheme == enigma"
+        },
+        {
+          "command": "enigma.editJavadoc",
+          "when": "resourceScheme == enigma"
+        },
+        {
+          "command": "enigma.toggleMapping",
+          "when": "resourceScheme == enigma"
+        },
+        {
+          "command": "enigma.showInheritance",
+          "when": "resourceScheme == enigma"
+        },
+        {
+          "command": "enigma.showImplementations",
+          "when": "resourceScheme == enigma"
+        },
+        {
+          "command": "enigma.showCalls",
+          "when": "resourceScheme == enigma"
+        },
+        {
+          "command": "enigma.showCallsSpecific",
+          "when": "resourceScheme == enigma"
+        },
+        {
+          "command": "enigma.showStructure",
+          "when": "resourceScheme == enigma"
+        },
+        {
+          "command": "enigma.showBytecode",
+          "when": "resourceScheme == enigma"
+        },
+        {
+          "command": "enigma.showSource",
+          "when": "resourceScheme == enigma"
+        },
+        {
+          "command": "enigma.reloadClass",
+          "when": "resourceScheme == enigma"
+        },
+        {
+          "command": "enigma.nextObfuscated",
+          "when": "resourceScheme == enigma"
+        },
+        {
+          "command": "enigma.previousObfuscated",
+          "when": "resourceScheme == enigma"
+        },
+        {
+          "command": "enigma.copyObfuscatedName",
+          "when": "resourceScheme == enigma"
+        },
+        {
+          "command": "enigma.revealInClassTree",
+          "when": "resourceScheme == enigma"
+        },
+        {
+          "command": "enigma.classTree.showAll",
+          "when": "config.enigma.classTree.mode != 'all'"
+        },
+        {
+          "command": "enigma.classTree.showSplit",
+          "when": "config.enigma.classTree.mode == 'all'"
+        },
+        {
+          "command": "enigma.openJarFile",
+          "when": "false"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "enigma.editJavadoc",
+          "when": "resourceScheme == enigma && editorLangId == enigma-java",
+          "group": "1_modification@20"
+        },
+        {
+          "command": "enigma.toggleMapping",
+          "when": "resourceScheme == enigma && editorLangId == enigma-java",
+          "group": "1_modification@21"
+        },
+        {
+          "command": "enigma.showInheritance",
+          "when": "resourceScheme == enigma",
+          "group": "0_enigma@1"
+        },
+        {
+          "command": "enigma.showImplementations",
+          "when": "resourceScheme == enigma",
+          "group": "0_enigma@2"
+        },
+        {
+          "command": "enigma.showCalls",
+          "when": "resourceScheme == enigma",
+          "group": "0_enigma@3"
+        },
+        {
+          "command": "enigma.showCallsSpecific",
+          "when": "resourceScheme == enigma",
+          "group": "0_enigma@4"
+        },
+        {
+          "command": "enigma.copyObfuscatedName",
+          "when": "resourceScheme == enigma",
+          "group": "9_cutcopypaste@20"
+        },
+        {
+          "command": "enigma.revealInClassTree",
+          "when": "resourceScheme == enigma",
+          "group": "z_enigma@1"
         }
       ],
       "editor/title": [
         {
+          "command": "enigma.showBytecode",
+          "when": "resourceScheme == enigma && resourceExtname == .java",
+          "group": "navigation@1"
+        },
+        {
+          "command": "enigma.showSource",
+          "when": "resourceScheme == enigma && resourceExtname == .bytecode",
+          "group": "navigation@1"
+        },
+        {
           "command": "enigma.saveMappings",
           "when": "resourceScheme == enigma && enigma.dirty",
           "group": "navigation@2"
+        },
+        {
+          "command": "enigma.selectDecompiler",
+          "when": "resourceScheme == enigma",
+          "group": "1_enigma@1"
+        },
+        {
+          "command": "enigma.reloadClass",
+          "when": "resourceScheme == enigma",
+          "group": "1_enigma@2"
         }
       ],
       "view/title": [
+        {
+          "command": "enigma.openJar",
+          "when": "view == enigma.classes.obfuscated || view == enigma.classes.all",
+          "group": "navigation@1"
+        },
+        {
+          "command": "enigma.search",
+          "when": "view =~ /^enigma\\.classes\\./ && enigma.projectOpen",
+          "group": "navigation@2"
+        },
         {
           "command": "enigma.saveMappings",
           "when": "(view == enigma.classes.deobfuscated || view == enigma.classes.all) && enigma.projectOpen && enigma.dirty",
           "group": "navigation@3"
         },
         {
+          "command": "enigma.classTree.showAll",
+          "when": "view =~ /^enigma\\.classes\\./ && config.enigma.classTree.mode != 'all'",
+          "group": "0_layout@1"
+        },
+        {
+          "command": "enigma.classTree.showSplit",
+          "when": "view =~ /^enigma\\.classes\\./ && config.enigma.classTree.mode == 'all'",
+          "group": "0_layout@1"
+        },
+        {
+          "command": "enigma.generateClassStats",
+          "when": "view =~ /^enigma\\.classes\\./ && enigma.projectOpen && !enigma.classStats",
+          "group": "1_view@1"
+        },
+        {
+          "command": "enigma.hideClassStats",
+          "when": "view =~ /^enigma\\.classes\\./ && enigma.projectOpen && enigma.classStats",
+          "group": "1_view@1"
+        },
+        {
+          "command": "enigma.showStats",
+          "when": "view =~ /^enigma\\.classes\\./ && enigma.projectOpen",
+          "group": "1_view@2"
+        },
+        {
+          "command": "enigma.openMappings",
+          "when": "view =~ /^enigma\\.classes\\./ && enigma.projectOpen",
+          "group": "2_mappings@1"
+        },
+        {
+          "command": "enigma.openMappingsFolder",
+          "when": "view =~ /^enigma\\.classes\\./ && enigma.projectOpen && !isMac",
+          "group": "2_mappings@2"
+        },
+        {
           "command": "enigma.saveMappings",
           "when": "view =~ /^enigma\\.classes\\./ && enigma.projectOpen",
           "group": "2_mappings@3"
+        },
+        {
+          "command": "enigma.saveMappingsAs",
+          "when": "view =~ /^enigma\\.classes\\./ && enigma.projectOpen",
+          "group": "2_mappings@4"
+        },
+        {
+          "command": "enigma.closeMappings",
+          "when": "view =~ /^enigma\\.classes\\./ && enigma.projectOpen && enigma.mappingsOpen",
+          "group": "2_mappings@5"
+        },
+        {
+          "command": "enigma.exportSource",
+          "when": "view =~ /^enigma\\.classes\\./ && enigma.projectOpen",
+          "group": "3_export@1"
+        },
+        {
+          "command": "enigma.exportJar",
+          "when": "view =~ /^enigma\\.classes\\./ && enigma.projectOpen",
+          "group": "3_export@2"
+        },
+        {
+          "command": "enigma.openRecent",
+          "when": "view =~ /^enigma\\.classes\\./",
+          "group": "4_jar@1"
+        },
+        {
+          "command": "enigma.closeJar",
+          "when": "view =~ /^enigma\\.classes\\./ && enigma.projectOpen",
+          "group": "4_jar@2"
+        },
+        {
+          "submenu": "enigma.structure.options",
+          "when": "view == enigma.structure",
+          "group": "navigation@1"
+        },
+        {
+          "command": "enigma.analysis.inheritance",
+          "when": "view == enigma.analysis",
+          "group": "navigation@1"
+        },
+        {
+          "command": "enigma.analysis.implementations",
+          "when": "view == enigma.analysis",
+          "group": "navigation@2"
+        },
+        {
+          "command": "enigma.analysis.calls",
+          "when": "view == enigma.analysis",
+          "group": "navigation@3"
+        },
+        {
+          "command": "enigma.analysis.clear",
+          "when": "view == enigma.analysis && enigma.analysis.mode != ''",
+          "group": "navigation@4"
+        },
+        {
+          "command": "enigma.collab.disconnect",
+          "when": "view == enigma.collab && enigma.connection != 'not_connected'",
+          "group": "navigation@1"
+        }
+      ],
+      "enigma.structure.options": [
+        {
+          "command": "enigma.structure.obfuscation.all",
+          "when": "enigma.structure.obfuscation != 'all'",
+          "group": "1_obfuscation@1"
+        },
+        {
+          "command": "enigma.structure.obfuscation.all.checked",
+          "when": "enigma.structure.obfuscation == 'all'",
+          "group": "1_obfuscation@1"
+        },
+        {
+          "command": "enigma.structure.obfuscation.obfuscated",
+          "when": "enigma.structure.obfuscation != 'obfuscated'",
+          "group": "1_obfuscation@2"
+        },
+        {
+          "command": "enigma.structure.obfuscation.obfuscated.checked",
+          "when": "enigma.structure.obfuscation == 'obfuscated'",
+          "group": "1_obfuscation@2"
+        },
+        {
+          "command": "enigma.structure.obfuscation.deobfuscated",
+          "when": "enigma.structure.obfuscation != 'deobfuscated'",
+          "group": "1_obfuscation@3"
+        },
+        {
+          "command": "enigma.structure.obfuscation.deobfuscated.checked",
+          "when": "enigma.structure.obfuscation == 'deobfuscated'",
+          "group": "1_obfuscation@3"
+        },
+        {
+          "command": "enigma.structure.documentation.all",
+          "when": "enigma.structure.documentation != 'all'",
+          "group": "2_documentation@1"
+        },
+        {
+          "command": "enigma.structure.documentation.all.checked",
+          "when": "enigma.structure.documentation == 'all'",
+          "group": "2_documentation@1"
+        },
+        {
+          "command": "enigma.structure.documentation.documented",
+          "when": "enigma.structure.documentation != 'documented'",
+          "group": "2_documentation@2"
+        },
+        {
+          "command": "enigma.structure.documentation.documented.checked",
+          "when": "enigma.structure.documentation == 'documented'",
+          "group": "2_documentation@2"
+        },
+        {
+          "command": "enigma.structure.documentation.non_documented",
+          "when": "enigma.structure.documentation != 'non_documented'",
+          "group": "2_documentation@3"
+        },
+        {
+          "command": "enigma.structure.documentation.non_documented.checked",
+          "when": "enigma.structure.documentation == 'non_documented'",
+          "group": "2_documentation@3"
+        },
+        {
+          "command": "enigma.structure.sorting.default",
+          "when": "enigma.structure.sorting != 'default'",
+          "group": "3_sorting@1"
+        },
+        {
+          "command": "enigma.structure.sorting.default.checked",
+          "when": "enigma.structure.sorting == 'default'",
+          "group": "3_sorting@1"
+        },
+        {
+          "command": "enigma.structure.sorting.a_z",
+          "when": "enigma.structure.sorting != 'a_z'",
+          "group": "3_sorting@2"
+        },
+        {
+          "command": "enigma.structure.sorting.a_z.checked",
+          "when": "enigma.structure.sorting == 'a_z'",
+          "group": "3_sorting@2"
+        },
+        {
+          "command": "enigma.structure.sorting.z_a",
+          "when": "enigma.structure.sorting != 'z_a'",
+          "group": "3_sorting@3"
+        },
+        {
+          "command": "enigma.structure.sorting.z_a.checked",
+          "when": "enigma.structure.sorting == 'z_a'",
+          "group": "3_sorting@3"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "enigma.renameClass",
+          "when": "view =~ /^enigma\\.classes\\./ && viewItem == enigma.class",
+          "group": "inline@1"
+        },
+        {
+          "command": "enigma.renamePackage",
+          "when": "view =~ /^enigma\\.classes\\./ && viewItem == enigma.package",
+          "group": "inline@1"
+        },
+        {
+          "command": "enigma.renameClass",
+          "when": "view =~ /^enigma\\.classes\\./ && viewItem == enigma.class",
+          "group": "1_edit@1"
+        },
+        {
+          "command": "enigma.toggleMapping",
+          "when": "view =~ /^enigma\\.classes\\./ && viewItem == enigma.class",
+          "group": "1_edit@2"
+        },
+        {
+          "command": "enigma.renamePackage",
+          "when": "view =~ /^enigma\\.classes\\./ && viewItem =~ /^enigma\\.(class|package)$/",
+          "group": "2_package@1"
+        },
+        {
+          "command": "enigma.movePackage",
+          "when": "view =~ /^enigma\\.classes\\./ && viewItem =~ /^enigma\\.(class|package)$/",
+          "group": "2_package@2"
+        },
+        {
+          "command": "enigma.showInheritance",
+          "when": "view =~ /^enigma\\.classes\\./ && viewItem == enigma.class",
+          "group": "3_analysis@1"
+        },
+        {
+          "command": "enigma.showCalls",
+          "when": "view =~ /^enigma\\.classes\\./ && viewItem == enigma.class",
+          "group": "3_analysis@2"
+        },
+        {
+          "command": "enigma.showBytecode",
+          "when": "view =~ /^enigma\\.classes\\./ && viewItem == enigma.class",
+          "group": "4_view@1"
+        },
+        {
+          "command": "enigma.copyObfuscatedName",
+          "when": "view =~ /^enigma\\.classes\\./ && viewItem == enigma.class",
+          "group": "4_view@2"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "enigma.openJarFile",
+          "when": "resourceExtname == .jar && !explorerResourceIsFolder",
+          "group": "navigation@10"
+        }
+      ],
+      "editor/title/context": [
+        {
+          "command": "enigma.openJarFile",
+          "when": "resourceExtname == .jar && resourceScheme == file",
+          "group": "2_files@90"
         }
       ]
     },
@@ -473,10 +1453,73 @@
         "when": "editorTextFocus && resourceScheme == enigma && editorLangId == enigma-java && !enigma.renaming && !editorReadonly && !suggestWidgetVisible && !renameInputVisible"
       },
       {
+        "command": "enigma.undo",
+        "key": "ctrl+z",
+        "mac": "cmd+z",
+        "when": "editorTextFocus && resourceScheme == enigma && !enigma.renaming"
+      },
+      {
+        "command": "enigma.redo",
+        "key": "ctrl+y",
+        "mac": "cmd+shift+z",
+        "when": "editorTextFocus && resourceScheme == enigma && !enigma.renaming"
+      },
+      {
+        "command": "enigma.redo",
+        "key": "ctrl+shift+z",
+        "when": "editorTextFocus && resourceScheme == enigma && !enigma.renaming && !isMac"
+      },
+      {
         "command": "enigma.saveMappings",
         "key": "ctrl+s",
         "mac": "cmd+s",
         "when": "resourceScheme == enigma"
+      },
+      {
+        "command": "enigma.editJavadoc",
+        "key": "ctrl+alt+d",
+        "mac": "cmd+alt+d",
+        "when": "editorTextFocus && resourceScheme == enigma"
+      },
+      {
+        "command": "enigma.toggleMapping",
+        "key": "ctrl+alt+o",
+        "mac": "cmd+alt+o",
+        "when": "editorTextFocus && resourceScheme == enigma"
+      },
+      {
+        "command": "enigma.showInheritance",
+        "key": "ctrl+alt+i",
+        "mac": "cmd+alt+i",
+        "when": "editorTextFocus && resourceScheme == enigma"
+      },
+      {
+        "command": "enigma.showImplementations",
+        "key": "ctrl+alt+m",
+        "mac": "cmd+alt+m",
+        "when": "editorTextFocus && resourceScheme == enigma"
+      },
+      {
+        "command": "enigma.showCalls",
+        "key": "ctrl+alt+c",
+        "mac": "cmd+alt+c",
+        "when": "editorTextFocus && resourceScheme == enigma"
+      },
+      {
+        "command": "enigma.nextObfuscated",
+        "key": "alt+down",
+        "when": "editorTextFocus && resourceScheme == enigma && !enigma.renaming"
+      },
+      {
+        "command": "enigma.previousObfuscated",
+        "key": "alt+up",
+        "when": "editorTextFocus && resourceScheme == enigma && !enigma.renaming"
+      },
+      {
+        "command": "enigma.search",
+        "key": "ctrl+shift+alt+f",
+        "mac": "cmd+shift+alt+f",
+        "when": "enigma.projectOpen"
       }
     ],
     "languages": [
@@ -553,6 +1596,114 @@
       "[enigma-bytecode]": {
         "editor.wordBasedSuggestions": "off"
       }
-    }
+    },
+    "views": {
+      "enigma": [
+        {
+          "id": "enigma.classes.obfuscated",
+          "name": "%view.enigma.classes.obfuscated%",
+          "icon": "$(symbol-class)",
+          "initialSize": 3,
+          "when": "config.enigma.classTree.mode != 'all'"
+        },
+        {
+          "id": "enigma.classes.deobfuscated",
+          "name": "%view.enigma.classes.deobfuscated%",
+          "icon": "$(symbol-class)",
+          "initialSize": 3,
+          "when": "config.enigma.classTree.mode != 'all'"
+        },
+        {
+          "id": "enigma.classes.all",
+          "name": "%view.enigma.classes.all%",
+          "icon": "$(symbol-class)",
+          "when": "config.enigma.classTree.mode == 'all'"
+        }
+      ],
+      "enigma-identifier": [
+        {
+          "id": "enigma.entry",
+          "name": "%view.enigma.entry%",
+          "type": "webview",
+          "icon": "$(symbol-field)"
+        }
+      ],
+      "enigma-analysis": [
+        {
+          "id": "enigma.structure",
+          "name": "%view.enigma.structure%",
+          "icon": "$(list-tree)",
+          "initialSize": 3
+        },
+        {
+          "id": "enigma.analysis",
+          "name": "%view.enigma.analysis%",
+          "icon": "$(type-hierarchy)",
+          "initialSize": 2
+        }
+      ],
+      "enigma-collaboration": [
+        {
+          "id": "enigma.collab",
+          "name": "%view.enigma.collab%",
+          "type": "webview",
+          "icon": "$(organization)"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "enigma.classes.obfuscated",
+        "when": "!enigma.projectOpen",
+        "contents": "%welcome.enigma.classes.obfuscated.0%"
+      },
+      {
+        "view": "enigma.classes.obfuscated",
+        "when": "enigma.projectOpen",
+        "contents": "%welcome.enigma.classes.obfuscated.1%"
+      },
+      {
+        "view": "enigma.classes.deobfuscated",
+        "when": "!enigma.projectOpen",
+        "contents": "%welcome.enigma.classes.deobfuscated.2%"
+      },
+      {
+        "view": "enigma.classes.deobfuscated",
+        "when": "enigma.projectOpen",
+        "contents": "%welcome.enigma.classes.deobfuscated.3%"
+      },
+      {
+        "view": "enigma.classes.all",
+        "when": "!enigma.projectOpen",
+        "contents": "%welcome.enigma.classes.all.4%"
+      },
+      {
+        "view": "enigma.structure",
+        "contents": "%welcome.enigma.structure.5%"
+      },
+      {
+        "view": "enigma.analysis",
+        "contents": "%welcome.enigma.analysis.6%"
+      }
+    ],
+    "submenus": [
+      {
+        "id": "enigma.structure.options",
+        "label": "%submenu.enigma.structure.options%",
+        "icon": "$(filter)"
+      }
+    ],
+    "customEditors": [
+      {
+        "viewType": "enigma.jar",
+        "displayName": "Enigma",
+        "selector": [
+          {
+            "filenamePattern": "*.jar"
+          }
+        ],
+        "priority": "option"
+      }
+    ]
   }
 }
