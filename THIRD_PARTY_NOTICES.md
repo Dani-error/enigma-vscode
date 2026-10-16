@@ -9,11 +9,11 @@ pieces adapted from it:
 
 - `backend/src/main/java/dev/danibcastro/enigmavscode/backend/search/` — `SearchUtil` and `SearchEntry`, copied from
   `enigma-swing` with only the package declaration changed.
-- `backend/src/main/java/dev/danibcastro/enigmavscode/backend/PackageRenamePlanner.java` — a port of `enigma-swing`'s
+- `backend/src/main/java/dev/danibcastro/enigmavscode/backend/util/PackageRenamePlanner.java` — a port of `enigma-swing`'s
   `PackageRenamer`.
 
 Licensing the whole project under the LGPL keeps that simple: the combined work can be distributed under one licence,
-and anyone can replace the bundled Enigma (it is a composite Gradle build of `vendor/enigma`.
+and anyone can replace the bundled Enigma (it is a composite Gradle build of `vendor/enigma`).
 
 ## Enigma
 
