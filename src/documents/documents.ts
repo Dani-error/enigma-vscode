@@ -16,6 +16,26 @@ export interface SourceEvent {
     source: SourceResult;
 }
 
+/**
+ * What a class reads as while its tab is being closed because its jar is not open (see setAside). Not kept: this is
+ * no text of the class.
+ */
+const placeholder = (parsed: { class: string; view: View }): LoadedFile => ({
+    source: {
+        ...parsed,
+        deobfName: parsed.class,
+        revision: 0,
+        serial: 0,
+        text: '',
+        error: null,
+        tokens: {} as SourceResult['tokens'],
+        refs: [],
+        groups: [],
+    },
+    bytes: new Uint8Array(),
+    mtime: 0,
+});
+
 /** How many classes are kept in memory although no document shows them (anymore). */
 const MAX_UNOPENED = 32;
 
@@ -83,8 +103,12 @@ export class EnigmaDocuments implements vscode.FileSystemProvider, vscode.Dispos
                 this.loading.clear();
                 this.fetching.clear();
             }),
-            // with a jar open, every class can be read again
-            backend.onDidChangeProject(() => this.aside.clear()),
+            // with a jar open, every class can be read again; until then, what was set aside stays so
+            backend.onDidChangeProject(state => {
+                if (state.jarPath) {
+                    this.aside.clear();
+                }
+            }),
         );
     }
 
@@ -110,9 +134,10 @@ export class EnigmaDocuments implements vscode.FileSystemProvider, vscode.Dispos
     }
 
     /**
-     * Tells that the tabs of these classes are being closed because their jar is not open. The editor may be reading
-     * them at this very moment, for the tabs it restored when the window was opened. It is answered with an empty
-     * text: an error is what it would show, and log, for a tab that is gone the next moment.
+     * Tells that the tabs of these classes are being closed because their jar is not open, or is about to close. The
+     * editor may be reading them at this very moment: for the tabs it restored when the window was opened, or for
+     * what was asked just before the jar went. It is answered with an empty text: an error is what it would show,
+     * and log, for a tab that is gone the next moment.
      */
     setAside(classes: { class: string; view: View }[]): void {
         for (const parsed of classes) {
@@ -141,24 +166,10 @@ export class EnigmaDocuments implements vscode.FileSystemProvider, vscode.Dispos
             throw vscode.FileSystemError.FileNotFound(uri);
         }
 
+        const isAside = this.aside.has(`${parsed.view}:${parsed.class}`);
         if (!(await this.ready())) {
-            if (this.aside.has(`${parsed.view}:${parsed.class}`)) {
-                // not kept: this is no text of the class
-                return {
-                    source: {
-                        ...parsed,
-                        deobfName: parsed.class,
-                        revision: 0,
-                        serial: 0,
-                        text: '',
-                        error: null,
-                        tokens: {} as SourceResult['tokens'],
-                        refs: [],
-                        groups: [],
-                    },
-                    bytes: new Uint8Array(),
-                    mtime: 0,
-                };
+            if (isAside) {
+                return placeholder(parsed);
             }
 
             throw vscode.FileSystemError.Unavailable(t('documents.noEnigmaProjectIsOpenOpen'));
@@ -168,6 +179,11 @@ export class EnigmaDocuments implements vscode.FileSystemProvider, vscode.Dispos
         try {
             source = await this.backend.request('class/source', parsed);
         } catch (error) {
+            // the jar went while this was asked for, as its tab was closing: on a restart, or with "Close Jar"
+            if (error instanceof BackendError && error.code === ErrorCode.NoProject && this.aside.has(`${parsed.view}:${parsed.class}`)) {
+                return placeholder(parsed);
+            }
+
             throw vscode.FileSystemError.Unavailable(error instanceof Error ? error.message : String(error));
         }
 

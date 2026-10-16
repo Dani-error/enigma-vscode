@@ -1,11 +1,38 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import Mocha from 'mocha';
+import { startWatching, unexpectedTrouble } from './harness';
+
+/** How long after a test what it caused still counts as its doing. */
+const SETTLE_MS = 250;
 
 // The console of the extension host is not reliably flushed when the editor exits, so results are also written to a
 // file that the launcher prints.
 export function run(): Promise<void> {
     const mocha = new Mocha({ ui: 'bdd', color: false, timeout: 120000, bail: false });
+    // every test fails if something goes wrong during it that it did not expect, wherever that shows (see harness.ts)
+    mocha.suite.on('pre-require', (context: Mocha.MochaGlobals) => {
+        const it = context.it;
+        const strict = (title: string, test?: Mocha.Func) =>
+            it(
+                title,
+                test &&
+                    async function (this: Mocha.Context) {
+                        startWatching();
+                        await (test as (this: Mocha.Context) => Promise<void>).call(this);
+                        // what goes wrong as a consequence may take a moment to show
+                        await new Promise(resolve => setTimeout(resolve, SETTLE_MS));
+                        const found = unexpectedTrouble();
+                        if (found.length > 0) {
+                            throw new Error(
+                                `What went wrong during this test:\n${found.map(trouble => `  [${trouble.where}] ${trouble.text}`).join('\n')}`,
+                            );
+                        }
+                    },
+            );
+        // with it.only and it.skip as they are
+        context.it = Object.assign(strict, it) as Mocha.TestFunction;
+    });
     // in the order of their names: the files build on each other
     for (const file of fs.readdirSync(__dirname).sort()) {
         if (file.endsWith('.test.js')) {

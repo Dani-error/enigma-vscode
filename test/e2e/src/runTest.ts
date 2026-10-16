@@ -75,6 +75,7 @@ function serveScreenshots(directory: string, port: number): NodeJS.Timeout {
 }
 
 async function main(): Promise<void> {
+    let logged: string[] | undefined;
     // this runs from build/extension/test/e2e (see tests() in scripts/build.ts)
     const root = path.resolve(__dirname, '../../../..');
     // the extension as it ships, which is what is tested (see scripts/layout.ts; this file is not bundled, so it cannot import it)
@@ -98,7 +99,14 @@ async function main(): Promise<void> {
     // Many machines have JAVA_HOME pointing at an old Java for other tools. The extension must cope with that, so
     // the tests always run that way: this is a stand-in for a Java 8 installation.
     const oldJava = path.join(temp, 'java8');
-    const testEnv: Record<string, string> = { ENIGMA_E2E_WORKSPACE: workspace, ENIGMA_E2E_RESULTS: results, ENIGMA_E2E_FIXTURES: fixtures };
+    // what the tests say they cause on purpose, one pattern per line (see expectTrouble in harness.ts)
+    const expected = path.join(temp, 'expected.txt');
+    const testEnv: Record<string, string> = {
+        ENIGMA_E2E_WORKSPACE: workspace,
+        ENIGMA_E2E_RESULTS: results,
+        ENIGMA_E2E_FIXTURES: fixtures,
+        ENIGMA_E2E_EXPECTED: expected,
+    };
     if (process.platform !== 'win32') {
         fs.mkdirSync(path.join(oldJava, 'bin'), { recursive: true });
         fs.writeFileSync(path.join(oldJava, 'release'), 'JAVA_VERSION="1.8.0_332"\n');
@@ -148,8 +156,50 @@ async function main(): Promise<void> {
         clearInterval(screenshotServer);
         console.log('\n=== Enigma end-to-end results ===');
         console.log(fs.existsSync(results) ? fs.readFileSync(results, 'utf8') : 'No results were written: the tests did not start.');
+        const allowed = fs.existsSync(expected)
+            ? fs
+                  .readFileSync(expected, 'utf8')
+                  .split('\n')
+                  .filter(line => line)
+                  .map(line => new RegExp(line))
+            : [];
+        logged = loggedErrors(path.join(temp, 'user-data', 'logs')).filter(line => !allowed.some(pattern => pattern.test(line)));
         fs.rmSync(temp, { recursive: true, force: true });
     }
+
+    if (logged && logged.length > 0) {
+        throw new Error(`VS Code logged errors about the extension during the tests:\n${logged.map(line => `  ${line}`).join('\n')}`);
+    }
+}
+
+/**
+ * What VS Code wrote down as errors about the extension, in the logs of its window and of its extension host: what
+ * goes wrong outside of any one test, like a document that could not be read while tabs were being restored.
+ */
+function loggedErrors(directory: string): string[] {
+    const found: string[] = [];
+    if (!fs.existsSync(directory)) {
+        return found;
+    }
+
+    for (const entry of fs.readdirSync(directory, { recursive: true, withFileTypes: true })) {
+        if (!entry.isFile() || !/^(renderer|exthost|main)\.log$/.test(entry.name)) {
+            continue;
+        }
+
+        const lines = fs.readFileSync(path.join(entry.parentPath, entry.name), 'utf8').split('\n');
+        lines.forEach((line, index) => {
+            // about this extension: its scheme, its id, or its code; what VS Code says about itself is not ours to fix
+            const ours = /enigma:|danibcastro\.enigma-vscode|build\/extension\/dist/.test(
+                `${line} ${lines[index + 1] ?? ''} ${lines[index + 2] ?? ''}`,
+            );
+            if (line.includes('[error]') && ours) {
+                found.push(`${entry.name}: ${line.trim()}`);
+            }
+        });
+    }
+
+    return found;
 }
 
 main().catch(error => {

@@ -1,6 +1,6 @@
 import * as assert from 'node:assert/strict';
 import * as vscode from 'vscode';
-import { Api, activate, classDocument, execute, positionOf, waitFor } from './harness';
+import { Api, activate, classDocument, execute, expectTrouble, positionOf, waitFor } from './harness';
 
 describe('Enigma in VS Code: the features of the editor on decompiled classes', () => {
     let api: Api;
@@ -30,7 +30,8 @@ describe('Enigma in VS Code: the features of the editor on decompiled classes', 
             ),
             /reserved/i,
         );
-        // names that are not part of the jar cannot be renamed at all
+        // names that are not part of the jar cannot be renamed at all; VS Code logs the refusal
+        expectTrouble(/is not part of the jar and cannot be renamed/);
         await assert.rejects(execute('vscode.prepareRename', classDocument('a').uri, positionOf(classDocument('a'), 'String')));
     });
 

@@ -6,7 +6,7 @@ import { ClassEditors } from '../documents/classEditors';
 import { OpenState, StatsResult } from '../engine/protocol';
 import { settings } from '../config';
 import { FromStatsPage, StatsOptions, ToStatsPage } from './messages';
-import { page, problemOf, webviewOptions } from './webview';
+import { logPageFailure, page, problemOf, webviewOptions } from './webview';
 import { t } from '../l10n';
 
 /**
@@ -90,6 +90,9 @@ export class StatsPanel implements vscode.Disposable {
 
     private async onMessage(message: FromStatsPage): Promise<void> {
         switch (message.type) {
+            case 'pageFailed':
+                logPageFailure(this.backend.output, 'stats', message.message);
+                break;
             case 'ready': {
                 const options = this.defaults();
                 const jar = this.state()?.jarPath;

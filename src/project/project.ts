@@ -443,6 +443,8 @@ export class Project implements vscode.Disposable {
             return;
         }
 
+        // what the editor is still reading of them is answered without the jar
+        this.documents.setAside(this.editors.openTabs());
         await this.editors.closeAll();
         await this.reporter.run(() => this.backend.request('project/closeJar'));
         await this.memory.forgetWindow();

@@ -4,7 +4,7 @@ import { Backend } from '../engine/backend';
 import { CollabMessage, CollabState } from '../engine/protocol';
 import { settings } from '../config';
 import { FromCollabPage, LoggedMessage, ToCollabPage } from './messages';
-import { page, problemOf, webviewOptions } from './webview';
+import { logPageFailure, page, problemOf, webviewOptions } from './webview';
 import { t } from '../l10n';
 
 const MAX_MESSAGES = 500;
@@ -141,6 +141,9 @@ export class CollabPane implements vscode.WebviewViewProvider, vscode.Disposable
     /** Handles a message of the web view. Public so that tests can act as the web view. */
     async onMessage(message: FromCollabPage): Promise<void> {
         switch (message.type) {
+            case 'pageFailed':
+                logPageFailure(this.backend.output, 'collab', message.message);
+                break;
             case 'ready':
                 this.send();
                 break;

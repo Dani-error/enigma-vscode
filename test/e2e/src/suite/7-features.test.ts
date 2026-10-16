@@ -3,7 +3,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import type { EntryRef } from '../../../../src/engine/protocol';
-import { Api, Offered, activate, entryInfo, execute, fixtures, jar, pause, waitFor, workspace } from './harness';
+import { Api, Offered, activate, entryInfo, execute, fixtures, jar, pause, reported, waitFor, workspace } from './harness';
 
 // The commands around the mappings and the jar that the other suites do not get to: what the menus of the class
 // trees and of the editor do, saving in other ways, exporting, and the choices about the engine. On a jar of its own,
@@ -82,6 +82,16 @@ describe('Enigma in VS Code: the commands around mappings, classes and the engin
         await waitFor('the jar to be open', () => api.project.isOpen && api.index.get('g') !== undefined);
         assert.equal(fs.realpathSync(api.project.state!.jarPath), fs.realpathSync(packagesJar));
         assert.equal(api.index.size, 8);
+    });
+
+    it('asks for the file when opened from the buttons of a view, which pass something else than a file', async () => {
+        // what the editor passes to the commands of a tree view's title
+        const fromTheTitle = { $treeViewId: 'enigma.classes.all' };
+        const before = reported.length;
+        const jar = await answering({}, () => execute('enigma.openJar', fromTheTitle));
+        const mappings = await answering({}, () => execute('enigma.openMappings', fromTheTitle));
+        assert.deepEqual([jar.asked, mappings.asked], [['open: Open Jar'], ['open: Open Mappings']]);
+        assert.deepEqual(reported.slice(before), [], 'no error is shown');
     });
 
     it('renames a class from the class tree, with the name checked while it is typed', async () => {

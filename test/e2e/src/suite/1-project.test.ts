@@ -2,7 +2,7 @@ import * as assert from 'node:assert/strict';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
-import { Api, activate, execute, jar, reported, waitFor, workspace } from './harness';
+import { Api, activate, execute, expectTrouble, jar, reported, waitFor, workspace } from './harness';
 
 describe('Enigma in VS Code: opening a jar, and the Java it runs on', () => {
     let api: Api;
@@ -46,6 +46,8 @@ describe('Enigma in VS Code: opening a jar, and the Java it runs on', () => {
     });
 
     it('applies the enigma.java.home setting as soon as it is changed', async function () {
+        // what is tested: that a Java the engine cannot run on is reported, naming the setting
+        expectTrouble(/enigma\.java\.home/);
         const config = () => vscode.workspace.getConfiguration('enigma');
         const errorsBefore = reported.length;
 

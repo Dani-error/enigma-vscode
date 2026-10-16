@@ -30,6 +30,9 @@ export class JavaNotFoundError extends Error {
     }
 }
 
+/** What the connection answers for requests the engine will not answer, because it stopped. */
+const GONE = new Set<number>([rpc.ErrorCodes.PendingResponseRejected, rpc.ErrorCodes.ConnectionInactive]);
+
 /** How long the engine gets to shut down, and then to exit, before it is killed. */
 const STOP_TIMEOUT_MS = 5000;
 
@@ -41,6 +44,8 @@ export class Backend implements vscode.Disposable {
     private starting?: Promise<EnvironmentInfo>;
     /** The process that was asked to stop: its exit is no surprise. */
     private stopping?: ChildProcessWithoutNullStreams;
+    /** The stop under way: what is asked of the engine meanwhile waits for the next one. */
+    private stopped?: Promise<void>;
     private disposed = false;
     private readonly progress = new TaskProgress();
     private readonly exitEmitter = new vscode.EventEmitter<{ expected: boolean }>();
@@ -233,6 +238,12 @@ export class Backend implements vscode.Disposable {
      * @throws BackendError for errors the user caused or can fix
      */
     async request<M extends Method>(method: M, ...[params]: ArgumentsOf<M>): Promise<ResultOf<M>> {
+        // an engine on its way out takes nothing new: what is asked meanwhile goes to the one that follows, if any
+        await this.stopped;
+        if (this.disposed) {
+            throw new Error(t('backend.theEnigmaBackendIsNotRunning'));
+        }
+
         await this.start();
         const connection = this.connection;
         if (!connection) {
@@ -242,6 +253,12 @@ export class Backend implements vscode.Disposable {
         try {
             return await connection.sendRequest<ResultOf<M>>(method, rpc.ParameterStructures.byName, params ?? {});
         } catch (error) {
+            if (error instanceof rpc.ResponseError && GONE.has(error.code)) {
+                // stopped before it answered, as when it is restarted: nothing failed
+                this.output.debug(`${method} was not answered: the engine stopped`);
+                throw new Error(t('backend.theEnigmaBackendIsNotRunning'), { cause: error });
+            }
+
             if (error instanceof rpc.ResponseError) {
                 // answers the callers know how to handle; anything else is a failure of the engine
                 const data = error.data as ErrorData | undefined;
@@ -265,7 +282,14 @@ export class Backend implements vscode.Disposable {
         }
     }
 
-    async stop(): Promise<void> {
+    stop(): Promise<void> {
+        this.stopped ??= this.shutDown().finally(() => {
+            this.stopped = undefined;
+        });
+        return this.stopped;
+    }
+
+    private async shutDown(): Promise<void> {
         const child = this.process;
         const connection = this.connection;
         if (!child) {

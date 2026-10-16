@@ -48,6 +48,44 @@ export interface Offered extends vscode.QuickPickItem {
 }
 
 export const reported: string[] = [];
+
+/** Something that went wrong while the tests ran, and where it showed. */
+export interface Trouble {
+    where: 'notification' | 'log' | 'engine' | 'rejection' | 'exception';
+    text: string;
+}
+
+const troubles: Trouble[] = [];
+let expected: RegExp[] = [];
+
+const note = (where: Trouble['where'], text: string) => troubles.push({ where, text });
+
+/**
+ * Lets the running test cause what matches these: causing it is what the test is about. Anything else that goes wrong
+ * during a test fails it (see index.ts), wherever it shows.
+ */
+export function expectTrouble(...patterns: RegExp[]): void {
+    expected.push(...patterns);
+    // what VS Code logs of it is read after the run, by the launcher (see runTest.ts)
+    if (process.env.ENIGMA_E2E_EXPECTED) {
+        fs.appendFileSync(process.env.ENIGMA_E2E_EXPECTED, patterns.map(pattern => `${pattern.source}\n`).join(''));
+    }
+}
+
+/** Starts a test with nothing gone wrong and nothing expected to. */
+export function startWatching(): void {
+    troubles.length = 0;
+    expected = [];
+}
+
+/** What went wrong since the test started that it did not say it would cause. */
+export function unexpectedTrouble(): Trouble[] {
+    return troubles.filter(trouble => !expected.some(pattern => pattern.test(trouble.text)));
+}
+
+// the extension host runs the tests and the extension in one process: what neither handles shows up here
+process.on('unhandledRejection', reason => note('rejection', reason instanceof Error ? (reason.stack ?? reason.message) : String(reason)));
+process.on('uncaughtException', error => note('exception', error.stack ?? error.message));
 /** What the extension logged at debug level; printed when a test times out. */
 export const trace: string[] = [];
 globalThis.enigmaTestTrace = trace;
@@ -270,6 +308,20 @@ export function activate(): Promise<Api> {
         const api = await extension.activate();
 
         const output = api.backend.output;
+        const error = output.error.bind(output);
+        output.error = (message: string | Error, ...rest: unknown[]) => {
+            note('log', message instanceof Error ? (message.stack ?? message.message) : message);
+            error(message, ...rest);
+        };
+        // the engine writes its log here, line by line
+        const appendLine = output.appendLine.bind(output);
+        output.appendLine = (line: string) => {
+            if (/\[ERROR\]|^Exception in thread/.test(line)) {
+                note('engine', line);
+            }
+
+            appendLine(line);
+        };
         const debug = output.debug.bind(output);
         output.debug = (message: string, ...rest: unknown[]) => {
             trace.push(`${new Date().toISOString().substring(17, 23)} ${message}`);
@@ -279,6 +331,7 @@ export function activate(): Promise<Api> {
         const showError = vscode.window.showErrorMessage;
         (vscode.window as unknown as Record<string, unknown>).showErrorMessage = (message: string, ...rest: unknown[]) => {
             reported.push(message);
+            note('notification', message);
             // the original, with whatever the extension passed: messages, options and buttons
             return Reflect.apply(showError, vscode.window, [message, ...rest]) as Thenable<unknown>;
         };

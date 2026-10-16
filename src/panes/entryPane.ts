@@ -6,7 +6,7 @@ import { EntryInfo, EntryRef, TokenInfo } from '../engine/protocol';
 import { Editing } from '../project/editing';
 import { describeEntry } from './entryDescription';
 import { EntryAction, EntryField, FromEntryPage, PaneEntry, Problem, ToEntryPage } from './messages';
-import { page, problemOf, webviewOptions } from './webview';
+import { logPageFailure, page, problemOf, webviewOptions } from './webview';
 import { t } from '../l10n';
 
 /** The command behind each of the buttons that lead on from an entry. */
@@ -188,6 +188,11 @@ export class EntryPane implements vscode.WebviewViewProvider, vscode.Disposable 
 
     /** Handles a message of the web view. Public so that tests can act as the web view. */
     async onMessage(message: FromEntryPage): Promise<void> {
+        if (message.type === 'pageFailed') {
+            logPageFailure(this.backend.output, 'entry', message.message);
+            return;
+        }
+
         if (message.type === 'ready') {
             this.pageReady = true;
             this.send();

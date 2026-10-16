@@ -37,6 +37,11 @@ export const webviewOptions = (extensionUri: vscode.Uri): vscode.WebviewOptions 
     return { enableScripts: true, localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'dist')] };
 };
 
+/** Logs what went wrong in a page, which tells its pane (see PageFailed). */
+export const logPageFailure = (output: vscode.LogOutputChannel, page: PageName, message: string): void => {
+    output.error(`The ${page} page failed: ${message}`);
+};
+
 export const problemOf = (error: unknown): Problem => {
     return { severity: 'error', message: error instanceof Error ? error.message : String(error) };
 };

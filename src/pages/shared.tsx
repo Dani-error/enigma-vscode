@@ -1,7 +1,7 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
 import type { TextKey } from '../l10n/keys';
-import type { Problem } from '../panes/messages';
+import type { PageFailed, Problem } from '../panes/messages';
 
 // What the pages of the panes share: their texts, the way to their pane in the extension, and small pieces of UI.
 // The pages are Preact components (https://preactjs.com): they describe what is shown for their state, and Preact
@@ -24,6 +24,15 @@ export const t = (key: TextKey, ...values: unknown[]): string => {
 };
 
 const vscode = acquireVsCodeApi();
+
+// what goes wrong here is told to the pane, which logs it: nobody sees the console of a page
+const fail = (problem: unknown) =>
+    vscode.postMessage({
+        type: 'pageFailed',
+        message: problem instanceof Error ? (problem.stack ?? problem.message) : String(problem),
+    } satisfies PageFailed);
+window.addEventListener('error', event => fail(event.error ?? event.message));
+window.addEventListener('unhandledrejection', event => fail(event.reason));
 
 /**
  * The way between a page and its pane in the extension. What each side may send is in panes/messages.ts.

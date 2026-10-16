@@ -5,13 +5,14 @@ import * as vscode from 'vscode';
 import type { EntryRef } from '../../../../src/engine/protocol';
 import {
     Api,
-    classOf,
     METHOD_DO_BASE_THINGS,
     activate,
     classDocument,
+    classOf,
     entryInfo,
     everywhere,
     execute,
+    expectTrouble,
     openClass,
     pause,
     positionOf,
@@ -437,6 +438,8 @@ describe('Enigma in VS Code: panes and views', () => {
         const current = api.index.get('a')!.deobf;
         assert.match(await call('enigma_read_class', { class: current }), /public abstract class /);
         assert.match(await call('enigma_read_class', { class: 'a' }), /public abstract class /);
+        // a class that does not exist is refused, and VS Code logs what its tools refuse
+        expectTrouble(/Error from tool enigma_read_class/);
         await assert.rejects(call('enigma_read_class', { class: 'no/such/Thing' }), /There is no class/);
 
         // what is listed for a member is what renames it

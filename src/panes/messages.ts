@@ -49,7 +49,14 @@ export type ToEntryPage =
     | { type: 'javadocResult'; key: string; problem: Problem | null }
     | { type: 'focus'; field: EntryField };
 
+/** What went wrong in a page, which has no log of its own that anyone sees: its pane logs it. */
+export interface PageFailed {
+    type: 'pageFailed';
+    message: string;
+}
+
 export type FromEntryPage =
+    | PageFailed
     | { type: 'ready' }
     | { type: 'dirty'; dirty: boolean }
     | { type: 'copy'; text: string }
@@ -81,6 +88,7 @@ export interface CollabPageState {
 export type ToCollabPage = { type: 'state'; state: CollabPageState } | { type: 'failed'; message: string };
 
 export type FromCollabPage =
+    | PageFailed
     | { type: 'ready' }
     | { type: 'connect'; username: string; address: string; password: string }
     | { type: 'host'; username: string; port: number; password: string }
@@ -101,4 +109,4 @@ export type ToStatsPage =
     | { type: 'result'; stats?: StatsResult; error?: string }
     | { type: 'stale' };
 
-export type FromStatsPage = { type: 'ready' } | { type: 'generate'; options: StatsOptions } | { type: 'open'; name: string };
+export type FromStatsPage = PageFailed | { type: 'ready' } | { type: 'generate'; options: StatsOptions } | { type: 'open'; name: string };
