@@ -1,0 +1,45 @@
+import * as vscode from 'vscode';
+import { Enigma } from '../enigma';
+import { JarOpener } from '../project/jarOpener';
+import { Register, Targets } from './registry';
+
+/** Jars, mappings, exporting, and working on them together. */
+export const registerProjectCommands = (register: Register, targets: Targets, { project, editor, jarOpener, collabPane, backend }: Enigma) => {
+    register('enigma.openJar', (jar?: string | vscode.Uri) => project.openJar(jar instanceof vscode.Uri ? jar.fsPath : jar));
+    // "Open with Enigma" on a jar in the explorer, or on the tab of one; the files that were selected with it come second
+    register('enigma.openJarFile', async (jar?: vscode.Uri) => {
+        const tab = vscode.window.tabGroups.activeTabGroup.activeTab?.input;
+        const target = jar ?? (tab instanceof vscode.TabInputCustom && tab.viewType === JarOpener.viewType ? tab.uri : undefined);
+        if (target) {
+            await jarOpener.open(target);
+        } else {
+            await project.openJar();
+        }
+    });
+    register('enigma.closeJar', () => project.closeJar());
+    register('enigma.openRecent', () => project.openRecent());
+    register('enigma.reloadAll', () => project.reloadAll());
+
+    register('enigma.openMappings', (mappings?: string | vscode.Uri) => project.openMappings(mappings instanceof vscode.Uri ? mappings.fsPath : mappings));
+    register('enigma.openMappingsFolder', () => project.openMappings(undefined, true));
+    register('enigma.saveMappings', async () => {
+        // a name still being typed belongs to what is saved
+        if (await editor.commitActive('enter')) {
+            await project.saveMappings();
+        }
+    });
+    register('enigma.saveMappingsAs', async () => {
+        if (await editor.commitActive('enter')) {
+            await project.saveMappingsAs();
+        }
+    });
+    register('enigma.closeMappings', () => project.closeMappings());
+    register('enigma.reloadMappings', () => project.reloadMappings());
+    register('enigma.dropMappings', () => project.dropMappings());
+
+    register('enigma.exportSource', () => project.exportSource());
+    register('enigma.exportJar', () => project.exportJar());
+
+    register('enigma.collab.open', () => targets.requireProject() ? collabPane.reveal() : undefined);
+    register('enigma.collab.disconnect', () => backend.request('collab/disconnect'));
+}
