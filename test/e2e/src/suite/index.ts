@@ -25,7 +25,7 @@ export function run(): Promise<void> {
     return new Promise((resolve, reject) => {
         try {
             const runner = mocha.run(failures => {
-                const notes: string[] = ((globalThis as any).enigmaTestTrace ?? []).filter((line: string) => line.startsWith('[test] keys do not reach'));
+                const notes = (globalThis.enigmaTestTrace ?? []).filter(line => line.startsWith('[test] keys do not reach'));
                 notes.forEach(note => record(`  note ${note.substring('[test] '.length)}`));
                 record(`${failures === 0 ? 'PASSED' : 'FAILED'}: ${runner.stats?.passes ?? 0} passing, ${failures} failing`);
                 if (failures > 0) {
@@ -37,13 +37,18 @@ export function run(): Promise<void> {
             runner.on('pass', test => record(`  ok   ${test.title} (${test.duration}ms)`));
             runner.on('fail', (test, error) => {
                 // what the extension logged while the test ran explains most failures
-                const trace: string[] = (globalThis as any).enigmaTestTrace ?? [];
+                const trace = globalThis.enigmaTestTrace ?? [];
                 const text = `${error?.stack ?? error}\n--- log ---\n${trace.slice(-30).join('\n')}`;
-                record(`  FAIL ${test.fullTitle()}\n${text.split('\n').map(line => `         ${line}`).join('\n')}`);
+                record(
+                    `  FAIL ${test.fullTitle()}\n${text
+                        .split('\n')
+                        .map(line => `         ${line}`)
+                        .join('\n')}`,
+                );
             });
         } catch (error) {
-            record(`FAILED to start: ${error instanceof Error ? error.stack : error}`);
-            reject(error);
+            record(`FAILED to start: ${error instanceof Error ? error.stack : String(error)}`);
+            reject(error instanceof Error ? error : new Error(String(error)));
         }
     });
 }

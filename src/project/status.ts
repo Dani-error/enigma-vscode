@@ -35,7 +35,9 @@ export class ProjectStatus implements vscode.Disposable {
         const connection = state.connection === 'hosting' ? ' $(broadcast)' : state.connection === 'connected' ? ' $(plug)' : '';
         this.item.text = `$(symbol-keyword) ${jar}${mappings ? ` $(arrow-right) ${mappings}` : ''}${state.dirty ? ' $(circle-filled)' : ''}${connection}`;
         const tooltip = new vscode.MarkdownString();
-        tooltip.appendMarkdown(`**Enigma**\n\nJar: \`${state.jarPath}\`\n\n${t('common.mappings')}: ${state.mappingsPath ? `\`${state.mappingsPath}\`` : `_${t('status.none')}_`}`);
+        tooltip.appendMarkdown(
+            `**Enigma**\n\nJar: \`${state.jarPath}\`\n\n${t('common.mappings')}: ${state.mappingsPath ? `\`${state.mappingsPath}\`` : `_${t('status.none')}_`}`,
+        );
         tooltip.appendMarkdown(`\n\n${t('common.decompiler')}: ${decompiler ?? state.decompiler}`);
         if (state.dirty) {
             tooltip.appendMarkdown(`\n\n$(circle-filled) ${t('status.unsavedMappingChangesClickToSave')}`);

@@ -17,7 +17,14 @@ export const fixtures = path.join(root, 'vendor', 'enigma', 'enigma', 'build', '
 export type Told = { [N in keyof Notifications]: { name: N; params: Notifications[N] } }[keyof Notifications];
 
 const NOTIFICATIONS: (keyof Notifications)[] = [
-    'stateChanged', 'projectChanged', 'mappingsChanged', 'sourceChanged', 'notification', 'progress', 'collab/stateChanged', 'collab/message',
+    'stateChanged',
+    'projectChanged',
+    'mappingsChanged',
+    'sourceChanged',
+    'notification',
+    'progress',
+    'collab/stateChanged',
+    'collab/message',
 ];
 /** How long the engine gets to exit once its input is closed. */
 const EXIT_TIMEOUT_MS = 15000;
@@ -42,15 +49,22 @@ export class Engine {
      */
     constructor(directory: string, java?: string) {
         assert.ok(fs.existsSync(backendJar), `backend jar not built: ${backendJar} (run "bun run build:backend")`);
-        assert.ok(fs.existsSync(path.join(fixtures, 'inheritance_tree.jar')), 'Enigma test fixtures not built (run "bun run test:backend" once)');
+        assert.ok(
+            fs.existsSync(path.join(fixtures, 'inheritance_tree.jar')),
+            'Enigma test fixtures not built (run "bun run test:backend" once)',
+        );
 
-        const executable = java ?? process.env.ENIGMA_JAVA ?? (process.env.JAVA_HOME ? path.join(process.env.JAVA_HOME, 'bin', 'java') : 'java');
+        const executable =
+            java ?? process.env.ENIGMA_JAVA ?? (process.env.JAVA_HOME ? path.join(process.env.JAVA_HOME, 'bin', 'java') : 'java');
         this.child = spawn(executable, ['-jar', backendJar], { stdio: ['pipe', 'pipe', 'pipe'], cwd: directory });
         this.child.stderr.on('data', (chunk: Buffer) => {
             this.log += chunk.toString();
         });
 
-        this.connection = rpc.createMessageConnection(new rpc.StreamMessageReader(this.child.stdout), new rpc.StreamMessageWriter(this.child.stdin));
+        this.connection = rpc.createMessageConnection(
+            new rpc.StreamMessageReader(this.child.stdout),
+            new rpc.StreamMessageWriter(this.child.stdin),
+        );
         this.connection.onError(([error]) => this.protocolErrors.push(error));
         for (const name of NOTIFICATIONS) {
             this.connection.onNotification(name, (params: unknown) => {

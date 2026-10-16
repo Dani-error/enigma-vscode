@@ -13,7 +13,7 @@ interface RpcRequest {
     jsonrpc: '2.0';
     id?: string | number | null;
     method: string;
-    params?: any;
+    params?: { protocolVersion?: unknown; name?: unknown; arguments?: unknown };
 }
 
 /**
@@ -30,7 +30,11 @@ export class McpServer implements vscode.Disposable {
     private token?: string;
     private readonly disposables: vscode.Disposable[];
 
-    constructor(private readonly context: vscode.ExtensionContext, private readonly tools: AiTool[], private readonly output: vscode.LogOutputChannel) {
+    constructor(
+        private readonly context: vscode.ExtensionContext,
+        private readonly tools: AiTool[],
+        private readonly output: vscode.LogOutputChannel,
+    ) {
         this.disposables = [
             vscode.workspace.onDidChangeConfiguration(event => {
                 if (event.affectsConfiguration('enigma.mcp')) {
@@ -78,10 +82,12 @@ export class McpServer implements vscode.Disposable {
             });
         } catch (error) {
             const busy = (error as NodeJS.ErrnoException).code === 'EADDRINUSE';
-            this.output.warn(`MCP server not started on port ${wanted}: ${error instanceof Error ? error.message : error}`);
-            void vscode.window.showWarningMessage(busy
-                ? t('mcpServer.enigmaPortIsInUseSo', wanted)
-                : t('mcpServer.enigmaTheMcpServerCouldNot', error instanceof Error ? error.message : error));
+            this.output.warn(`MCP server not started on port ${wanted}: ${error instanceof Error ? error.message : String(error)}`);
+            void vscode.window.showWarningMessage(
+                busy
+                    ? t('mcpServer.enigmaPortIsInUseSo', wanted)
+                    : t('mcpServer.enigmaTheMcpServerCouldNot', error instanceof Error ? error.message : String(error)),
+            );
             return;
         }
 
@@ -120,7 +126,11 @@ export class McpServer implements vscode.Disposable {
         const given = /^Bearer (.+)$/.exec(request.headers.authorization ?? '')?.[1] ?? '';
         const expected = await this.secret();
         if (given.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(given), Buffer.from(expected))) {
-            return send(401, { error: 'Not authorized. Run "Enigma: Connect an Assistant over MCP..." in VS Code for the address and token.' }, { 'WWW-Authenticate': 'Bearer' });
+            return send(
+                401,
+                { error: 'Not authorized. Run "Enigma: Connect an Assistant over MCP..." in VS Code for the address and token.' },
+                { 'WWW-Authenticate': 'Bearer' },
+            );
         }
 
         if (request.method !== 'POST') {
@@ -135,12 +145,14 @@ export class McpServer implements vscode.Disposable {
                 chunks.push(chunk as Buffer);
             }
 
-            message = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+            message = JSON.parse(Buffer.concat(chunks).toString('utf8')) as RpcRequest | RpcRequest[];
         } catch {
             return send(400, { jsonrpc: '2.0', id: null, error: { code: -32700, message: 'The request is not JSON.' } });
         }
 
-        const answers = (await Promise.all((Array.isArray(message) ? message : [message]).map(one => this.handle(one)))).filter(answer => answer !== undefined);
+        const answers = (await Promise.all((Array.isArray(message) ? message : [message]).map(one => this.handle(one)))).filter(
+            answer => answer !== undefined,
+        );
         if (answers.length === 0) {
             // only notifications: nothing to say
             return send(202);
@@ -157,33 +169,55 @@ export class McpServer implements vscode.Disposable {
 
         const result = (value: unknown) => ({ jsonrpc: '2.0', id: message.id, result: value });
         switch (message.method) {
-            case 'initialize':
+            case 'initialize': {
+                const asked = message.params?.protocolVersion;
                 return result({
-                    protocolVersion: PROTOCOL_VERSIONS.includes(message.params?.protocolVersion) ? message.params.protocolVersion : PROTOCOL_VERSIONS[0],
+                    protocolVersion: typeof asked === 'string' && PROTOCOL_VERSIONS.includes(asked) ? asked : PROTOCOL_VERSIONS[0],
                     capabilities: { tools: {} },
-                    serverInfo: { name: 'enigma', title: 'Enigma', version: String(this.context.extension.packageJSON.version) },
+                    serverInfo: {
+                        name: 'enigma',
+                        title: 'Enigma',
+                        version: (this.context.extension.packageJSON as { version: string }).version,
+                    },
                     instructions: INSTRUCTIONS,
                 });
+            }
             case 'ping':
                 return result({});
             case 'tools/list':
                 return result({
                     tools: this.tools.map(tool => ({
-                        name: tool.name, title: tool.title, description: tool.description, inputSchema: tool.inputSchema,
-                        annotations: { title: tool.title, readOnlyHint: !tool.changes, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+                        name: tool.name,
+                        title: tool.title,
+                        description: tool.description,
+                        inputSchema: tool.inputSchema,
+                        annotations: {
+                            title: tool.title,
+                            readOnlyHint: !tool.changes,
+                            destructiveHint: false,
+                            idempotentHint: true,
+                            openWorldHint: false,
+                        },
                     })),
                 });
             case 'tools/call': {
-                const tool = this.tools.find(candidate => candidate.name === message.params?.name);
+                const name = message.params?.name;
+                const tool = this.tools.find(candidate => candidate.name === name);
                 if (!tool) {
-                    return { jsonrpc: '2.0', id: message.id, error: { code: -32602, message: `Unknown tool: ${message.params?.name}` } };
+                    return { jsonrpc: '2.0', id: message.id, error: { code: -32602, message: `Unknown tool: ${String(name)}` } };
                 }
 
                 // what goes wrong in a tool is for the model to read and act on, not a failure of the protocol
                 try {
-                    return result({ content: [{ type: 'text', text: toText(await tool.run(message.params?.arguments ?? {})) }], isError: false });
+                    return result({
+                        content: [{ type: 'text', text: toText(await tool.run(message.params?.arguments ?? {})) }],
+                        isError: false,
+                    });
                 } catch (error) {
-                    return result({ content: [{ type: 'text', text: error instanceof Error ? error.message : String(error) }], isError: true });
+                    return result({
+                        content: [{ type: 'text', text: error instanceof Error ? error.message : String(error) }],
+                        isError: true,
+                    });
                 }
             }
 
@@ -206,23 +240,39 @@ export class McpServer implements vscode.Disposable {
         const url = `http://127.0.0.1:${this.listening}/mcp`;
         const token = await this.secret();
         const choices = [
-            { label: 'Claude Code', detail: t('mcpServer.copiesTheCommandThatAddsEnigma'), claude: true, text: `claude mcp add --transport http enigma ${url} --header "Authorization: Bearer ${token}"` },
             {
-                label: t('mcpServer.anotherAssistant'), detail: t('mcpServer.copiesAConfigurationForClientsThat'), claude: false,
-                text: JSON.stringify({ mcpServers: { enigma: { type: 'http', url, headers: { Authorization: `Bearer ${token}` } } } }, undefined, 2),
+                label: 'Claude Code',
+                detail: t('mcpServer.copiesTheCommandThatAddsEnigma'),
+                claude: true,
+                text: `claude mcp add --transport http enigma ${url} --header "Authorization: Bearer ${token}"`,
+            },
+            {
+                label: t('mcpServer.anotherAssistant'),
+                detail: t('mcpServer.copiesAConfigurationForClientsThat'),
+                claude: false,
+                text: JSON.stringify(
+                    { mcpServers: { enigma: { type: 'http', url, headers: { Authorization: `Bearer ${token}` } } } },
+                    undefined,
+                    2,
+                ),
             },
         ];
-        const choice = await vscode.window.showQuickPick(choices, { title: t('mcpServer.connectAnAssistantToEnigma'), placeHolder: t('mcpServer.enigmaAnswersOnWhileThisWindow', url) });
+        const choice = await vscode.window.showQuickPick(choices, {
+            title: t('mcpServer.connectAnAssistantToEnigma'),
+            placeHolder: t('mcpServer.enigmaAnswersOnWhileThisWindow', url),
+        });
         if (choice) {
             await vscode.env.clipboard.writeText(choice.text);
-            void vscode.window.showInformationMessage(choice.claude
-                ? t('mcpServer.enigmaCopiedRunItInA')
-                : t('mcpServer.enigmaCopiedPasteItIntoThe'));
+            void vscode.window.showInformationMessage(
+                choice.claude ? t('mcpServer.enigmaCopiedRunItInA') : t('mcpServer.enigmaCopiedPasteItIntoThe'),
+            );
         }
     }
 
     dispose(): void {
-        this.disposables.forEach(disposable => disposable.dispose());
+        for (const disposable of this.disposables) {
+            disposable.dispose();
+        }
         void this.stop();
     }
 }

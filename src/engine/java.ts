@@ -8,17 +8,11 @@ import * as path from 'node:path';
 export const MINIMUM_JAVA = 17;
 
 /** Where a runtime was found. The extension words it for the user; source is the same in English, for logs. */
-export type JavaOrigin =
-    | { kind: 'setting' }
-    | { kind: 'javaHome' }
-    | { kind: 'path' }
-    | { kind: 'installed'; directory: string };
+export type JavaOrigin = { kind: 'setting' } | { kind: 'javaHome' } | { kind: 'path' } | { kind: 'installed'; directory: string };
 
 /** Why a runtime was passed over. */
 export type JavaProblem =
-    | { kind: 'noExecutable'; file: string }
-    | { kind: 'notStartable'; error?: string }
-    | { kind: 'tooOld'; version: number };
+    { kind: 'noExecutable'; file: string } | { kind: 'notStartable'; error?: string } | { kind: 'tooOld'; version: number };
 
 export interface JavaRuntime {
     executable: string;
@@ -47,14 +41,23 @@ const SOURCES: Record<Exclude<JavaOrigin['kind'], 'installed'>, string> = {
 };
 
 /** Where a runtime was found, in English. */
-export const sourceOf = (origin: JavaOrigin) => origin.kind === 'installed' ? `installed in ${origin.directory}` : SOURCES[origin.kind];
+export const sourceOf = (origin: JavaOrigin) => (origin.kind === 'installed' ? `installed in ${origin.directory}` : SOURCES[origin.kind]);
 
 /** Why a runtime was passed over, in English. */
-export const reasonOf = (problem: JavaProblem) => problem.kind === 'noExecutable' ? `there is no ${problem.file} in it`
-    : problem.kind === 'tooOld' ? `it is Java ${problem.version}` : problem.error ?? 'it could not be started';
+export const reasonOf = (problem: JavaProblem) =>
+    problem.kind === 'noExecutable'
+        ? `there is no ${problem.file} in it`
+        : problem.kind === 'tooOld'
+          ? `it is Java ${problem.version}`
+          : (problem.error ?? 'it could not be started');
 
-const rejection = (javaPath: string, origin: JavaOrigin, problem: JavaProblem): RejectedJava =>
-    ({ path: javaPath, origin, problem, source: sourceOf(origin), reason: reasonOf(problem) });
+const rejection = (javaPath: string, origin: JavaOrigin, problem: JavaProblem): RejectedJava => ({
+    path: javaPath,
+    origin,
+    problem,
+    source: sourceOf(origin),
+    reason: reasonOf(problem),
+});
 
 export interface JavaSearch {
     /** The runtime to use, if found. */
@@ -78,7 +81,7 @@ export interface JavaSearchOptions {
 
 const executableName = (platform: NodeJS.Platform) => {
     return platform === 'win32' ? 'java.exe' : 'java';
-}
+};
 
 /** Parses the major version out of the output of {@code java -version} or the {@code JAVA_VERSION} of a release file. */
 export const parseMajorVersion = (text: string) => {
@@ -90,7 +93,7 @@ export const parseMajorVersion = (text: string) => {
     // Java 8 and older call themselves 1.8, 1.7, ...
     const major = match[1] === '1' && match[2] !== undefined ? Number(match[2]) : Number(match[1]);
     return Number.isFinite(major) ? major : undefined;
-}
+};
 
 /**
  * Asks a java executable for its version.
@@ -113,7 +116,7 @@ export const probeJava = (executable: string, env: NodeJS.ProcessEnv = process.e
             resolve(version === undefined ? { error: 'its version could not be determined' } : { version });
         });
     });
-}
+};
 
 /** The version recorded in the release file every JDK ships, without starting it. */
 const releaseVersion = (home: string) => {
@@ -125,11 +128,11 @@ const releaseVersion = (home: string) => {
     } catch {
         return undefined;
     }
-}
+};
 
 const expandHome = (value: string, homeDir: string) => {
     return value === '~' || value.startsWith('~/') || value.startsWith('~\\') ? path.join(homeDir, value.substring(1)) : value;
-}
+};
 
 /**
  * Turns what a user may reasonably put into the setting into an installation directory: the directory itself, its
@@ -152,7 +155,7 @@ export const normalizeJavaHome = (value: string, platform: NodeJS.Platform = pro
     }
 
     return home;
-}
+};
 
 const defaultSearchRoots = (platform: NodeJS.Platform, homeDir: string, env: NodeJS.ProcessEnv) => {
     const roots = [
@@ -173,7 +176,11 @@ const defaultSearchRoots = (platform: NodeJS.Platform, homeDir: string, env: Nod
     } else if (platform === 'win32') {
         for (const base of [env.ProgramFiles, env['ProgramFiles(x86)'], env.LOCALAPPDATA && path.join(env.LOCALAPPDATA, 'Programs')]) {
             if (base) {
-                roots.unshift(...['Java', 'Eclipse Adoptium', 'Amazon Corretto', 'Zulu', 'Microsoft', 'BellSoft', 'Semeru'].map(vendor => path.join(base, vendor)));
+                roots.unshift(
+                    ...['Java', 'Eclipse Adoptium', 'Amazon Corretto', 'Zulu', 'Microsoft', 'BellSoft', 'Semeru'].map(vendor =>
+                        path.join(base, vendor),
+                    ),
+                );
             }
         }
     } else {
@@ -181,7 +188,7 @@ const defaultSearchRoots = (platform: NodeJS.Platform, homeDir: string, env: Nod
     }
 
     return roots;
-}
+};
 
 /**
  * Lists the Java installations found in the usual places, newest first. Nothing is executed.
@@ -241,7 +248,7 @@ export const discoverInstallations = (options: JavaSearchOptions = {}) => {
     }
 
     return [...found.values()].sort((a, b) => b.version - a.version || a.executable.localeCompare(b.executable));
-}
+};
 
 const onPath = (env: NodeJS.ProcessEnv, platform: NodeJS.Platform) => {
     const executable = executableName(platform);
@@ -252,8 +259,7 @@ const onPath = (env: NodeJS.ProcessEnv, platform: NodeJS.Platform) => {
     }
 
     return undefined;
-}
-
+};
 
 /**
  * Finds a Java runtime new enough for the engine.
@@ -305,10 +311,19 @@ export async function findJava(options: JavaSearchOptions = {}): Promise<JavaSea
     if (pathJava) {
         const probe = await probeJava(pathJava, env);
         if (probe.version !== undefined && probe.version >= minimum) {
-            return { runtime: { executable: pathJava, version: probe.version, origin: { kind: 'path' }, source: sourceOf({ kind: 'path' }) }, rejected };
+            return {
+                runtime: { executable: pathJava, version: probe.version, origin: { kind: 'path' }, source: sourceOf({ kind: 'path' }) },
+                rejected,
+            };
         }
 
-        rejected.push(rejection(pathJava, { kind: 'path' }, probe.version !== undefined ? { kind: 'tooOld', version: probe.version } : { kind: 'notStartable', error: probe.error }));
+        rejected.push(
+            rejection(
+                pathJava,
+                { kind: 'path' },
+                probe.version !== undefined ? { kind: 'tooOld', version: probe.version } : { kind: 'notStartable', error: probe.error },
+            ),
+        );
     }
 
     for (const installation of discoverInstallations(options)) {
@@ -322,7 +337,13 @@ export async function findJava(options: JavaSearchOptions = {}): Promise<JavaSea
             return { runtime: { ...installation, version: probe.version }, rejected };
         }
 
-        rejected.push(rejection(installation.executable, installation.origin, probe.version !== undefined ? { kind: 'tooOld', version: probe.version } : { kind: 'notStartable', error: probe.error }));
+        rejected.push(
+            rejection(
+                installation.executable,
+                installation.origin,
+                probe.version !== undefined ? { kind: 'tooOld', version: probe.version } : { kind: 'notStartable', error: probe.error },
+            ),
+        );
     }
 
     return { rejected };
@@ -336,7 +357,7 @@ export const describeFailure = (search: JavaSearch, minimum: number = MINIMUM_JA
     }
 
     return `Enigma needs Java ${minimum} or newer to run, and none was found.${tried ? ` Looked at: ${tried}.` : ''}`;
-}
+};
 
 export const environmentFor = (runtime: JavaRuntime, env: NodeJS.ProcessEnv = process.env) => {
     const result: NodeJS.ProcessEnv = { ...env };
@@ -347,4 +368,4 @@ export const environmentFor = (runtime: JavaRuntime, env: NodeJS.ProcessEnv = pr
     }
 
     return result;
-}
+};

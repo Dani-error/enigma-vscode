@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { TokenRange, View } from "../engine/protocol";
+import { TokenRange, View } from '../engine/protocol';
 
 // How the classes of a jar are addressed in the editor: enigma:/test.jar!/com/example/Name.java?class=<obfuscated>
 

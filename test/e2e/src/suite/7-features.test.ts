@@ -3,23 +3,36 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import type { EntryRef } from '../../../../src/engine/protocol';
-import {
-    Api, activate, entryInfo, execute, fixtures, jar, pause, waitFor, workspace,
-} from './harness';
+import { Api, Offered, activate, entryInfo, execute, fixtures, jar, pause, waitFor, workspace } from './harness';
 
 // The commands around the mappings and the jar that the other suites do not get to: what the menus of the class
 // trees and of the editor do, saving in other ways, exporting, and the choices about the engine. On a jar of its own,
 // whose classes are named here first.
 
 /** Answers the dialogues of the editor for the duration of an action, and tells what was asked. */
-async function answering<T>(answers: { input?: string[]; warning?: string; information?: string; pick?: (items: any[]) => any; open?: string; save?: string }, action: () => Promise<T>): Promise<{ result: T; asked: string[] }> {
+async function answering<T>(
+    answers: {
+        input?: string[];
+        warning?: string;
+        information?: string;
+        pick?: (items: Offered[]) => Offered | undefined;
+        open?: string;
+        save?: string;
+    },
+    action: () => Promise<T>,
+): Promise<{ result: T; asked: string[] }> {
     const asked: string[] = [];
-    const inputs = [...answers.input ?? []];
+    const inputs = [...(answers.input ?? [])];
     const originals = {
-        showInputBox: vscode.window.showInputBox, showWarningMessage: vscode.window.showWarningMessage, showInformationMessage: vscode.window.showInformationMessage,
-        showQuickPick: vscode.window.showQuickPick, showOpenDialog: vscode.window.showOpenDialog, showSaveDialog: vscode.window.showSaveDialog,
+        showInputBox: vscode.window.showInputBox,
+        showWarningMessage: vscode.window.showWarningMessage,
+        showInformationMessage: vscode.window.showInformationMessage,
+        showQuickPick: vscode.window.showQuickPick,
+        showOpenDialog: vscode.window.showOpenDialog,
+        showSaveDialog: vscode.window.showSaveDialog,
     };
-    const window = vscode.window as any;
+    // the API is a plain object of functions, and stand-ins take the place of some of them
+    const window = vscode.window as unknown as Record<string, unknown>;
     window.showInputBox = async (options: vscode.InputBoxOptions) => {
         asked.push(`input: ${options.title ?? options.prompt}`);
         return inputs.shift();
@@ -32,7 +45,7 @@ async function answering<T>(answers: { input?: string[]; warning?: string; infor
         asked.push(`information: ${message}`);
         return answers.information;
     };
-    window.showQuickPick = async (items: any[], options: vscode.QuickPickOptions) => {
+    window.showQuickPick = async (items: Offered[], options: vscode.QuickPickOptions) => {
         asked.push(`pick: ${options?.title}`);
         return answers.pick?.(items);
     };
@@ -65,9 +78,9 @@ describe('Enigma in VS Code: the commands around mappings, classes and the engin
     });
 
     it('opens another jar, asking about the one that is open', async () => {
-        await answering({ warning: 'Don\'t Save' }, () => execute('enigma.openJar', packagesJar));
+        await answering({ warning: "Don't Save" }, () => execute('enigma.openJar', packagesJar));
         await waitFor('the jar to be open', () => api.project.isOpen && api.index.get('g') !== undefined);
-        assert.equal(fs.realpathSync(api.project.state!.jarPath!), fs.realpathSync(packagesJar));
+        assert.equal(fs.realpathSync(api.project.state!.jarPath), fs.realpathSync(packagesJar));
         assert.equal(api.index.size, 8);
     });
 
@@ -90,7 +103,10 @@ describe('Enigma in VS Code: the commands around mappings, classes and the engin
         const renamed = await answering({ input: ['pkg/one', 'lib/core'], warning: 'Rename' }, () => execute('enigma.renamePackage'));
         // what will be renamed is listed before anything is
         const question = renamed.asked.find(asked => asked.startsWith('warning: Rename package pkg/one to lib/core?'));
-        assert.ok(question?.includes('pkg/one/Alpha → lib/core/Alpha') && question.includes('pkg/one/sub/Beta → lib/core/sub/Beta'), renamed.asked.join('\n'));
+        assert.ok(
+            question?.includes('pkg/one/Alpha → lib/core/Alpha') && question.includes('pkg/one/sub/Beta → lib/core/sub/Beta'),
+            renamed.asked.join('\n'),
+        );
         await waitFor('the package to be renamed', () => name('a') === 'lib/core/Alpha' && name('b') === 'lib/core/sub/Beta');
         // Enigma renames the parts of a package one by one, which takes the packages next to it along where a part
         // they share changes: here "pkg". That is how its own interface behaves (see PackageRenamePlanner).
@@ -122,10 +138,20 @@ describe('Enigma in VS Code: the commands around mappings, classes and the engin
     });
 
     it('saves the mappings in a chosen format, and from then on by itself if asked to', async () => {
-        const { result, asked } = await answering({ pick: items => items.find(item => item.format.id === 'enigma:enigma_file') ?? items.find(item => !item.format.directory), save: saved },
-            () => execute('enigma.saveMappingsAs'));
+        const { result, asked } = await answering(
+            {
+                pick: items =>
+                    items.find(item => item.format?.id === 'enigma:enigma_file') ??
+                    items.find(item => item.format && !item.format.directory),
+                save: saved,
+            },
+            () => execute('enigma.saveMappingsAs'),
+        );
         assert.notEqual(result, false);
-        assert.deepEqual(asked.map(question => question.split(':')[0]), ['pick', 'save']);
+        assert.deepEqual(
+            asked.map(question => question.split(':')[0]),
+            ['pick', 'save'],
+        );
         assert.match(fs.readFileSync(saved, 'utf8'), /lib\/moved\/Alpha/);
         assert.equal(api.project.state!.dirty, false);
         assert.equal(fs.realpathSync(api.project.state!.mappingsPath!), fs.realpathSync(saved));
@@ -153,14 +179,17 @@ describe('Enigma in VS Code: the commands around mappings, classes and the engin
         assert.match(kept.asked[0], /^warning: Your mappings have unsaved changes\./);
         assert.equal(name('f'), 'pkg/two/Unsaved');
 
-        await answering({ warning: 'Don\'t Save' }, () => execute('enigma.reloadMappings'));
+        await answering({ warning: "Don't Save" }, () => execute('enigma.reloadMappings'));
         await waitFor('the mappings as they were saved', () => name('f') === 'f' && !api.project.state!.dirty);
         assert.equal(name('e'), 'pkg/two/Epsilon');
 
         await rename('f', 'pkg/two/UnsavedAgain');
         await waitFor('the change', () => name('f') === 'pkg/two/UnsavedAgain');
-        await answering({ warning: 'Don\'t Save' }, () => execute('enigma.reloadAll'));
-        await waitFor('the jar and the mappings as they were saved', () => api.project.isOpen && name('f') === 'f' && name('a') === 'lib/moved/Alpha');
+        await answering({ warning: "Don't Save" }, () => execute('enigma.reloadAll'));
+        await waitFor(
+            'the jar and the mappings as they were saved',
+            () => api.project.isOpen && name('f') === 'f' && name('a') === 'lib/moved/Alpha',
+        );
     });
 
     it('drops mappings that do not match the jar', async () => {
@@ -170,7 +199,10 @@ describe('Enigma in VS Code: the commands around mappings, classes and the engin
         await waitFor('the mappings to be loaded again', () => name('a') === 'lib/moved/Alpha');
 
         const { asked } = await answering({}, () => execute('enigma.dropMappings'));
-        assert.ok(asked.some(question => /^information: Enigma dropped \d+ mapping\(s\)/.test(question)), asked.join('\n'));
+        assert.ok(
+            asked.some(question => /^information: Enigma dropped \d+ mapping\(s\)/.test(question)),
+            asked.join('\n'),
+        );
         assert.equal(name('a'), 'lib/moved/Alpha', 'what matches stays');
 
         await execute('enigma.saveMappings');
@@ -183,13 +215,19 @@ describe('Enigma in VS Code: the commands around mappings, classes and the engin
         const sources = path.join(workspace, 'exported-source');
         fs.mkdirSync(sources, { recursive: true });
         const source = await answering({ open: sources }, () => execute('enigma.exportSource'));
-        assert.ok(source.asked.some(question => question.startsWith('information: Enigma exported the decompiled source')), source.asked.join('\n'));
+        assert.ok(
+            source.asked.some(question => question.startsWith('information: Enigma exported the decompiled source')),
+            source.asked.join('\n'),
+        );
         assert.match(fs.readFileSync(path.join(sources, 'lib', 'moved', 'Alpha.java'), 'utf8'), /class Alpha/);
         assert.ok(fs.existsSync(path.join(sources, 'lib', 'core', 'two', 'Gamma.java')));
 
         const target = path.join(workspace, 'exported.jar');
         const exported = await answering({ save: target }, () => execute('enigma.exportJar'));
-        assert.ok(exported.asked.some(question => question.startsWith('information: Enigma exported the remapped jar')), exported.asked.join('\n'));
+        assert.ok(
+            exported.asked.some(question => question.startsWith('information: Enigma exported the remapped jar')),
+            exported.asked.join('\n'),
+        );
         // the names of its entries are stored as they are
         const bytes = fs.readFileSync(target).toString('latin1');
         assert.ok(bytes.includes('lib/moved/Alpha.class') && bytes.includes('lib/core/two/Gamma.class'));
@@ -206,16 +244,22 @@ describe('Enigma in VS Code: the commands around mappings, classes and the engin
         await waitFor('the class', () => /Vineflower/.test(shown()) && /class Alpha/.test(shown()));
 
         const offered: string[] = [];
-        await answering({ pick: items => (offered.push(...items.map(item => item.id)), items.find(item => /cfr/i.test(item.id))) }, () => execute('enigma.selectDecompiler'));
-        assert.ok(offered.length >= 3, `decompilers offered: ${offered}`);
-        await waitFor('the class decompiled by the other one', () => /cfr/i.test(api.project.state!.decompiler) && !/Vineflower/.test(shown()) && /class Alpha/.test(shown()));
+        await answering(
+            { pick: items => (offered.push(...items.map(item => item.id ?? '')), items.find(item => /cfr/i.test(item.id ?? ''))) },
+            () => execute('enigma.selectDecompiler'),
+        );
+        assert.ok(offered.length >= 3, `decompilers offered: ${offered.join(', ')}`);
+        await waitFor(
+            'the class decompiled by the other one',
+            () => /cfr/i.test(api.project.state!.decompiler) && !/Vineflower/.test(shown()) && /class Alpha/.test(shown()),
+        );
         assert.match(String(vscode.workspace.getConfiguration('enigma').get('decompiler')), /cfr/i);
 
-        await answering({ pick: items => items.find(item => /vineflower/i.test(item.id)) }, () => execute('enigma.selectDecompiler'));
+        await answering({ pick: items => items.find(item => /vineflower/i.test(item.id ?? '')) }, () => execute('enigma.selectDecompiler'));
         await waitFor('the class decompiled as before', () => /Vineflower/.test(shown()));
 
         let loaded = 0;
-        const listener = (api.documents as any).onDidLoadSource(() => loaded++);
+        const listener = api.documents.onDidLoadSource(() => loaded++);
         try {
             await execute('enigma.reloadClass');
             await waitFor('the class to be decompiled again', () => loaded > 0);
@@ -228,7 +272,10 @@ describe('Enigma in VS Code: the commands around mappings, classes and the engin
         await execute('enigma.openClass', 'org/quiltmc/enigma/input/Keep');
         const editor = await waitFor('the class', () => {
             const active = vscode.window.activeTextEditor;
-            return active?.document.uri.path.endsWith('/Keep.java') && (api.documents.source(active.document.uri)?.tokens.obfuscated.length ?? 0) > 0 ? active : undefined;
+            return active?.document.uri.path.endsWith('/Keep.java') &&
+                (api.documents.source(active.document.uri)?.tokens.obfuscated.length ?? 0) > 0
+                ? active
+                : undefined;
         });
         const obfuscated = api.documents.source(editor.document.uri)!.tokens.obfuscated.map(([line, character]) => `${line}:${character}`);
         const top = new vscode.Position(0, 0);
@@ -247,17 +294,35 @@ describe('Enigma in VS Code: the commands around mappings, classes and the engin
     });
 
     it('opens a recent project again, with the mappings it was used with', async () => {
-        let offered: any[] = [];
-        await answering({ pick: items => (offered = items, items.find(item => item.label === 'inheritance_tree.jar')), warning: 'Don\'t Save' }, () => execute('enigma.openRecent'));
-        assert.deepEqual(offered.slice(0, 2).map(item => item.label), ['packages.jar', 'inheritance_tree.jar'], 'most recent first');
+        let offered: Offered[] = [];
+        await answering(
+            { pick: items => ((offered = items), items.find(item => item.label === 'inheritance_tree.jar')), warning: "Don't Save" },
+            () => execute('enigma.openRecent'),
+        );
+        assert.deepEqual(
+            offered.slice(0, 2).map(item => item.label),
+            ['packages.jar', 'inheritance_tree.jar'],
+            'most recent first',
+        );
         assert.equal(offered[0].description, '→ packages.mapping');
-        await waitFor('the other jar', () => api.project.isOpen && fs.realpathSync(api.project.state!.jarPath!) === fs.realpathSync(jar) && api.index.get('a')?.deobf === 'BaseClass');
+        await waitFor(
+            'the other jar',
+            () =>
+                api.project.isOpen &&
+                fs.realpathSync(api.project.state!.jarPath) === fs.realpathSync(jar) &&
+                api.index.get('a')?.deobf === 'BaseClass',
+        );
 
-        await answering({ pick: items => items.find(item => item.label === 'packages.jar'), warning: 'Don\'t Save' }, () => execute('enigma.openRecent'));
-        await waitFor('the jar of these tests, with its names', () => api.project.isOpen && name('a') === 'lib/moved/Alpha' && name('e') === 'pkg/two/Epsilon');
+        await answering({ pick: items => items.find(item => item.label === 'packages.jar'), warning: "Don't Save" }, () =>
+            execute('enigma.openRecent'),
+        );
+        await waitFor(
+            'the jar of these tests, with its names',
+            () => api.project.isOpen && name('a') === 'lib/moved/Alpha' && name('e') === 'pkg/two/Epsilon',
+        );
         assert.equal((await entryInfo(api, type('a'))).name, 'lib/moved/Alpha');
 
-        await answering({ warning: 'Don\'t Save' }, () => execute('enigma.closeJar'));
+        await answering({ warning: "Don't Save" }, () => execute('enigma.closeJar'));
         await waitFor('the jar to be closed', () => !api.project.isOpen);
     });
 });

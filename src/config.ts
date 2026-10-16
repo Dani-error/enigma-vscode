@@ -8,7 +8,14 @@ function read<T>(name: string): T | undefined {
 }
 
 /** The languages Enigma has its messages in, by the language of the editor they are used for. */
-const ENGINE_LANGUAGES: Record<string, string> = { en: 'en_us', de: 'de_de', fr: 'fr_fr', ja: 'ja_jp', 'zh-cn': 'zh_cn', zh: 'zh_cn' };
+const ENGINE_LANGUAGES: Record<string, string> = {
+    'en': 'en_us',
+    'de': 'de_de',
+    'fr': 'fr_fr',
+    'ja': 'ja_jp',
+    'zh-cn': 'zh_cn',
+    'zh': 'zh_cn',
+};
 
 /**
  * @param locale the language of the editor, like "de" or "zh-cn"
@@ -62,9 +69,11 @@ export const settings = {
         return level === 'none' || level === 'no_chat' ? level : 'full';
     },
     get statistics(): { includeSynthetic: boolean; countFallback: boolean } {
-        return { includeSynthetic: read<boolean>('stats.includeSynthetic') ?? false, countFallback: read<boolean>('stats.countFallback') ?? false };
+        return {
+            includeSynthetic: read<boolean>('stats.includeSynthetic') ?? false,
+            countFallback: read<boolean>('stats.countFallback') ?? false,
+        };
     },
-
 
     get javaHome(): string | undefined {
         return read<string>('java.home');
@@ -104,8 +113,12 @@ export const settings = {
     async updateWhereSet(name: string, value: unknown): Promise<void> {
         const config = vscode.workspace.getConfiguration(SECTION);
         const inspected = config.inspect(name);
-        const target = inspected?.workspaceFolderValue !== undefined ? vscode.ConfigurationTarget.WorkspaceFolder
-            : inspected?.workspaceValue !== undefined ? vscode.ConfigurationTarget.Workspace : vscode.ConfigurationTarget.Global;
+        const target =
+            inspected?.workspaceFolderValue !== undefined
+                ? vscode.ConfigurationTarget.WorkspaceFolder
+                : inspected?.workspaceValue !== undefined
+                  ? vscode.ConfigurationTarget.Workspace
+                  : vscode.ConfigurationTarget.Global;
         await config.update(name, value, target);
     },
 };

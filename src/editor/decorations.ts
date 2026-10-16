@@ -5,7 +5,6 @@ import { CATEGORY_NAMES } from './zones';
 import { t } from '../l10n';
 
 export class Decorations implements vscode.Disposable {
-
     private readonly categories: Record<TokenCategory, vscode.TextEditorDecorationType>;
 
     /** The occurrences of the name that is being typed. */
@@ -15,17 +14,18 @@ export class Decorations implements vscode.Disposable {
     private readonly warning: vscode.TextEditorDecorationType;
 
     constructor() {
-        const category = (name: TokenCategory, overview: boolean) => vscode.window.createTextEditorDecorationType({
-            backgroundColor: new vscode.ThemeColor(`enigma.${name}Background`),
-            border: '1px solid',
-            borderColor: new vscode.ThemeColor(`enigma.${name}Border`),
-            borderRadius: '2px',
-            // a name grows when typing at either of its ends
-            rangeBehavior: vscode.DecorationRangeBehavior.OpenOpen,
-            // where names are still obfuscated shows in the scroll bar
-            overviewRulerColor: overview ? new vscode.ThemeColor(`enigma.${name}Border`) : undefined,
-            overviewRulerLane: overview ? vscode.OverviewRulerLane.Right : undefined,
-        });
+        const category = (name: TokenCategory, overview: boolean) =>
+            vscode.window.createTextEditorDecorationType({
+                backgroundColor: new vscode.ThemeColor(`enigma.${name}Background`),
+                border: '1px solid',
+                borderColor: new vscode.ThemeColor(`enigma.${name}Border`),
+                borderRadius: '2px',
+                // a name grows when typing at either of its ends
+                rangeBehavior: vscode.DecorationRangeBehavior.OpenOpen,
+                // where names are still obfuscated shows in the scroll bar
+                overviewRulerColor: overview ? new vscode.ThemeColor(`enigma.${name}Border`) : undefined,
+                overviewRulerLane: overview ? vscode.OverviewRulerLane.Right : undefined,
+            });
 
         this.categories = {
             obfuscated: category('obfuscated', true),
@@ -71,7 +71,10 @@ export class Decorations implements vscode.Disposable {
                     continue;
                 }
 
-                const range = new vscode.Range(document.positionAt(parsed.starts[zone.index]), document.positionAt(parsed.ends[zone.index]));
+                const range = new vscode.Range(
+                    document.positionAt(parsed.starts[zone.index]),
+                    document.positionAt(parsed.ends[zone.index]),
+                );
                 if (session && zone.group === session.group && zone.inline) {
                     typed.push(range);
                 } else {
@@ -90,16 +93,28 @@ export class Decorations implements vscode.Disposable {
         const errors: vscode.Range[] = [];
         const warnings: vscode.Range[] = [];
         if (state && parsed && session) {
-            const primary = new vscode.Range(document.positionAt(parsed.starts[session.primary]), document.positionAt(parsed.ends[session.primary]));
+            const primary = new vscode.Range(
+                document.positionAt(parsed.starts[session.primary]),
+                document.positionAt(parsed.ends[session.primary]),
+            );
             const problem = session.problem;
-            const colour = problem?.severity === 'error' ? 'editorError.foreground' : problem?.severity === 'warning' ? 'editorWarning.foreground' : 'editorCodeLens.foreground';
+            const colour =
+                problem?.severity === 'error'
+                    ? 'editorError.foreground'
+                    : problem?.severity === 'warning'
+                      ? 'editorWarning.foreground'
+                      : 'editorCodeLens.foreground';
             const text = problem
                 ? `${problem.severity === 'error' ? '✗' : '⚠'} ${problem.message}${problem.severity === 'warning' ? ` — ${t('decorations.enterToRenameAnyway')}` : ''}`
-                : session.busy ? t('decorations.renaming') : t('decorations.enterToRenameEscToCancel');
+                : session.busy
+                  ? t('decorations.renaming')
+                  : t('decorations.enterToRenameEscToCancel');
             // at the end of the line rather than next to the name, so that the code does not move while typing
             hints.push({
                 range: document.lineAt(primary.end.line).range.with(document.lineAt(primary.end.line).range.end),
-                renderOptions: { after: { contentText: text, color: new vscode.ThemeColor(colour), margin: '0 0 0 3ch', fontStyle: 'italic' } },
+                renderOptions: {
+                    after: { contentText: text, color: new vscode.ThemeColor(colour), margin: '0 0 0 3ch', fontStyle: 'italic' },
+                },
             });
             if (problem) {
                 (problem.severity === 'error' ? errors : warnings).push(primary);
@@ -118,5 +133,4 @@ export class Decorations implements vscode.Disposable {
         this.error.dispose();
         this.warning.dispose();
     }
-
 }

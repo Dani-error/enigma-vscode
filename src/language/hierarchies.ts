@@ -17,8 +17,11 @@ export class HierarchyProvider implements vscode.TypeHierarchyProvider, vscode.C
     /** Entries behind the items handed to the editor's hierarchy views. */
     private readonly entries = new WeakMap<object, EntryRef>();
 
-    constructor(private readonly backend: Backend, private readonly index: ClassIndex, private readonly documents: EnigmaDocuments) {
-    }
+    constructor(
+        private readonly backend: Backend,
+        private readonly index: ClassIndex,
+        private readonly documents: EnigmaDocuments,
+    ) {}
 
     private async typeItem(info: EntryInfo): Promise<vscode.TypeHierarchyItem | undefined> {
         if (!info.inJar) {
@@ -30,8 +33,17 @@ export class HierarchyProvider implements vscode.TypeHierarchyProvider, vscode.C
             return undefined;
         }
 
-        const packageName = info.fullName.includes('/') ? info.fullName.substring(0, info.fullName.lastIndexOf('/')).replace(/\//g, '.') : '';
-        const item = new vscode.TypeHierarchyItem(symbolKind(info.kind), info.simpleName.replace(/\$/g, '.'), packageName, location.uri, location.range, location.range);
+        const packageName = info.fullName.includes('/')
+            ? info.fullName.substring(0, info.fullName.lastIndexOf('/')).replace(/\//g, '.')
+            : '';
+        const item = new vscode.TypeHierarchyItem(
+            symbolKind(info.kind),
+            info.simpleName.replace(/\$/g, '.'),
+            packageName,
+            location.uri,
+            location.range,
+            location.range,
+        );
         this.entries.set(item, info.entry);
         return item;
     }
@@ -48,7 +60,10 @@ export class HierarchyProvider implements vscode.TypeHierarchyProvider, vscode.C
         return this.typeItem(info);
     }
 
-    private async relatedTypes(item: vscode.TypeHierarchyItem, method: 'hierarchy/supertypes' | 'hierarchy/subtypes'): Promise<vscode.TypeHierarchyItem[]> {
+    private async relatedTypes(
+        item: vscode.TypeHierarchyItem,
+        method: 'hierarchy/supertypes' | 'hierarchy/subtypes',
+    ): Promise<vscode.TypeHierarchyItem[]> {
         const entry = this.entries.get(item);
         if (!entry || entry.kind !== 'class') {
             return [];
@@ -78,7 +93,13 @@ export class HierarchyProvider implements vscode.TypeHierarchyProvider, vscode.C
         }
 
         const item = new vscode.CallHierarchyItem(
-            symbolKind(info.kind), `${info.simpleName}${info.type ?? ''}`, (info.owner ?? '').replace(/\//g, '.'), location.uri, location.range, location.range);
+            symbolKind(info.kind),
+            `${info.simpleName}${info.type ?? ''}`,
+            (info.owner ?? '').replace(/\//g, '.'),
+            location.uri,
+            location.range,
+            location.range,
+        );
         this.entries.set(item, info.entry);
         return item;
     }
@@ -110,15 +131,17 @@ export class HierarchyProvider implements vscode.TypeHierarchyProvider, vscode.C
         }
 
         const callers = await this.backend.request('calls/incoming', { entry });
-        const calls = await Promise.all(callers.slice(0, MAX_HIERARCHY_ITEMS).map(async caller => {
-            const callerItem = await this.callItem(caller).catch(() => undefined);
-            if (!callerItem) {
-                return undefined;
-            }
+        const calls = await Promise.all(
+            callers.slice(0, MAX_HIERARCHY_ITEMS).map(async caller => {
+                const callerItem = await this.callItem(caller).catch(() => undefined);
+                if (!callerItem) {
+                    return undefined;
+                }
 
-            const ranges = await this.callSites(caller.sites);
-            return new vscode.CallHierarchyIncomingCall(callerItem, ranges.length > 0 ? ranges : [callerItem.selectionRange]);
-        }));
+                const ranges = await this.callSites(caller.sites);
+                return new vscode.CallHierarchyIncomingCall(callerItem, ranges.length > 0 ? ranges : [callerItem.selectionRange]);
+            }),
+        );
         return calls.filter((call): call is vscode.CallHierarchyIncomingCall => call !== undefined);
     }
 
@@ -129,14 +152,16 @@ export class HierarchyProvider implements vscode.TypeHierarchyProvider, vscode.C
         }
 
         const callees = await this.backend.request('calls/outgoing', { entry });
-        const calls = await Promise.all(callees.slice(0, MAX_HIERARCHY_ITEMS).map(async callee => {
-            const calleeItem = await this.callItem(callee).catch(() => undefined);
-            if (!calleeItem) {
-                return undefined;
-            }
+        const calls = await Promise.all(
+            callees.slice(0, MAX_HIERARCHY_ITEMS).map(async callee => {
+                const calleeItem = await this.callItem(callee).catch(() => undefined);
+                if (!calleeItem) {
+                    return undefined;
+                }
 
-            return new vscode.CallHierarchyOutgoingCall(calleeItem, await this.callSites(callee.sites));
-        }));
+                return new vscode.CallHierarchyOutgoingCall(calleeItem, await this.callSites(callee.sites));
+            }),
+        );
         return calls.filter((call): call is vscode.CallHierarchyOutgoingCall => call !== undefined);
     }
 }

@@ -17,8 +17,7 @@ export class ClassIndex implements vscode.Disposable {
     /** Fired after the list or any name in it changed. */
     readonly onDidChange = this.emitter.event;
 
-    constructor(private readonly backend: Backend) {
-    }
+    constructor(private readonly backend: Backend) {}
 
     get all(): Iterable<ClassItem> {
         return this.classes.values();

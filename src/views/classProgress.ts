@@ -15,7 +15,10 @@ export class ClassProgress implements vscode.Disposable {
     private progress?: Progress;
     private readonly disposables: vscode.Disposable[];
 
-    constructor(private readonly backend: Backend, private readonly classes: ClassViews) {
+    constructor(
+        private readonly backend: Backend,
+        private readonly classes: ClassViews,
+    ) {
         this.disposables = [
             backend.onDidChangeProject(() => this.apply(undefined)),
             backend.onDidChangeMappings(params => void this.update(params)),
@@ -72,6 +75,8 @@ export class ClassProgress implements vscode.Disposable {
     }
 
     dispose(): void {
-        this.disposables.forEach(disposable => disposable.dispose());
+        for (const disposable of this.disposables) {
+            disposable.dispose();
+        }
     }
 }

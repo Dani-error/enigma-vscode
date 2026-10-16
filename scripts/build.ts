@@ -66,7 +66,10 @@ function stage(): void {
     const keys = manifestKeys(source);
     for (const language of languages(root)) {
         const file = language === SOURCE_LANGUAGE ? 'package.nls.json' : `package.nls.${language}.json`;
-        fs.writeFileSync(path.join(paths.extension, file), `${JSON.stringify(manifestTexts(readTexts(root, language), keys), undefined, 2)}\n`);
+        fs.writeFileSync(
+            path.join(paths.extension, file),
+            `${JSON.stringify(manifestTexts(readTexts(root, language), keys), undefined, 2)}\n`,
+        );
     }
 
     for (const file of SHIPPED.filter(file => fs.existsSync(path.join(root, file)))) {
@@ -98,7 +101,10 @@ function tests(): esbuild.BuildOptions {
     const out = path.join(paths.extension, 'test', 'e2e');
     fs.rmSync(out, { recursive: true, force: true });
     return {
-        entryPoints: fs.readdirSync(source, { recursive: true, encoding: 'utf8' }).filter(file => file.endsWith('.ts')).map(file => path.join(source, file)),
+        entryPoints: fs
+            .readdirSync(source, { recursive: true, encoding: 'utf8' })
+            .filter(file => file.endsWith('.ts'))
+            .map(file => path.join(source, file)),
         outdir: out,
         outbase: source,
         platform: 'node',

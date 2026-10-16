@@ -15,4 +15,4 @@ export const registerStatsCommands = (register: Register, targets: Targets, { st
         }
     });
     register('enigma.hideClassStats', () => classProgress.hide());
-}
+};

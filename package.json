@@ -30,6 +30,7 @@
     "vscode-jsonrpc": "^8.2.1"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/bun": "^1.4.3",
     "@types/mocha": "^10.0.10",
     "@types/node": "^26.6.5",
@@ -38,8 +39,13 @@
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.9.2",
     "esbuild": "^0.24.2",
+    "eslint": "^10.13.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "jiti": "^2.7.0",
     "mocha": "^10.8.2",
-    "typescript": "^5.9.3"
+    "prettier": "^3.9.10",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.71.2"
   },
   "scripts": {
     "build:backend": "bun scripts/gradle.ts installJar --console=plain -q",
@@ -48,7 +54,7 @@
     "bundle": "bun scripts/build.ts",
     "build": "bun run typecheck && bun run bundle",
     "watch": "bun scripts/build.ts --watch",
-    "test": "bun run test:unit && bun run test:protocol && bun run test:e2e && bun run test:reload",
+    "test": "bun run check && bun run test:unit && bun run test:protocol && bun run test:e2e && bun run test:reload",
     "test:unit": "bun test test/java.test.ts test/zones.test.ts",
     "test:protocol": "bun test/protocol.test.ts",
     "pretest:e2e": "bun run build && bun scripts/build.ts --tests",
@@ -59,7 +65,12 @@
     "vscode:prepublish": "bun run build",
     "sync:ai": "bun scripts/sync-ai-tools.ts",
     "l10n": "bun scripts/l10n.ts",
-    "l10n:check": "bun scripts/l10n.ts --check"
+    "l10n:check": "bun scripts/l10n.ts --check",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "check": "bun run typecheck && bun run lint && bun run format:check && bun run l10n:check"
   },
   "contributes": {
     "viewsContainers": {

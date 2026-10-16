@@ -1,0 +1,22 @@
+# How every editor indents this project, before any formatter runs. Prettier formats the TypeScript, JSON, CSS and
+# Markdown (bun run format); the Java of backend/ follows the same rules.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[{package.json,bun.lock}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[vendor/**]
+# Enigma's own sources keep Enigma's own style
+indent_style = unset
+indent_size = unset

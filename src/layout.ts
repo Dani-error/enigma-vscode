@@ -81,7 +81,7 @@ export class Layout implements vscode.Disposable {
             try {
                 await show();
             } catch (error) {
-                this.output.debug(`Could not show the ${pane} pane: ${error}`);
+                this.output.debug(`Could not show the ${pane} pane: ${String(error)}`);
             }
         };
 
@@ -113,6 +113,8 @@ export class Layout implements vscode.Disposable {
     }
 
     dispose(): void {
-        this.disposables.forEach(disposable => disposable.dispose());
+        for (const disposable of this.disposables) {
+            disposable.dispose();
+        }
     }
 }

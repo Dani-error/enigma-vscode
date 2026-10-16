@@ -50,7 +50,7 @@ const IDENTIFIER_CHAR = /[\p{L}\p{Nl}\p{Nd}\p{Mn}\p{Mc}\p{Pc}\p{Sc}]/u;
 
 const isIdentifierChar = (character: string | undefined) => {
     return character !== undefined && character.length > 0 && IDENTIFIER_CHAR.test(character);
-}
+};
 
 /**
  * The text of a class as the engine produced it, cut into names and everything in between.
@@ -66,7 +66,11 @@ export class ZoneModel {
     /** Whether the text can be edited in place at all. */
     readonly editable: boolean;
 
-    constructor(readonly text: string, refs: RefTuple[], readonly groups: ZoneGroup[]) {
+    constructor(
+        readonly text: string,
+        refs: RefTuple[],
+        readonly groups: ZoneGroup[],
+    ) {
         const lineStarts = [0];
         for (let i = text.indexOf('\n'); i >= 0; i = text.indexOf('\n', i + 1)) {
             lineStarts.push(i + 1);
@@ -93,16 +97,27 @@ export class ZoneModel {
             // rename command.
             const prefixLength = name.length - zoneText.length;
             const prefix = prefixLength >= 0 && name.endsWith(zoneText) ? name.substring(0, prefixLength) : undefined;
-            const inline = renamable
-                && IDENTIFIER.test(zoneText)
-                && prefix !== undefined && (prefix.length === 0 || prefix.endsWith('/'))
+            const inline =
+                renamable &&
+                IDENTIFIER.test(zoneText) &&
+                prefix !== undefined &&
+                (prefix.length === 0 || prefix.endsWith('/')) &&
                 // a name must be delimited by something that cannot be part of a name
-                && !isIdentifierChar(text[start - 1]) && !isIdentifierChar(text[end]);
+                !isIdentifierChar(text[start - 1]) &&
+                !isIdentifierChar(text[end]);
 
             this.gaps.push(text.substring(position, start));
             this.zones.push({
-                index: this.zones.length, start, end, text: zoneText, group, category,
-                declaration: (flags & FLAG_DECLARATION) !== 0, renamable, inline, prefix: prefix ?? '',
+                index: this.zones.length,
+                start,
+                end,
+                text: zoneText,
+                group,
+                category,
+                declaration: (flags & FLAG_DECLARATION) !== 0,
+                renamable,
+                inline,
+                prefix: prefix ?? '',
             });
             position = end;
         }
@@ -129,8 +144,8 @@ export class ZoneModel {
      * @returns where each zone is now and which ones changed, or undefined if anything but an editable name was changed
      */
     parse(current: string): ParsedText | undefined {
-        const starts: number[] = new Array(this.zones.length);
-        const ends: number[] = new Array(this.zones.length);
+        const starts = new Array<number>(this.zones.length);
+        const ends = new Array<number>(this.zones.length);
         const changed: number[] = [];
         let position = 0;
 
@@ -216,7 +231,7 @@ export const judge = (model: ZoneModel, parsed: ParsedText | undefined): EditVer
     }
 
     return { kind: 'rename', group, zones: parsed.changed };
-}
+};
 
 /**
  * If {@code current} is {@code original} with text inserted somewhere, returns what was inserted.
@@ -236,7 +251,7 @@ export const insertedText = (original: string, current: string) => {
 
     const suffix = original.length - prefix;
     return current.endsWith(original.substring(prefix)) ? current.substring(prefix, current.length - suffix) : undefined;
-}
+};
 
 /** The smallest replacement that turns {@code from} into {@code to}. */
 export const difference = (from: string, to: string) => {
@@ -258,7 +273,7 @@ export const difference = (from: string, to: string) => {
     }
 
     return { start, end: fromEnd, text: to.substring(start, toEnd) };
-}
+};
 
 /**
  * The changes that turn one text of a class into another. Where only names differ, each name is replaced on its own,
@@ -286,9 +301,9 @@ export const changesBetween = (model: ZoneModel | undefined, current: string, ta
 
     const change = difference(current, target);
     return (change ? [change] : []) as { start: number; end: number; text: string }[];
-}
+};
 
 /** The full name to rename to, given what was typed on a zone. */
 export const newNameOf = (zone: Zone, typed: string) => {
     return zone.prefix + typed;
-}
+};

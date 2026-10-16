@@ -30,39 +30,39 @@ All of these are dependencies of Enigma itself, in the versions of its version c
 redistribution as part of an LGPL-3.0 work. Licences were read from each artifact's published POM on 2026-10-11, except
 where noted. The licence and notice files shipped inside the libraries are preserved in the jar under `META-INF/`.
 
-| Library | Version | Licence |
-| --- | --- | --- |
-| [Vineflower](https://github.com/Vineflower/vineflower) | 1.11.1 | Apache-2.0 |
-| [CFR](https://github.com/FabricMC/cfr), FabricMC's fork | 0.2.2 | MIT (from the repository's licence file; the POM declares none) |
-| [Procyon](https://github.com/mstrobel/procyon) compiler tools and core | 0.6.0 | Apache-2.0 |
-| [ASM](https://asm.ow2.io/) (asm, commons, tree, util, analysis) | 9.9 | BSD-3-Clause |
-| [Guava](https://github.com/google/guava), failureaccess | 33.5.0-jre, 1.0.3 | Apache-2.0 |
-| [Gson](https://github.com/google/gson) | 2.13.2 | Apache-2.0 |
-| [JavaParser](https://javaparser.org/) | 3.27.0 | LGPL or Apache-2.0, at the recipient's choice |
-| [Quilt Config](https://github.com/QuiltMC/quilt-config) | 1.3.2 | Apache-2.0 (from the licence file in the jar; the POM declares none) |
-| [tinylog](https://tinylog.org/) api and impl | 2.7.0 | Apache-2.0 |
-| [jopt-simple](https://github.com/jopt-simple/jopt-simple) | 6.0-alpha-3 | MIT |
-| [JSpecify](https://jspecify.dev/) | 1.0.0 | Apache-2.0 |
-| Error Prone annotations, J2ObjC annotations, JetBrains annotations | 2.41.0, 3.1, 23.0.0 | Apache-2.0 |
+| Library                                                                | Version             | Licence                                                              |
+| ---------------------------------------------------------------------- | ------------------- | -------------------------------------------------------------------- |
+| [Vineflower](https://github.com/Vineflower/vineflower)                 | 1.11.1              | Apache-2.0                                                           |
+| [CFR](https://github.com/FabricMC/cfr), FabricMC's fork                | 0.2.2               | MIT (from the repository's licence file; the POM declares none)      |
+| [Procyon](https://github.com/mstrobel/procyon) compiler tools and core | 0.6.0               | Apache-2.0                                                           |
+| [ASM](https://asm.ow2.io/) (asm, commons, tree, util, analysis)        | 9.9                 | BSD-3-Clause                                                         |
+| [Guava](https://github.com/google/guava), failureaccess                | 33.5.0-jre, 1.0.3   | Apache-2.0                                                           |
+| [Gson](https://github.com/google/gson)                                 | 2.13.2              | Apache-2.0                                                           |
+| [JavaParser](https://javaparser.org/)                                  | 3.27.0              | LGPL or Apache-2.0, at the recipient's choice                        |
+| [Quilt Config](https://github.com/QuiltMC/quilt-config)                | 1.3.2               | Apache-2.0 (from the licence file in the jar; the POM declares none) |
+| [tinylog](https://tinylog.org/) api and impl                           | 2.7.0               | Apache-2.0                                                           |
+| [jopt-simple](https://github.com/jopt-simple/jopt-simple)              | 6.0-alpha-3         | MIT                                                                  |
+| [JSpecify](https://jspecify.dev/)                                      | 1.0.0               | Apache-2.0                                                           |
+| Error Prone annotations, J2ObjC annotations, JetBrains annotations     | 2.41.0, 3.1, 23.0.0 | Apache-2.0                                                           |
 
 Not bundled, although they are part of `enigma-swing`: FlatLaf, syntaxpain, swing-dpi, fontchooser. The Swing module is
 not used.
 
 ## Libraries bundled in `dist/extension.js`
 
-| Library | Version | Licence |
-| --- | --- | --- |
-| [vscode-jsonrpc](https://github.com/microsoft/vscode-languageserver-node) | 8.2.1 | MIT |
+| Library                                                                   | Version | Licence |
+| ------------------------------------------------------------------------- | ------- | ------- |
+| [vscode-jsonrpc](https://github.com/microsoft/vscode-languageserver-node) | 8.2.1   | MIT     |
 
 ## Libraries bundled in `dist/pages/`
 
-| Library | Version | Licence |
-| --- | --- | --- |
-| [Preact](https://github.com/preactjs/preact), with its hooks | 11.0.1 | MIT |
+| Library                                                      | Version | Licence |
+| ------------------------------------------------------------ | ------- | ------- |
+| [Preact](https://github.com/preactjs/preact), with its hooks | 11.0.1  | MIT     |
 
 ## Files bundled in `dist/` and `resources/`
 
-| File | Origin | Licence |
-| --- | --- | --- |
-| `dist/codicons/codicon.css`, `codicon.ttf` | [@vscode/codicons](https://github.com/microsoft/vscode-codicons), the icons of VS Code, used by the panes. Copied from the package when the extension is built, in the version `package.json` asks for. | Icons: CC BY 4.0. Code: MIT. |
-| `resources/icons/*.svg` | The icons of classes, methods and fields in the trees, by Elior "Mallowigi" Boukhobza (Material Theme UI), as shipped with Enigma's Swing interface. Unchanged. | MIT; the licence is at the top of each file. |
+| File                                       | Origin                                                                                                                                                                                                  | Licence                                      |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `dist/codicons/codicon.css`, `codicon.ttf` | [@vscode/codicons](https://github.com/microsoft/vscode-codicons), the icons of VS Code, used by the panes. Copied from the package when the extension is built, in the version `package.json` asks for. | Icons: CC BY 4.0. Code: MIT.                 |
+| `resources/icons/*.svg`                    | The icons of classes, methods and fields in the trees, by Elior "Mallowigi" Boukhobza (Material Theme UI), as shipped with Enigma's Swing interface. Unchanged.                                         | MIT; the licence is at the top of each file. |

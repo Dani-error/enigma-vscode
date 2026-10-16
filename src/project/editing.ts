@@ -5,15 +5,14 @@ import { describeChange } from '../engine/messages';
 import { t } from '../l10n';
 
 const describe = (messages: ValidationMessage[]) => {
-    return messages.map(message => message.details ? `${message.text} ${message.details}` : message.text).join('\n');
-}
+    return messages.map(message => (message.details ? `${message.text} ${message.details}` : message.text)).join('\n');
+};
 
 /**
  * Changes to mappings requested by the user.
  */
 export class Editing {
-    constructor(private readonly backend: Backend) {
-    }
+    constructor(private readonly backend: Backend) {}
 
     /**
      * Sends an edit to the engine, asking the user to confirm warnings.
@@ -25,7 +24,11 @@ export class Editing {
         let result = await send(false);
         if (!result.applied && result.needsConfirmation) {
             const warnings = result.messages.filter(message => message.type === 'warning');
-            const choice = await vscode.window.showWarningMessage(describe(warnings), { modal: true, detail: t('editing.doYouWantToProceedAnyway') }, t('editing.proceed'));
+            const choice = await vscode.window.showWarningMessage(
+                describe(warnings),
+                { modal: true, detail: t('editing.doYouWantToProceedAnyway') },
+                t('editing.proceed'),
+            );
             if (choice !== t('editing.proceed')) {
                 return false;
             }
@@ -70,7 +73,9 @@ export class Editing {
         } else {
             const reason = describe(result.messages) || t('editing.theMappingsChangedInTheMeantime');
             const label = describeChange(result.label);
-            void vscode.window.showWarningMessage(redo ? t('editing.enigmaCouldNotRedo', label, reason) : t('editing.enigmaCouldNotUndo', label, reason));
+            void vscode.window.showWarningMessage(
+                redo ? t('editing.enigmaCouldNotRedo', label, reason) : t('editing.enigmaCouldNotUndo', label, reason),
+            );
         }
     }
 
@@ -85,10 +90,15 @@ export class Editing {
             return false;
         }
 
-        const sample = preview.renames.slice(0, 15).map(rename => `${rename.from} → ${rename.to}`).join('\n');
+        const sample = preview.renames
+            .slice(0, 15)
+            .map(rename => `${rename.from} → ${rename.to}`)
+            .join('\n');
         const more = preview.renames.length > 15 ? `\n${t('editing.andMore', preview.renames.length - 15)}` : '';
         const choice = await vscode.window.showWarningMessage(
-            mode === 'move' ? t('editing.movePackageToClassEsWill', from, to, preview.renames.length) : t('editing.renamePackageToClassEsWill', from, to, preview.renames.length),
+            mode === 'move'
+                ? t('editing.movePackageToClassEsWill', from, to, preview.renames.length)
+                : t('editing.renamePackageToClassEsWill', from, to, preview.renames.length),
             { modal: true, detail: sample + more },
             t('common.rename'),
         );
@@ -99,7 +109,9 @@ export class Editing {
         const result = await this.backend.request('package/rename', { from, to, mode, apply: true });
         const errors = result.messages.filter(message => message.type === 'error');
         if (errors.length > 0) {
-            void vscode.window.showWarningMessage(t('editing.enigmaRenamedOfClasses', result.appliedCount ?? 0, result.renames.length, describe(errors)));
+            void vscode.window.showWarningMessage(
+                t('editing.enigmaRenamedOfClasses', result.appliedCount ?? 0, result.renames.length, describe(errors)),
+            );
         }
 
         return result.applied;

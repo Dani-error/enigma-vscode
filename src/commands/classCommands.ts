@@ -19,7 +19,7 @@ export const registerClassCommands = (register: Register, targets: Targets, { ba
     });
 
     register('enigma.navigateTo', async (entry: EntryRef, context?: EntryRef) => {
-        if (!await editors.navigate(entry, context)) {
+        if (!(await editors.navigate(entry, context))) {
             vscode.window.setStatusBarMessage(t('classCommands.enigmaThatEntryIsNotPart'), 4000);
         }
     });
@@ -54,9 +54,10 @@ export const registerClassCommands = (register: Register, targets: Targets, { ba
         }
 
         const position = active.selection.active;
-        const next = direction === 1
-            ? ranges.find(range => range.start.isAfter(position)) ?? ranges[0]
-            : [...ranges].reverse().find(range => range.end.isBefore(position)) ?? ranges[ranges.length - 1];
+        const next =
+            direction === 1
+                ? (ranges.find(range => range.start.isAfter(position)) ?? ranges[0])
+                : ([...ranges].reverse().find(range => range.end.isBefore(position)) ?? ranges[ranges.length - 1]);
         active.selection = new vscode.Selection(next.start, next.start);
         active.revealRange(next, vscode.TextEditorRevealType.InCenterIfOutsideViewport);
     };
@@ -84,4 +85,4 @@ export const registerClassCommands = (register: Register, targets: Targets, { ba
             await classes.reveal(current.class);
         }
     });
-}
+};

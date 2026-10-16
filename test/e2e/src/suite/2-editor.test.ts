@@ -1,7 +1,19 @@
 import * as assert from 'node:assert/strict';
 import * as vscode from 'vscode';
 import {
-    Api, METHOD_GET_NAME, activate, classDocument, entryInfo, everywhere, execute, openClass, positionOf, typeAt, typeOver, waitFor, withStub,
+    Api,
+    METHOD_GET_NAME,
+    activate,
+    classDocument,
+    entryInfo,
+    everywhere,
+    execute,
+    openClass,
+    positionOf,
+    typeAt,
+    typeOver,
+    waitFor,
+    withStub,
 } from './harness';
 
 describe('Enigma in VS Code: the constrained editor', () => {
@@ -28,7 +40,11 @@ describe('Enigma in VS Code: the constrained editor', () => {
         const before = editor.document.getText();
 
         // typing into a keyword, between words, or into a name of a library is undone at once
-        for (const [anchor, offset] of [['public class', 3], ['extends', 0], ['System.out', 2]] as const) {
+        for (const [anchor, offset] of [
+            ['public class', 3],
+            ['extends', 0],
+            ['System.out', 2],
+        ] as const) {
             await typeAt(editor, anchor, offset, 'x');
             await waitFor(`the text to be restored after typing in "${anchor}"`, () => editor.document.getText() === before);
         }
@@ -57,7 +73,10 @@ describe('Enigma in VS Code: the constrained editor', () => {
         assert.equal(api.editor.renaming, true);
 
         // the super call and the call on this are the same method: they change while typing, before anything is applied
-        await waitFor('the other uses to follow', () => document.getText().includes('super.getName()') && document.getText().includes('this.getName()'));
+        await waitFor(
+            'the other uses to follow',
+            () => document.getText().includes('super.getName()') && document.getText().includes('this.getName()'),
+        );
         assert.equal((await entryInfo(api, METHOD_GET_NAME)).tokenType, 'obfuscated', 'nothing is renamed until the name is applied');
         assert.ok(base.getText().includes('String a()'));
 
@@ -86,7 +105,10 @@ describe('Enigma in VS Code: the constrained editor', () => {
         await waitFor('the insertion', () => everywhere(document, 'getFullName'));
         assert.equal(await execute('enigma.inlineRename.commit'), true);
         assert.equal((await entryInfo(api, METHOD_GET_NAME)).name, 'getFullName');
-        await waitFor('the document to settle', () => !document.isDirty && !api.editor.renaming && document.getText().includes('super.getFullName()'));
+        await waitFor(
+            'the document to settle',
+            () => !document.isDirty && !api.editor.renaming && document.getText().includes('super.getFullName()'),
+        );
 
         await typeAt(editor, 'String getFullName()', 'String getFull'.length, 'Wrong');
         await waitFor('the edit', () => document.getText().includes('String getFullWrongName()'));
@@ -135,17 +157,22 @@ describe('Enigma in VS Code: the constrained editor', () => {
 
         // a name that cannot be applied is dropped when moving away, with a message saying so
         let warned = '';
-        await withStub(vscode.window, 'showWarningMessage', async (message: string) => {
-            warned = message;
-            return undefined;
-        }, async () => {
-            await typeOver(editor, 'String getFullName2()', 'String '.length, 'getFullName2', 'int');
-            await waitFor('the name to be typed', () => document.getText().includes('String int()'));
-            const away = positionOf(document, 'System.out');
-            editor.selection = new vscode.Selection(away, away);
-            await waitFor('the name to be restored', () => everywhere(document, 'getFullName2') && !api.editor.renaming);
-            await waitFor('the message', () => warned.length > 0);
-        });
+        await withStub(
+            vscode.window,
+            'showWarningMessage',
+            async (message: string) => {
+                warned = message;
+                return undefined;
+            },
+            async () => {
+                await typeOver(editor, 'String getFullName2()', 'String '.length, 'getFullName2', 'int');
+                await waitFor('the name to be typed', () => document.getText().includes('String int()'));
+                const away = positionOf(document, 'System.out');
+                editor.selection = new vscode.Selection(away, away);
+                await waitFor('the name to be restored', () => everywhere(document, 'getFullName2') && !api.editor.renaming);
+                await waitFor('the message', () => warned.length > 0);
+            },
+        );
         assert.match(warned, /did not rename/);
         assert.equal((await entryInfo(api, METHOD_GET_NAME)).name, 'getFullName2');
         await waitFor('the document to be unmodified', () => !document.isDirty);
@@ -179,10 +206,15 @@ describe('Enigma in VS Code: the constrained editor', () => {
             const active = vscode.window.activeTextEditor;
             return active?.document.uri.path === '/inheritance_tree.jar!/BaseClass.java' ? active : undefined;
         });
-        await waitFor('the renamed class to load', () => renamed.document.getText().includes('protected BaseClass(') && !renamed.document.isDirty);
+        await waitFor(
+            'the renamed class to load',
+            () => renamed.document.getText().includes('protected BaseClass(') && !renamed.document.isDirty,
+        );
 
-        const paths = vscode.window.tabGroups.all.flatMap(group => group.tabs).map(tab => tab.input instanceof vscode.TabInputText ? tab.input.uri.path : '');
-        assert.ok(!paths.includes('/inheritance_tree.jar!/a.java'), `the stale tab is closed: ${paths}`);
+        const paths = vscode.window.tabGroups.all
+            .flatMap(group => group.tabs)
+            .map(tab => (tab.input instanceof vscode.TabInputText ? tab.input.uri.path : ''));
+        assert.ok(!paths.includes('/inheritance_tree.jar!/a.java'), `the stale tab is closed: ${paths.join(', ')}`);
         await waitFor('the subclass to reference the new name', () => classDocument('d').getText().includes('extends BaseClass'));
         assert.equal(api.editor.renaming, false);
     });

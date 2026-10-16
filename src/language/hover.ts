@@ -4,13 +4,22 @@ import { t } from '../l10n';
 
 const describeMapping = (info: EntryInfo) => {
     switch (info.tokenType) {
-        case 'obfuscated': return t('hover.notMapped');
-        case 'deobfuscated': return t('hover.mapped');
-        case 'jar_proposed': return info.sourcePluginId ? t('hover.proposedFromTheBytecodeBy', `\`${info.sourcePluginId}\``) : t('hover.proposedFromTheBytecode');
-        case 'dynamic_proposed': return info.sourcePluginId ? t('hover.proposedFromOtherMappingsBy', `\`${info.sourcePluginId}\``) : t('hover.proposedFromOtherMappings');
-        default: return info.tokenType;
+        case 'obfuscated':
+            return t('hover.notMapped');
+        case 'deobfuscated':
+            return t('hover.mapped');
+        case 'jar_proposed':
+            return info.sourcePluginId
+                ? t('hover.proposedFromTheBytecodeBy', `\`${info.sourcePluginId}\``)
+                : t('hover.proposedFromTheBytecode');
+        case 'dynamic_proposed':
+            return info.sourcePluginId
+                ? t('hover.proposedFromOtherMappingsBy', `\`${info.sourcePluginId}\``)
+                : t('hover.proposedFromOtherMappings');
+        default:
+            return info.tokenType;
     }
-}
+};
 
 /** The contents of Enigma's identifier panel and entry tooltip, as a hover. */
 export function hoverMarkdown(info: TokenInfo | EntryInfo): vscode.MarkdownString {
@@ -46,7 +55,10 @@ export function hoverMarkdown(info: TokenInfo | EntryInfo): vscode.MarkdownStrin
         }
     }
 
-    const obfuscated = info.entry.kind === 'local' ? t('hover.index', info.index) : `\`${info.obfName}\`${info.descriptor ? ` \`${info.descriptor}\`` : ''}`;
+    const obfuscated =
+        info.entry.kind === 'local'
+            ? t('hover.index', info.index)
+            : `\`${info.obfName}\`${info.descriptor ? ` \`${info.descriptor}\`` : ''}`;
     rows.push(t('hover.obfuscated', obfuscated, describeMapping(info)));
     if (!info.inJar && info.entry.kind !== 'local') {
         rows.push(`_${t('hover.notPartOfTheJarCannot')}_`);
@@ -60,7 +72,8 @@ export function hoverMarkdown(info: TokenInfo | EntryInfo): vscode.MarkdownStrin
 
     // what can be done with the name, one click away
     const links: string[] = [];
-    const link = (label: string, command: string) => links.push(`[${label}](command:${command}?${encodeURIComponent(JSON.stringify([info.entry]))})`);
+    const link = (label: string, command: string) =>
+        links.push(`[${label}](command:${command}?${encodeURIComponent(JSON.stringify([info.entry]))})`);
     if (info.renamable) {
         links.push(`[${t('common.rename')}](command:editor.action.rename)`);
         link(info.tokenType === 'deobfuscated' ? t('hover.reset') : t('hover.markAsDeobfuscated'), 'enigma.toggleMapping');
@@ -80,7 +93,15 @@ export function hoverMarkdown(info: TokenInfo | EntryInfo): vscode.MarkdownStrin
 
     if (links.length > 0) {
         markdown.appendMarkdown(`\n\n---\n\n${links.join(' · ')}`);
-        markdown.isTrusted = { enabledCommands: ['editor.action.rename', 'enigma.toggleMapping', 'enigma.editJavadoc', 'enigma.showInheritance', 'enigma.showCalls'] };
+        markdown.isTrusted = {
+            enabledCommands: [
+                'editor.action.rename',
+                'enigma.toggleMapping',
+                'enigma.editJavadoc',
+                'enigma.showInheritance',
+                'enigma.showCalls',
+            ],
+        };
     }
 
     return markdown;

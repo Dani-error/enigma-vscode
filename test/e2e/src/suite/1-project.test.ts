@@ -2,9 +2,7 @@ import * as assert from 'node:assert/strict';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
-import {
-    Api, activate, execute, jar, reported, waitFor, workspace,
-} from './harness';
+import { Api, activate, execute, jar, reported, waitFor, workspace } from './harness';
 
 describe('Enigma in VS Code: opening a jar, and the Java it runs on', () => {
     let api: Api;
@@ -17,7 +15,7 @@ describe('Enigma in VS Code: opening a jar, and the Java it runs on', () => {
         await execute('enigma.openJar', jar);
         await waitFor('the jar to be open', () => api.project.isOpen && api.index.size > 0);
 
-        assert.equal(fs.realpathSync(api.project.state!.jarPath!), fs.realpathSync(jar));
+        assert.equal(fs.realpathSync(api.project.state!.jarPath), fs.realpathSync(jar));
         assert.ok(api.index.get('a')?.obfuscated);
         assert.ok(api.index.get('a')?.kind, 'classes say what kind of type they are');
         // inner classes are part of their outer class
@@ -52,8 +50,14 @@ describe('Enigma in VS Code: opening a jar, and the Java it runs on', () => {
         const errorsBefore = reported.length;
 
         // an installation that cannot be used is reported, naming the setting, and nothing else is run in its place
-        await config().update('java.home', process.env.ENIGMA_E2E_OLD_JAVA ?? path.join(workspace, 'no-java-here'), vscode.ConfigurationTarget.Global);
-        const message = await waitFor('the unusable setting to be reported', () => reported.slice(errorsBefore).find(text => text.includes('enigma.java.home')));
+        await config().update(
+            'java.home',
+            process.env.ENIGMA_E2E_OLD_JAVA ?? path.join(workspace, 'no-java-here'),
+            vscode.ConfigurationTarget.Global,
+        );
+        const message = await waitFor('the unusable setting to be reported', () =>
+            reported.slice(errorsBefore).find(text => text.includes('enigma.java.home')),
+        );
         assert.match(message, /cannot be used/);
         assert.equal(api.backend.running, false);
         assert.equal(api.project.isOpen, false);
@@ -62,15 +66,24 @@ describe('Enigma in VS Code: opening a jar, and the Java it runs on', () => {
         const installed = api.javaInstallations().find(installation => installation.home);
         if (installed) {
             await config().update('java.home', installed.home, vscode.ConfigurationTarget.Global);
-            await waitFor('the engine to start with the chosen Java', () => api.backend.running && api.project.isOpen && api.index.size > 0);
+            await waitFor(
+                'the engine to start with the chosen Java',
+                () => api.backend.running && api.project.isOpen && api.index.size > 0,
+            );
             assert.equal(api.backend.runtime?.source, 'the enigma.java.home setting');
             assert.equal(api.backend.runtime?.home, installed.home);
         }
 
         // clearing it goes back to automatic detection
         await config().update('java.home', undefined, vscode.ConfigurationTarget.Global);
-        await waitFor('the engine to run with a detected Java', () =>
-            api.backend.running && api.project.isOpen && api.index.size > 0 && api.backend.runtime?.source !== 'the enigma.java.home setting');
-        assert.equal(fs.realpathSync(api.project.state!.jarPath!), fs.realpathSync(jar));
+        await waitFor(
+            'the engine to run with a detected Java',
+            () =>
+                api.backend.running &&
+                api.project.isOpen &&
+                api.index.size > 0 &&
+                api.backend.runtime?.source !== 'the enigma.java.home setting',
+        );
+        assert.equal(fs.realpathSync(api.project.state!.jarPath), fs.realpathSync(jar));
     });
 });

@@ -12,7 +12,11 @@ export class ClassEditors implements vscode.Disposable {
     private migrating = Promise.resolve();
     private readonly subscription: vscode.Disposable;
 
-    constructor(private readonly backend: Backend, private readonly index: ClassIndex, private readonly documents: EnigmaDocuments) {
+    constructor(
+        private readonly backend: Backend,
+        private readonly index: ClassIndex,
+        private readonly documents: EnigmaDocuments,
+    ) {
         this.subscription = backend.onDidChangeMappings(params => this.onMappingsChanged(params));
     }
 
@@ -26,17 +30,27 @@ export class ClassEditors implements vscode.Disposable {
         });
     }
 
-    async openClass(obf: string, view: View = 'source', options: { preview?: boolean; viewColumn?: vscode.ViewColumn; preserveFocus?: boolean } = {}): Promise<vscode.TextEditor> {
+    async openClass(
+        obf: string,
+        view: View = 'source',
+        options: { preview?: boolean; viewColumn?: vscode.ViewColumn; preserveFocus?: boolean } = {},
+    ): Promise<vscode.TextEditor> {
         this.documents.revive(this.index.uri(obf, view));
-        return vscode.window.showTextDocument(this.index.uri(obf, view), { preview: options.preview ?? true, viewColumn: options.viewColumn, preserveFocus: options.preserveFocus });
+        return vscode.window.showTextDocument(this.index.uri(obf, view), {
+            preview: options.preview ?? true,
+            viewColumn: options.viewColumn,
+            preserveFocus: options.preserveFocus,
+        });
     }
 
     /** The classes that are open in tabs, in the order of the tabs. */
     openTabs(): { class: string; view: View; column: vscode.ViewColumn; active: boolean }[] {
-        return vscode.window.tabGroups.all.flatMap(group => group.tabs.flatMap(tab => {
-            const parsed = tab.input instanceof vscode.TabInputText ? parseClassUri(tab.input.uri) : undefined;
-            return parsed ? [{ ...parsed, column: group.viewColumn, active: tab.isActive && group.isActive }] : [];
-        }));
+        return vscode.window.tabGroups.all.flatMap(group =>
+            group.tabs.flatMap(tab => {
+                const parsed = tab.input instanceof vscode.TabInputText ? parseClassUri(tab.input.uri) : undefined;
+                return parsed ? [{ ...parsed, column: group.viewColumn, active: tab.isActive && group.isActive }] : [];
+            }),
+        );
     }
 
     /**
@@ -56,9 +70,11 @@ export class ClassEditors implements vscode.Disposable {
     private onMappingsChanged(params: MappingsChangedParams): void {
         if (params.classes.length > 0) {
             // one at a time: each migration opens and closes editors
-            this.migrating = this.migrating.then(() => this.migrateTabs(params.classes)).catch(error => {
-                this.backend.output.warn(`Failed to update editor tabs: ${error}`);
-            });
+            this.migrating = this.migrating
+                .then(() => this.migrateTabs(params.classes))
+                .catch(error => {
+                    this.backend.output.warn(`Failed to update editor tabs: ${error}`);
+                });
         }
     }
 
@@ -77,7 +93,7 @@ export class ClassEditors implements vscode.Disposable {
             // Until it has none: saving is refused while another save of the document is under way, as the one that
             // follows a name typed in the code, and a tab closed with changes makes the editor ask about them.
             for (let attempt = 0; document?.isDirty && !document.isClosed && attempt < 25; attempt++) {
-                if (!await document.save() && document.isDirty) {
+                if (!(await document.save()) && document.isDirty) {
                     await new Promise(resolve => setTimeout(resolve, 40));
                 }
             }
@@ -115,8 +131,9 @@ export class ClassEditors implements vscode.Disposable {
                     continue;
                 }
 
-                const editor = vscode.window.visibleTextEditors.find(candidate =>
-                    candidate.document.uri.toString() === oldUri.toString() && candidate.viewColumn === group.viewColumn);
+                const editor = vscode.window.visibleTextEditors.find(
+                    candidate => candidate.document.uri.toString() === oldUri.toString() && candidate.viewColumn === group.viewColumn,
+                );
                 this.documents.revive(newUri);
                 await vscode.window.showTextDocument(newUri, {
                     viewColumn: group.viewColumn,
@@ -126,7 +143,9 @@ export class ClassEditors implements vscode.Disposable {
                 });
                 switchedAway = switchedAway || tab !== originallyActive;
 
-                const stale = group.tabs.find(candidate => candidate.input instanceof vscode.TabInputText && candidate.input.uri.toString() === oldUri.toString());
+                const stale = group.tabs.find(
+                    candidate => candidate.input instanceof vscode.TabInputText && candidate.input.uri.toString() === oldUri.toString(),
+                );
                 if (stale) {
                     await this.closeTab(stale);
                 }
@@ -137,14 +156,19 @@ export class ClassEditors implements vscode.Disposable {
                 const parsed = parseClassUri(originallyActive.input.uri);
                 const item = parsed && renamed.get(parsed.class);
                 const uri = parsed && item ? this.index.uri(item.obf, parsed.view, item.deobf) : originallyActive.input.uri;
-                await vscode.window.showTextDocument(uri, { viewColumn: group.viewColumn, preview: false, preserveFocus: group !== activeGroup });
+                await vscode.window.showTextDocument(uri, {
+                    viewColumn: group.viewColumn,
+                    preview: false,
+                    preserveFocus: group !== activeGroup,
+                });
             }
         }
     }
 
     /** Closes every editor showing a class, when the jar is closed. */
     async closeAll(): Promise<void> {
-        const tabs = vscode.window.tabGroups.all.flatMap(group => group.tabs)
+        const tabs = vscode.window.tabGroups.all
+            .flatMap(group => group.tabs)
             .filter(tab => tab.input instanceof vscode.TabInputText && tab.input.uri.scheme === SCHEME);
         for (const tab of tabs) {
             await this.closeTab(tab);

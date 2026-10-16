@@ -15,7 +15,13 @@ const SELECTOR: vscode.DocumentSelector = { scheme: SCHEME };
  * Connects the engine to the editor's own features, so that renaming, navigation, hierarchies and symbol search work
  * on decompiled classes through the standard editor commands.
  */
-export function registerLanguageFeatures(backend: Backend, index: ClassIndex, documents: EnigmaDocuments, editing: Editing, isOpen: () => boolean): vscode.Disposable {
+export function registerLanguageFeatures(
+    backend: Backend,
+    index: ClassIndex,
+    documents: EnigmaDocuments,
+    editing: Editing,
+    isOpen: () => boolean,
+): vscode.Disposable {
     const navigation = new NavigationProvider(backend, index, documents);
     const hierarchies = new HierarchyProvider(backend, index, documents);
     const symbols = new SymbolProvider(backend, index, documents, isOpen);

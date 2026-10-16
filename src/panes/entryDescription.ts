@@ -3,19 +3,20 @@ import { Fact, PaneEntry } from './messages';
 import { t } from '../l10n';
 
 // a map rather than an object: "constructor" is one of the kinds
-const kinds = () => new Map<SymbolKind, [label: string, icon: string]>([
-    ['class', [t('common.class'), 'symbol-class']],
-    ['interface', [t('common.interface'), 'symbol-interface']],
-    ['annotation', [t('common.annotation'), 'symbol-interface']],
-    ['enum', [t('common.enum'), 'symbol-enum']],
-    ['record', [t('common.record'), 'symbol-struct']],
-    ['enumConstant', [t('entryDescription.enumConstant'), 'symbol-enum-member']],
-    ['field', [t('entryDescription.field'), 'symbol-field']],
-    ['method', [t('entryDescription.method'), 'symbol-method']],
-    ['constructor', [t('entryDescription.constructor'), 'symbol-constructor']],
-    ['parameter', [t('entryDescription.parameter'), 'symbol-parameter']],
-    ['local', [t('entryDescription.localVariable'), 'symbol-variable']],
-]);
+const kinds = () =>
+    new Map<SymbolKind, [label: string, icon: string]>([
+        ['class', [t('common.class'), 'symbol-class']],
+        ['interface', [t('common.interface'), 'symbol-interface']],
+        ['annotation', [t('common.annotation'), 'symbol-interface']],
+        ['enum', [t('common.enum'), 'symbol-enum']],
+        ['record', [t('common.record'), 'symbol-struct']],
+        ['enumConstant', [t('entryDescription.enumConstant'), 'symbol-enum-member']],
+        ['field', [t('entryDescription.field'), 'symbol-field']],
+        ['method', [t('entryDescription.method'), 'symbol-method']],
+        ['constructor', [t('entryDescription.constructor'), 'symbol-constructor']],
+        ['parameter', [t('entryDescription.parameter'), 'symbol-parameter']],
+        ['local', [t('entryDescription.localVariable'), 'symbol-variable']],
+    ]);
 
 const dotted = (name: string) => name.replace(/\//g, '.');
 
@@ -89,25 +90,44 @@ export const describeEntry = (info: EntryInfo | TokenInfo): PaneEntry => {
     }
 
     const name = info.renameName || text || info.name;
-    const topLevelClass = isClass && !entry.name.includes('$') || (isConstructor && entry.kind === 'method' && !entry.owner.includes('$'));
+    const topLevelClass =
+        (isClass && !entry.name.includes('$')) || (isConstructor && entry.kind === 'method' && !entry.owner.includes('$'));
     let lockedReason: string | undefined;
     if (!info.renamable) {
-        lockedReason = !info.inJar && entry.kind !== 'local' ? t('entryDescription.notPartOfTheJarIt')
-            : entry.kind === 'local' && !entry.parameter ? t('common.enigmaCannotRenameLocalVariablesOnly')
-                : t('entryDescription.thisNameCannotBeChangedIt');
+        lockedReason =
+            !info.inJar && entry.kind !== 'local'
+                ? t('entryDescription.notPartOfTheJarIt')
+                : entry.kind === 'local' && !entry.parameter
+                  ? t('common.enigmaCannotRenameLocalVariablesOnly')
+                  : t('entryDescription.thisNameCannotBeChangedIt');
     }
 
     const actions: PaneEntry['actions'] = [];
     if (info.navigable) {
-        actions.push({ id: 'declaration', label: t('entryDescription.declaration'), icon: 'go-to-file', title: t('entryDescription.goToTheDeclaration') });
+        actions.push({
+            id: 'declaration',
+            label: t('entryDescription.declaration'),
+            icon: 'go-to-file',
+            title: t('entryDescription.goToTheDeclaration'),
+        });
     }
 
     if (isClass || isMethod) {
-        actions.push({ id: 'inheritance', label: t('common.inheritance'), icon: 'type-hierarchy-sub', title: t('entryDescription.showWhereThisIsInheritedAnd') });
+        actions.push({
+            id: 'inheritance',
+            label: t('common.inheritance'),
+            icon: 'type-hierarchy-sub',
+            title: t('entryDescription.showWhereThisIsInheritedAnd'),
+        });
     }
 
     if ((isClass || isMethod) && !isConstructor) {
-        actions.push({ id: 'implementations', label: t('common.implementations'), icon: 'symbol-interface', title: t('entryDescription.showWhatImplementsThis') });
+        actions.push({
+            id: 'implementations',
+            label: t('common.implementations'),
+            icon: 'symbol-interface',
+            title: t('entryDescription.showWhatImplementsThis'),
+        });
     }
 
     if (entry.kind !== 'local' && info.inJar) {
@@ -126,7 +146,9 @@ export const describeEntry = (info: EntryInfo | TokenInfo): PaneEntry => {
         renamable: info.renamable,
         nameHint: topLevelClass
             ? t('entryDescription.enterToRenameUseToSeparate')
-            : isConstructor ? t('entryDescription.enterToRenameTheClass') : t('entryDescription.enterToRenameEveryUseOf'),
+            : isConstructor
+              ? t('entryDescription.enterToRenameTheClass')
+              : t('entryDescription.enterToRenameEveryUseOf'),
         lockedReason,
         documentable: info.documentable,
         javadoc: info.javadoc ?? '',
@@ -138,4 +160,4 @@ export const describeEntry = (info: EntryInfo | TokenInfo): PaneEntry => {
             : null,
         actions,
     };
-}
+};

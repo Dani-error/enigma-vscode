@@ -79,7 +79,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<Enigma
     const editor = new EditorController(backend, documents, editors);
     const editing = new Editing(backend);
     const entryPane = new EntryPane(context.extensionUri, backend, documents, editing, () => project.isOpen);
-    const collabPane = new CollabPane(context, backend, () => project.isOpen, action => project.confirmDiscard(action));
+    const collabPane = new CollabPane(
+        context,
+        backend,
+        () => project.isOpen,
+        action => project.confirmDiscard(action),
+    );
     const statsPanel = new StatsPanel(context, backend, index, editors, () => project.state);
     const jarOpener = new JarOpener(project);
     const classes = new ClassViews(context.extensionUri, index, () => project.isOpen);
@@ -92,8 +97,25 @@ export async function activate(context: vscode.ExtensionContext): Promise<Enigma
     const layout = new Layout(project, index, classes, structure, entryPane, output);
 
     context.subscriptions.push(
-        output, backend, index, reporter, project, documents, editors, editor, structure, analysis, entryPane, collabPane, statsPanel, jarOpener,
-        classes, classProgress, layout, mcp, registerLanguageModelTools(aiTools),
+        output,
+        backend,
+        index,
+        reporter,
+        project,
+        documents,
+        editors,
+        editor,
+        structure,
+        analysis,
+        entryPane,
+        collabPane,
+        statsPanel,
+        jarOpener,
+        classes,
+        classProgress,
+        layout,
+        mcp,
+        registerLanguageModelTools(aiTools),
         registerLanguageFeatures(backend, index, documents, editing, () => project.isOpen),
         project.onDidChange(state => {
             index.jarName = state?.jarPath ? path.basename(state.jarPath) : 'jar';
@@ -116,8 +138,24 @@ export async function activate(context: vscode.ExtensionContext): Promise<Enigma
     );
 
     const enigma: Enigma = {
-        context, output, backend, index, reporter, project, documents, editors, editor, editing, classes, classProgress, structure, analysis,
-        entryPane, collabPane, statsPanel, jarOpener,
+        context,
+        output,
+        backend,
+        index,
+        reporter,
+        project,
+        documents,
+        editors,
+        editor,
+        editing,
+        classes,
+        classProgress,
+        structure,
+        analysis,
+        entryPane,
+        collabPane,
+        statsPanel,
+        jarOpener,
     };
     const register = commandRegistry(context, error => reporter.report(error));
     const targets = new Targets(backend, documents, project);
@@ -141,8 +179,23 @@ export async function activate(context: vscode.ExtensionContext): Promise<Enigma
     };
 
     return {
-        backend, project, index, documents, editing, editor, jarOpener, entryPane, collabPane, statsPanel,
-        analysis: analysis.provider, structure, structureView: structure.view, classTrees: classes.trees, classViews: classes.views, classDecorations: classes.decorations, mcp,
+        backend,
+        project,
+        index,
+        documents,
+        editing,
+        editor,
+        jarOpener,
+        entryPane,
+        collabPane,
+        statsPanel,
+        analysis: analysis.provider,
+        structure,
+        structureView: structure.view,
+        classTrees: classes.trees,
+        classViews: classes.views,
+        classDecorations: classes.decorations,
+        mcp,
         javaInstallations: () => discoverInstallations().filter(installation => installation.version >= MINIMUM_JAVA),
     };
 }

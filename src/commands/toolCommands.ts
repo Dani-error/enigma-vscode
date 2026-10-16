@@ -5,8 +5,12 @@ import { Register } from './registry';
 import { t } from '../l10n';
 
 const quote = (value: string) => {
-    return /^[\w@%+=:,./-]+$/.test(value) ? value : process.platform === 'win32' ? `"${value.replace(/"/g, '\\"')}"` : `'${value.replace(/'/g, '\'\\\'\'')}'`;
-}
+    return /^[\w@%+=:,./-]+$/.test(value)
+        ? value
+        : process.platform === 'win32'
+          ? `"${value.replace(/"/g, '\\"')}"`
+          : `'${value.replace(/'/g, "'\\''")}'`;
+};
 
 /** Enigma's program that has no window, run in a terminal: its dedicated server. */
 export const registerToolCommands = (register: Register, { backend, project }: Enigma) => {
@@ -17,18 +21,30 @@ export const registerToolCommands = (register: Register, { backend, project }: E
         terminal.show();
         // Enigma's own logging configuration also writes build/logs into the working directory, which is the user's
         // workspace here. The backend's configuration logs to the console only.
-        terminal.sendText(`${quote(runtime.executable)} -Dtinylog.configuration=enigma-vscode-tinylog.properties -cp ${quote(backend.classpath())} ${mainClass} ${args}`.trim());
+        terminal.sendText(
+            `${quote(runtime.executable)} -Dtinylog.configuration=enigma-vscode-tinylog.properties -cp ${quote(backend.classpath())} ${mainClass} ${args}`.trim(),
+        );
     };
 
     register('enigma.startDedicatedServer', async () => {
-        const jar = project.state?.jarPath ?? (await vscode.window.showOpenDialog({ title: t('toolCommands.jarToServe'), filters: { [t('common.javaArchives')]: ['jar'] } }))?.[0]?.fsPath;
+        const jar =
+            project.state?.jarPath ??
+            (
+                await vscode.window.showOpenDialog({
+                    title: t('toolCommands.jarToServe'),
+                    filters: { [t('common.javaArchives')]: ['jar'] },
+                })
+            )?.[0]?.fsPath;
         if (!jar) {
             return;
         }
 
-        const mappings = project.state?.mappingsPath ?? await vscode.window.showInputBox({
-            title: t('toolCommands.dedicatedServer13Mappings'), prompt: t('toolCommands.pathOfTheMappingsTheServer'),
-        });
+        const mappings =
+            project.state?.mappingsPath ??
+            (await vscode.window.showInputBox({
+                title: t('toolCommands.dedicatedServer13Mappings'),
+                prompt: t('toolCommands.pathOfTheMappingsTheServer'),
+            }));
         if (!mappings) {
             return;
         }
@@ -38,7 +54,11 @@ export const registerToolCommands = (register: Register, { backend, project }: E
             return;
         }
 
-        const password = await vscode.window.showInputBox({ title: t('toolCommands.dedicatedServer33Password'), password: true, prompt: t('toolCommands.leaveEmptyForNone') });
+        const password = await vscode.window.showInputBox({
+            title: t('toolCommands.dedicatedServer33Password'),
+            password: true,
+            prompt: t('toolCommands.leaveEmptyForNone'),
+        });
         if (password === undefined) {
             return;
         }
@@ -55,4 +75,4 @@ export const registerToolCommands = (register: Register, { backend, project }: E
 
         await runInTerminal(t('toolCommands.terminalName'), 'org.quiltmc.enigma.network.DedicatedEnigmaServer', args.join(' '));
     });
-}
+};

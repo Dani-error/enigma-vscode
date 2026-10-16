@@ -5,7 +5,9 @@ import { JavaRuntime, MINIMUM_JAVA, describeFailure, discoverInstallations, find
 const PREFERRED_VERSIONS = [21, 17];
 
 async function chooseJdk(): Promise<JavaRuntime & { home: string }> {
-    const usable = discoverInstallations().filter((jdk): jdk is JavaRuntime & { home: string } => jdk.version >= MINIMUM_JAVA && !!jdk.home);
+    const usable = discoverInstallations().filter(
+        (jdk): jdk is JavaRuntime & { home: string } => jdk.version >= MINIMUM_JAVA && !!jdk.home,
+    );
     const preferred = PREFERRED_VERSIONS.map(version => usable.find(jdk => jdk.version === version)).find(jdk => jdk);
     if (preferred) {
         return preferred;

@@ -1,18 +1,18 @@
 {
-	"comments": {
-		"lineComment": "//",
-		"blockComment": ["/*", "*/"]
-	},
-	"brackets": [
-		["{", "}"],
-		["[", "]"],
-		["(", ")"]
-	],
-	"wordPattern": "[\\p{L}\\p{Nl}\\p{Pc}\\p{Sc}][\\p{L}\\p{Nl}\\p{Nd}\\p{Mn}\\p{Mc}\\p{Pc}\\p{Sc}]*",
-	"folding": {
-		"markers": {
-			"start": "^\\s*//\\s*(?:(?:#?region\\b)|(?:<editor-fold\\b))",
-			"end": "^\\s*//\\s*(?:(?:#?endregion\\b)|(?:</editor-fold>))"
-		}
-	}
+    "comments": {
+        "lineComment": "//",
+        "blockComment": ["/*", "*/"]
+    },
+    "brackets": [
+        ["{", "}"],
+        ["[", "]"],
+        ["(", ")"]
+    ],
+    "wordPattern": "[\\p{L}\\p{Nl}\\p{Pc}\\p{Sc}][\\p{L}\\p{Nl}\\p{Nd}\\p{Mn}\\p{Mc}\\p{Pc}\\p{Sc}]*",
+    "folding": {
+        "markers": {
+            "start": "^\\s*//\\s*(?:(?:#?region\\b)|(?:<editor-fold\\b))",
+            "end": "^\\s*//\\s*(?:(?:#?endregion\\b)|(?:</editor-fold>))"
+        }
+    }
 }

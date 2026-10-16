@@ -6,4 +6,4 @@ import { EntryRef } from '../engine/protocol';
 export const declarationOf = async (backend: Backend, index: ClassIndex, entry: EntryRef) => {
     const location = await backend.request('nav/declaration', { entry });
     return location ? index.location(location) : undefined;
-}
+};

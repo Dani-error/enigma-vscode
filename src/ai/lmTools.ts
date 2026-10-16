@@ -12,14 +12,24 @@ export const registerLanguageModelTools = (tools: AiTool[]) => {
         return new vscode.Disposable(() => undefined);
     }
 
-    return vscode.Disposable.from(...tools.map(tool => vscode.lm.registerTool<object>(tool.name, {
-        prepareInvocation: ({ input }) => {
-            const change = tool.describeChange?.(input);
-            return change ? {
-                invocationMessage: change.message.split('\n')[0].replace(/\?$/, ''),
-                confirmationMessages: { title: change.title, message: `${change.message}\n\n${t('lmTools.thisChangesTheMappingsItCan')}` },
-            } : undefined;
-        },
-        invoke: async ({ input }) => new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(toText(await tool.run(input ?? {})))]),
-    })));
-}
+    return vscode.Disposable.from(
+        ...tools.map(tool =>
+            vscode.lm.registerTool<object>(tool.name, {
+                prepareInvocation: ({ input }) => {
+                    const change = tool.describeChange?.(input);
+                    return change
+                        ? {
+                              invocationMessage: change.message.split('\n')[0].replace(/\?$/, ''),
+                              confirmationMessages: {
+                                  title: change.title,
+                                  message: `${change.message}\n\n${t('lmTools.thisChangesTheMappingsItCan')}`,
+                              },
+                          }
+                        : undefined;
+                },
+                invoke: async ({ input }) =>
+                    new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(toText(await tool.run(input ?? {})))]),
+            }),
+        ),
+    );
+};

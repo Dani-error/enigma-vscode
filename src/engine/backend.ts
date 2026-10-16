@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import * as rpc from 'vscode-jsonrpc/node';
 import { JavaRuntime, JavaSearch, environmentFor, findJava } from './java';
 import { describeJavaFailure } from './javaText';
-import { ArgumentsOf, EnvironmentInfo, ErrorCode, ErrorData, Method, Notifications, ResultOf } from './protocol';
+import { ArgumentsOf, EnvironmentInfo, ErrorCode, ErrorData, Method, Notifications, ResultOf, isErrorCode } from './protocol';
 import { settings } from '../config';
 import { t } from '../l10n';
 import { describeSaid } from './messages';
@@ -14,7 +14,11 @@ import { TaskProgress } from './taskProgress';
 
 /** An error reported by the engine that is meant to be read by the user, as opposed to a bug. */
 export class BackendError extends Error {
-    constructor(message: string, readonly code: ErrorCode, readonly data?: ErrorData) {
+    constructor(
+        message: string,
+        readonly code: ErrorCode,
+        readonly data?: ErrorData,
+    ) {
         super(message);
     }
 }
@@ -32,7 +36,6 @@ const STOP_TIMEOUT_MS = 5000;
 type Emitters = { [N in keyof Notifications]: vscode.EventEmitter<Notifications[N]> };
 
 export class Backend implements vscode.Disposable {
-
     private process?: ChildProcessWithoutNullStreams;
     private connection?: rpc.MessageConnection;
     private starting?: Promise<EnvironmentInfo>;
@@ -70,7 +73,10 @@ export class Backend implements vscode.Disposable {
     /** The Java runtime the engine was last started with. */
     runtime?: JavaRuntime;
 
-    constructor(private readonly context: vscode.ExtensionContext, readonly output: vscode.LogOutputChannel) {
+    constructor(
+        private readonly context: vscode.ExtensionContext,
+        readonly output: vscode.LogOutputChannel,
+    ) {
         this.emitters['progress'].event(params => this.progress.handle(params));
     }
 
@@ -186,7 +192,10 @@ export class Backend implements vscode.Disposable {
     }
 
     private listen(connection: rpc.MessageConnection): void {
-        const forward = <N extends keyof Notifications>(name: N, adapt: (params: Notifications[N]) => Notifications[N] = params => params) => {
+        const forward = <N extends keyof Notifications>(
+            name: N,
+            adapt: (params: Notifications[N]) => Notifications[N] = params => params,
+        ) => {
             connection.onNotification(name, (params: Notifications[N]) => this.emitters[name].fire(adapt(params)));
         };
         for (const name of Object.keys(this.emitters) as (keyof Notifications)[]) {
@@ -236,12 +245,12 @@ export class Backend implements vscode.Disposable {
             if (error instanceof rpc.ResponseError) {
                 // answers the callers know how to handle; anything else is a failure of the engine
                 const data = error.data as ErrorData | undefined;
-                if (error.code === ErrorCode.NoProject || error.code === ErrorCode.UserError || error.code === ErrorCode.Stale) {
+                if (isErrorCode(error.code)) {
                     throw new BackendError(describeSaid(error.message, data), error.code, data);
                 }
 
                 this.output.error(`${method} failed: ${error.message}\n${data && 'stackTrace' in data ? data.stackTrace : ''}`);
-                throw new Error(`Enigma: ${error.message}`);
+                throw new Error(`Enigma: ${error.message}`, { cause: error });
             }
 
             throw error;

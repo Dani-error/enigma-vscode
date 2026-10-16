@@ -54,9 +54,13 @@ export class CollabPane implements vscode.WebviewViewProvider, vscode.Disposable
         view.webview.options = webviewOptions(this.context.extensionUri);
         view.webview.html = page(view.webview, this.context.extensionUri, 'collab', t('collabPane.collaboration'));
         view.webview.onDidReceiveMessage((message: FromCollabPage) => void this.onMessage(message), undefined, this.disposables);
-        view.onDidDispose(() => {
-            this.view = undefined;
-        }, undefined, this.disposables);
+        view.onDidDispose(
+            () => {
+                this.view = undefined;
+            },
+            undefined,
+            this.disposables,
+        );
         this.updateBadge();
     }
 
@@ -72,7 +76,12 @@ export class CollabPane implements vscode.WebviewViewProvider, vscode.Disposable
         if (this.view) {
             const others = this.state.state === 'not_connected' ? 0 : this.state.users.length;
             this.view.badge = others > 0 ? { value: others, tooltip: t('collabPane.connected', others) } : undefined;
-            this.view.description = this.state.state === 'hosting' ? t('collabPage.hosting') : this.state.state === 'connected' ? t('collabPage.connected') : undefined;
+            this.view.description =
+                this.state.state === 'hosting'
+                    ? t('collabPage.hosting')
+                    : this.state.state === 'connected'
+                      ? t('collabPage.connected')
+                      : undefined;
         }
     }
 
@@ -141,7 +150,7 @@ export class CollabPane implements vscode.WebviewViewProvider, vscode.Disposable
                     const { username, password } = message;
                     await this.context.globalState.update('enigma.collab.username', username);
                     if (message.type === 'connect') {
-                        if (!await this.confirmDiscard(t('collabPane.doYouWantToSaveThem'))) {
+                        if (!(await this.confirmDiscard(t('collabPane.doYouWantToSaveThem')))) {
                             this.post({ type: 'failed', message: t('collabPane.notConnectedYourMappingsHaveUnsaved') });
                             return;
                         }
@@ -163,10 +172,14 @@ export class CollabPane implements vscode.WebviewViewProvider, vscode.Disposable
 
                 break;
             case 'disconnect':
-                await this.backend.request('collab/disconnect').then(undefined, error => void vscode.window.showErrorMessage(`Enigma: ${problemOf(error).message}`));
+                await this.backend
+                    .request('collab/disconnect')
+                    .then(undefined, error => void vscode.window.showErrorMessage(`Enigma: ${problemOf(error).message}`));
                 break;
             case 'chat':
-                await this.backend.request('collab/sendMessage', { text: message.text }).then(undefined, error => void vscode.window.showErrorMessage(`Enigma: ${problemOf(error).message}`));
+                await this.backend
+                    .request('collab/sendMessage', { text: message.text })
+                    .then(undefined, error => void vscode.window.showErrorMessage(`Enigma: ${problemOf(error).message}`));
                 break;
             case 'navigate':
                 await vscode.commands.executeCommand('enigma.navigateTo', message.entry);
@@ -175,6 +188,8 @@ export class CollabPane implements vscode.WebviewViewProvider, vscode.Disposable
     }
 
     dispose(): void {
-        this.disposables.forEach(disposable => disposable.dispose());
+        for (const disposable of this.disposables) {
+            disposable.dispose();
+        }
     }
 }

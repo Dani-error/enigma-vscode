@@ -15,21 +15,23 @@ const MAX_LISTED = 80;
 
 export interface AiTool extends ToolDescription {
     /** What an assistant is about to change, for asking the user. Only for tools that change something. */
-    describeChange?(input: any): { title: string; message: string };
+    describeChange?(input: unknown): { title: string; message: string };
     /** @returns the answer for the model: text, or something to be shown as JSON */
-    run(input: any): Promise<unknown>;
+    run(input: unknown): Promise<unknown>;
 }
 
 export const describeEntry = (entry: EntryRef) => {
-    return entry.kind === 'class' ? `class ${entry.name}`
-        : entry.kind === 'local' ? `${entry.parameter ? 'parameter' : 'local variable'} ${entry.index} of ${entry.owner}.${entry.method}${entry.desc}`
-            : `${entry.kind} ${entry.owner}.${entry.name}${entry.kind === 'method' ? entry.desc : ''}`;
-}
+    return entry.kind === 'class'
+        ? `class ${entry.name}`
+        : entry.kind === 'local'
+          ? `${entry.parameter ? 'parameter' : 'local variable'} ${entry.index} of ${entry.owner}.${entry.method}${entry.desc}`
+          : `${entry.kind} ${entry.owner}.${entry.name}${entry.kind === 'method' ? entry.desc : ''}`;
+};
 
 /** Turns an answer into the text a model gets. */
 export const toText = (answer: unknown) => {
     return typeof answer === 'string' ? answer : JSON.stringify(answer, undefined, 1);
-}
+};
 
 export const createAiTools = (backend: Backend, index: ClassIndex, state: () => OpenState | undefined): AiTool[] => {
     const requireProject = (): OpenState => {
@@ -44,10 +46,13 @@ export const createAiTools = (backend: Backend, index: ClassIndex, state: () => 
     /** A class by the name the model was given, which is the one it has now or the one it had in the jar. */
     const classOf = (name: unknown): ClassItem => {
         requireProject();
-        const wanted = String(name ?? '').replace(/\.java$/, '').replace(/\./g, '/');
+        const given = typeof name === 'string' ? name : '';
+        const wanted = given.replace(/\.java$/, '').replace(/\./g, '/');
         const found = index.get(wanted) ?? index.byName(wanted);
         if (!found) {
-            throw new Error(`There is no class "${name}" in the jar. Names are written with their package and slashes, like com/example/Thing; enigma_list_classes lists them. Inner classes are part of their outer class: read that one.`);
+            throw new Error(
+                `There is no class "${given}" in the jar. Names are written with their package and slashes, like com/example/Thing; enigma_list_classes lists them. Inner classes are part of their outer class: read that one.`,
+            );
         }
 
         return found;
@@ -64,7 +69,11 @@ export const createAiTools = (backend: Backend, index: ClassIndex, state: () => 
 
     const classSummary = (item: ClassItem) => ({ obfuscatedName: item.obf, name: item.deobf, kind: item.kind, named: !item.obfuscated });
     const entrySummary = (info: EntryInfo) => ({
-        name: info.fullName, kind: info.kind, named: !info.obfuscated, ...(info.inJar ? {} : { library: true }), entry: info.entry,
+        name: info.fullName,
+        kind: info.kind,
+        named: !info.obfuscated,
+        ...(info.inJar ? {} : { library: true }),
+        entry: info.entry,
     });
     /** What an edit came to, for the model. */
     const outcome = (result: EditResult) => {
@@ -103,7 +112,9 @@ export const createAiTools = (backend: Backend, index: ClassIndex, state: () => 
             const limit = Math.min(Math.max(1, input.limit ?? MAX_CLASSES), MAX_CLASSES);
             return {
                 total: all.length,
-                ...(all.length > limit ? { note: `Only the first ${limit} are listed. Ask for one package at a time to see the rest.` } : {}),
+                ...(all.length > limit
+                    ? { note: `Only the first ${limit} are listed. Ask for one package at a time to see the rest.` }
+                    : {}),
                 classes: all.slice(0, limit).map(classSummary),
             };
         },
@@ -115,17 +126,30 @@ export const createAiTools = (backend: Backend, index: ClassIndex, state: () => 
             const to = Math.min(lines.length, from + MAX_LINES - 1);
             const header = [
                 `// ${item.deobf}${item.deobf === item.obf ? '' : ` (in the jar: ${item.obf})`}`,
-                ...(from > 1 || to < lines.length ? [`// Lines ${from} to ${to} of ${lines.length}.${to < lines.length ? ` Continue with fromLine ${to + 1}.` : ''}`] : []),
+                ...(from > 1 || to < lines.length
+                    ? [`// Lines ${from} to ${to} of ${lines.length}.${to < lines.length ? ` Continue with fromLine ${to + 1}.` : ''}`]
+                    : []),
             ];
             return `${header.join('\n')}\n${lines.slice(from - 1, to).join('\n')}`;
         },
         enigma_list_members: async (input: { class: string }) => {
             const item = classOf(input.class);
-            const root = await backend.request('structure', { class: item.obf, obfuscation: 'all', documentation: 'all', sorting: 'default' });
+            const root = await backend.request('structure', {
+                class: item.obf,
+                obfuscation: 'all',
+                documentation: 'all',
+                sorting: 'default',
+            });
             const members: object[] = [];
             const walk = (node: TreeNodeResult) => {
                 if (node.entry) {
-                    members.push({ shown: node.label, kind: node.kind, named: node.tokenType !== 'obfuscated', modifiers: node.modifiers || undefined, entry: node.entry });
+                    members.push({
+                        shown: node.label,
+                        kind: node.kind,
+                        named: node.tokenType !== 'obfuscated',
+                        modifiers: node.modifiers || undefined,
+                        entry: node.entry,
+                    });
                 }
 
                 node.children.forEach(walk);
@@ -136,15 +160,27 @@ export const createAiTools = (backend: Backend, index: ClassIndex, state: () => 
         enigma_search: async (input: { query: string; kinds?: SearchType[] }) => {
             requireProject();
             const results = await backend.request('search', { query: String(input.query ?? ''), types: input.kinds ?? [], limit: 60 });
-            return results.map(result => ({ name: result.fullName, kind: result.kind, named: result.deobfuscated, in: result.container ?? undefined, entry: result.entry }));
+            return results.map(result => ({
+                name: result.fullName,
+                kind: result.kind,
+                named: result.deobfuscated,
+                in: result.container ?? undefined,
+                entry: result.entry,
+            }));
         },
         enigma_describe: async (input: { entry: EntryRef }) => {
             const info = await backend.request('entry/info', { entry: entryOf(input.entry) });
             return {
-                name: info.fullName, obfuscatedName: info.obfName, kind: info.kind, named: !info.obfuscated,
+                name: info.fullName,
+                obfuscatedName: info.obfName,
+                kind: info.kind,
+                named: !info.obfuscated,
                 modifiers: info.modifiers.join(' ') || undefined,
-                signature: info.descriptor, type: info.type ?? undefined,
-                declaredIn: info.owner, extends: info.superClass ?? undefined, implements: info.interfaces?.length ? info.interfaces : undefined,
+                signature: info.descriptor,
+                type: info.type ?? undefined,
+                declaredIn: info.owner,
+                extends: info.superClass ?? undefined,
+                implements: info.interfaces?.length ? info.interfaces : undefined,
                 javadoc: info.javadoc ?? undefined,
                 ...(info.inJar ? {} : { library: 'Not part of the jar: it cannot be renamed.' }),
                 ...(info.renamable ? {} : { renamable: false }),
@@ -162,11 +198,17 @@ export const createAiTools = (backend: Backend, index: ClassIndex, state: () => 
         },
         enigma_callers: async (input: { entry: EntryRef }) => {
             const callers = await backend.request('calls/incoming', { entry: entryOf(input.entry) });
-            return { total: callers.length, callers: callers.slice(0, MAX_LISTED).map(caller => ({ ...entrySummary(caller), times: caller.sites.length })) };
+            return {
+                total: callers.length,
+                callers: callers.slice(0, MAX_LISTED).map(caller => ({ ...entrySummary(caller), times: caller.sites.length })),
+            };
         },
         enigma_callees: async (input: { entry: EntryRef }) => {
             const callees = await backend.request('calls/outgoing', { entry: entryOf(input.entry) });
-            return { total: callees.length, uses: callees.slice(0, MAX_LISTED).map(callee => ({ ...entrySummary(callee), times: callee.sites.length })) };
+            return {
+                total: callees.length,
+                uses: callees.slice(0, MAX_LISTED).map(callee => ({ ...entrySummary(callee), times: callee.sites.length })),
+            };
         },
         enigma_hierarchy: async (input: { class: string }) => {
             const item = classOf(input.class);
@@ -174,17 +216,33 @@ export const createAiTools = (backend: Backend, index: ClassIndex, state: () => 
                 backend.request('hierarchy/supertypes', { class: item.obf }),
                 backend.request('hierarchy/subtypes', { class: item.obf }),
             ]);
-            return { class: classSummary(item), extendsOrImplements: supertypes.map(entrySummary), extendedOrImplementedBy: subtypes.slice(0, MAX_LISTED).map(entrySummary) };
+            return {
+                class: classSummary(item),
+                extendsOrImplements: supertypes.map(entrySummary),
+                extendedOrImplementedBy: subtypes.slice(0, MAX_LISTED).map(entrySummary),
+            };
         },
         enigma_rename: async (input: { entry: EntryRef; newName: string }) => {
             // the user was asked already; what the engine warns about is told to the model with the result
-            const result = outcome(await backend.request('entry/rename', { entry: entryOf(input.entry), newName: String(input.newName ?? ''), confirmWarnings: true }));
+            const result = outcome(
+                await backend.request('entry/rename', {
+                    entry: entryOf(input.entry),
+                    newName: String(input.newName ?? ''),
+                    confirmWarnings: true,
+                }),
+            );
             return result.applied
                 ? { renamed: true, to: input.newName, ...(result.messages.length > 0 ? { messages: result.messages } : {}) }
                 : { renamed: false, messages: result.messages.length > 0 ? result.messages : ['The engine did not accept this name.'] };
         },
         enigma_set_javadoc: async (input: { entry: EntryRef; javadoc: string }) => {
-            const result = outcome(await backend.request('entry/setJavadoc', { entry: entryOf(input.entry), javadoc: String(input.javadoc ?? ''), confirmWarnings: true }));
+            const result = outcome(
+                await backend.request('entry/setJavadoc', {
+                    entry: entryOf(input.entry),
+                    javadoc: String(input.javadoc ?? ''),
+                    confirmWarnings: true,
+                }),
+            );
             return { written: result.applied, ...(result.messages.length > 0 ? { messages: result.messages } : {}) };
         },
     };
@@ -196,9 +254,11 @@ export const createAiTools = (backend: Backend, index: ClassIndex, state: () => 
         }),
         enigma_set_javadoc: (input: { entry: EntryRef; javadoc: string }) => ({
             title: t('tools.writeJavadocInEnigma'),
-            message: input.javadoc?.trim() ? `${t('tools.setTheJavadocOfTo', describeEntry(input.entry))}\n\n${input.javadoc}` : t('tools.removeTheJavadocOf', describeEntry(input.entry)),
+            message: input.javadoc?.trim()
+                ? `${t('tools.setTheJavadocOfTo', describeEntry(input.entry))}\n\n${input.javadoc}`
+                : t('tools.removeTheJavadocOf', describeEntry(input.entry)),
         }),
     };
 
     return TOOLS.map(tool => ({ ...tool, run: run[tool.name], describeChange: describeChange[tool.name] }));
-}
+};

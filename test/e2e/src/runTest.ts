@@ -10,23 +10,33 @@ import { runTests } from '@vscode/test-electron';
  * the interface really looks like: where the panes are, how the code is highlighted.
  */
 async function capture(port: number, file: string): Promise<void> {
-    const targets = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json() as { type: string; url: string; webSocketDebuggerUrl: string }[];
+    const targets = (await (await fetch(`http://127.0.0.1:${port}/json/list`)).json()) as {
+        type: string;
+        url: string;
+        webSocketDebuggerUrl: string;
+    }[];
     const page = targets.find(target => target.type === 'page' && target.url.includes('workbench'));
     if (!page) {
         throw new Error(`No window found among ${targets.map(target => target.url).join(', ')}`);
     }
 
-    const socket = new (globalThis as any).WebSocket(page.webSocketDebuggerUrl);
+    const socket = new WebSocket(page.webSocketDebuggerUrl);
     try {
-        await new Promise((resolve, reject) => {
-            socket.onopen = resolve;
+        await new Promise<void>((resolve, reject) => {
+            socket.onopen = () => resolve();
             socket.onerror = () => reject(new Error('could not connect to the window'));
         });
         const data = await new Promise<string>((resolve, reject) => {
-            socket.onmessage = (event: { data: unknown }) => {
-                const message = JSON.parse(String(event.data));
-                if (message.id === 1) {
-                    message.error ? reject(new Error(message.error.message)) : resolve(message.result.data);
+            socket.onmessage = event => {
+                const message = JSON.parse(String(event.data)) as { id: number; result?: { data: string }; error?: { message: string } };
+                if (message.id !== 1) {
+                    return;
+                }
+
+                if (message.error || !message.result) {
+                    reject(new Error(message.error?.message ?? 'no picture'));
+                } else {
+                    resolve(message.result.data);
                 }
             };
             socket.send(JSON.stringify({ id: 1, method: 'Page.captureScreenshot', params: { format: 'png' } }));
@@ -40,7 +50,7 @@ async function capture(port: number, file: string): Promise<void> {
 /** Serves the requests of the tests for screenshots: a file "name.request" is answered with "name.png". */
 function serveScreenshots(directory: string, port: number): NodeJS.Timeout {
     let busy = false;
-    return setInterval(async () => {
+    const serve = async () => {
         if (busy) {
             return;
         }
@@ -60,7 +70,8 @@ function serveScreenshots(directory: string, port: number): NodeJS.Timeout {
         } finally {
             busy = false;
         }
-    }, 100);
+    };
+    return setInterval(() => void serve(), 100);
 }
 
 async function main(): Promise<void> {
@@ -126,8 +137,10 @@ async function main(): Promise<void> {
                 '--disable-workspace-trust',
                 '--skip-welcome',
                 '--skip-release-notes',
-                '--user-data-dir', path.join(temp, 'user-data'),
-                '--extensions-dir', path.join(temp, 'extensions'),
+                '--user-data-dir',
+                path.join(temp, 'user-data'),
+                '--extensions-dir',
+                path.join(temp, 'extensions'),
                 ...(screenshots ? [`--remote-debugging-port=${debugPort}`] : []),
             ],
         });

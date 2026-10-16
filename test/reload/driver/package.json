@@ -5,7 +5,11 @@
   "publisher": "enigma-vscode",
   "version": "0.0.0",
   "private": true,
-  "engines": { "vscode": "^1.106.0" },
+  "engines": {
+    "vscode": "^1.106.0"
+  },
   "main": "./extension.js",
-  "activationEvents": ["*"]
+  "activationEvents": [
+    "*"
+  ]
 }

@@ -22,21 +22,21 @@ export function page(webview: vscode.Webview, extensionUri: vscode.Uri, name: Pa
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; font-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${title}</title>
-<link rel="stylesheet" href="${built('codicons', 'codicon.css')}">
-<link rel="stylesheet" href="${built('pages', 'panes.css')}">
+<link rel="stylesheet" href="${built('codicons', 'codicon.css').toString()}">
+<link rel="stylesheet" href="${built('pages', 'panes.css').toString()}">
 </head>
 <body>
 <div id="root"></div>
 <script nonce="${nonce}">window.L10N = ${JSON.stringify(pageTexts()).replace(/</g, '\\u003c')};</script>
-<script nonce="${nonce}" src="${built('pages', `${name}.js`)}"></script>
+<script nonce="${nonce}" src="${built('pages', `${name}.js`).toString()}"></script>
 </body>
 </html>`;
 }
 
 export const webviewOptions = (extensionUri: vscode.Uri): vscode.WebviewOptions => {
     return { enableScripts: true, localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'dist')] };
-}
+};
 
 export const problemOf = (error: unknown): Problem => {
     return { severity: 'error', message: error instanceof Error ? error.message : String(error) };
-}
+};

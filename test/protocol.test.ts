@@ -14,7 +14,7 @@ const temp = mkdtempSync(join(tmpdir(), 'enigma-vscode-'));
 const engine = new Engine(temp);
 /** Whether an error names what happened, with this key. */
 function said(error: unknown, key: Problem): boolean {
-    const data = isResponseError(error, ErrorCode.UserError) ? error.data as ErrorData | undefined : undefined;
+    const data = isResponseError(error, ErrorCode.UserError) ? (error.data as ErrorData | undefined) : undefined;
     return data !== undefined && 'key' in data && data.key === key;
 }
 
@@ -28,7 +28,10 @@ try {
 
     const state = await engine.request('project/openJar', { jar: join(fixtures, 'inheritance_tree.jar') });
     assert.equal(state.dirty, false);
-    assert.ok(engine.told.some(told => told.name === 'progress' && told.params.phase === 'begin'), 'progress is reported while opening');
+    assert.ok(
+        engine.told.some(told => told.name === 'progress' && told.params.phase === 'begin'),
+        'progress is reported while opening',
+    );
     assert.ok(engine.told.some(told => told.name === 'progress' && told.params.phase === 'end'));
 
     const classes = await engine.request('classes/list');
@@ -44,7 +47,11 @@ try {
     assert.equal(rename.applied, true, JSON.stringify(rename));
 
     // open classes are refreshed through a notification, then re-read
-    await engine.waitFor('sourceChanged notification for the open class', told => told.name === 'sourceChanged' && told.params.class === 'd', seen);
+    await engine.waitFor(
+        'sourceChanged notification for the open class',
+        told => told.name === 'sourceChanged' && told.params.class === 'd',
+        seen,
+    );
     const after = await engine.request('class/source', { class: 'd' });
     assert.match(after.text, /void doBaseThings\(\)/);
     assert.match((await engine.request('class/source', { class: 'a' })).text, /void doBaseThings\(\)/);
@@ -67,7 +74,9 @@ try {
     assert.match(readFileSync(mappings, 'utf8'), /METHOD a doBaseThings \(\)V/);
 
     // errors come back as JSON-RPC errors with a code
-    await assert.rejects(engine.request('mappings/open', { path: join(temp, 'missing.mapping') }), error => isResponseError(error, ErrorCode.UserError));
+    await assert.rejects(engine.request('mappings/open', { path: join(temp, 'missing.mapping') }), error =>
+        isResponseError(error, ErrorCode.UserError),
+    );
     await assert.rejects(engine.send('no/such/method'), error => isResponseError(error, METHOD_NOT_FOUND));
 
     // The engine only logs failed saves. They must still surface as errors, which relies on the log capturing
@@ -75,7 +84,9 @@ try {
     const unwritable = join(mappings, 'cannot', 'exist.mapping');
     await engine.request('entry/rename', { entry: methodEntry('a', 'a', '()Ljava/lang/String;'), newName: 'getName' });
     // named, not worded: the words are the client's
-    await assert.rejects(engine.request('mappings/save', { path: unwritable, format: 'enigma:enigma_file' }), error => said(error, 'save-failed'));
+    await assert.rejects(engine.request('mappings/save', { path: unwritable, format: 'enigma:enigma_file' }), error =>
+        said(error, 'save-failed'),
+    );
     assert.equal((await engine.request('project/state')).dirty, true, 'a failed save must leave the project dirty');
     assert.equal((await engine.request('mappings/save')).dirty, false);
     assert.match(readFileSync(mappings, 'utf8'), /METHOD a getName \(\)Ljava\/lang\/String;/);
@@ -97,7 +108,7 @@ try {
     console.error(error);
     console.error(`--- backend stderr ---\n${engine.log}`);
 } finally {
-    if (!await engine.close()) {
+    if (!(await engine.close())) {
         failed = true;
         console.error('the backend did not exit after its input was closed');
     }

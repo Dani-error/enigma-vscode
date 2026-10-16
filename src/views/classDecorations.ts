@@ -35,7 +35,11 @@ export class ClassDecorations implements vscode.FileDecorationProvider, vscode.D
 
         // a class nothing was done to yet looks like any other: a jar that was just opened is not a list of faults
         return mapped > 0
-            ? { badge: '◐', tooltip: t('classDecorations.partiallyMappedOfNames', mapped, mappable), color: new vscode.ThemeColor('testing.iconQueued') }
+            ? {
+                  badge: '◐',
+                  tooltip: t('classDecorations.partiallyMappedOfNames', mapped, mappable),
+                  color: new vscode.ThemeColor('testing.iconQueued'),
+              }
             : { badge: '○', tooltip: t('classDecorations.notMappedNoneOfNames', mappable) };
     }
 

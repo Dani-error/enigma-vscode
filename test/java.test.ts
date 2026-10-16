@@ -31,7 +31,10 @@ mkdirSync(none);
 // Like macOS' /usr/bin/java: runs whatever JAVA_HOME points to, and the newest installation otherwise.
 const stubDir = join(temp, 'stub');
 mkdirSync(stubDir);
-writeFileSync(join(stubDir, 'java'), `#!/bin/sh\nif [ -n "$JAVA_HOME" ]; then exec "$JAVA_HOME/bin/java" "$@"; fi\necho 'openjdk version "25.0.1" 2025-10-21 LTS' >&2\n`);
+writeFileSync(
+    join(stubDir, 'java'),
+    `#!/bin/sh\nif [ -n "$JAVA_HOME" ]; then exec "$JAVA_HOME/bin/java" "$@"; fi\necho 'openjdk version "25.0.1" 2025-10-21 LTS' >&2\n`,
+);
 chmodSync(join(stubDir, 'java'), 0o755);
 
 describe('java discovery', { skip }, () => {
@@ -69,7 +72,10 @@ describe('java discovery', { skip }, () => {
         assert.equal(environmentFor(search.runtime, { JAVA_HOME: java8 }).JAVA_HOME, java21);
 
         const installed = discoverInstallations({ searchRoots: [jdks] });
-        assert.deepEqual(installed.map(installation => installation.version), [21, 17, 8]);
+        assert.deepEqual(
+            installed.map(installation => installation.version),
+            [21, 17, 8],
+        );
     });
 
     it('uses JAVA_HOME when it is new enough', async () => {
@@ -80,12 +86,20 @@ describe('java discovery', { skip }, () => {
     });
 
     it('treats the setting as authoritative', async () => {
-        const chosen = await findJava({ configuredHome: java17, env: { JAVA_HOME: java21, PATH: join(java21, 'bin') }, searchRoots: [jdks] });
+        const chosen = await findJava({
+            configuredHome: java17,
+            env: { JAVA_HOME: java21, PATH: join(java21, 'bin') },
+            searchRoots: [jdks],
+        });
         assert.equal(chosen.runtime?.version, 17);
         assert.equal(chosen.runtime?.source, 'the enigma.java.home setting');
 
         // an unusable choice is reported, not silently replaced by something else
-        const tooOld = await findJava({ configuredHome: java8, env: { JAVA_HOME: java21, PATH: join(java21, 'bin') }, searchRoots: [jdks] });
+        const tooOld = await findJava({
+            configuredHome: java8,
+            env: { JAVA_HOME: java21, PATH: join(java21, 'bin') },
+            searchRoots: [jdks],
+        });
         assert.equal(tooOld.runtime, undefined);
         assert.equal(tooOld.configuredInvalid, true);
         assert.match(describeFailure(tooOld), /enigma\.java\.home.*Java 8/);
@@ -129,6 +143,8 @@ describe('java discovery on this machine', () => {
         const search = await findJava({ env: { ...process.env, JAVA_HOME: java8 } });
         assert.ok(search.runtime, describeFailure(search));
         assert.ok(search.runtime.version >= 17);
-        console.log(`    with JAVA_HOME=Java 8, found Java ${search.runtime.version} from ${search.runtime.source}: ${search.runtime.executable}`);
+        console.log(
+            `    with JAVA_HOME=Java 8, found Java ${search.runtime.version} from ${search.runtime.source}: ${search.runtime.executable}`,
+        );
     });
 });

@@ -11,7 +11,10 @@ import { t } from '../l10n';
 
 /** The command behind each of the buttons that lead on from an entry. */
 const ACTION_COMMANDS: Record<EntryAction, string> = {
-    declaration: 'enigma.navigateTo', inheritance: 'enigma.showInheritance', implementations: 'enigma.showImplementations', calls: 'enigma.showCalls',
+    declaration: 'enigma.navigateTo',
+    inheritance: 'enigma.showInheritance',
+    implementations: 'enigma.showImplementations',
+    calls: 'enigma.showCalls',
 };
 
 /**
@@ -62,10 +65,14 @@ export class EntryPane implements vscode.WebviewViewProvider, vscode.Disposable 
         view.webview.options = webviewOptions(this.extensionUri);
         view.webview.html = page(view.webview, this.extensionUri, 'entry', t('entryPane.identifier'));
         view.webview.onDidReceiveMessage((message: FromEntryPage) => void this.onMessage(message), undefined, this.disposables);
-        view.onDidDispose(() => {
-            this.view = undefined;
-            this.dirty = false;
-        }, undefined, this.disposables);
+        view.onDidDispose(
+            () => {
+                this.view = undefined;
+                this.dirty = false;
+            },
+            undefined,
+            this.disposables,
+        );
     }
 
     private post(message: ToEntryPage): void {
@@ -211,14 +218,23 @@ export class EntryPane implements vscode.WebviewViewProvider, vscode.Disposable 
         const info = current.info;
         switch (message.type) {
             case 'validate': {
-                let problem: Problem | null = null;
+                let problem: Problem | null;
                 try {
-                    const result = await this.backend.request('entry/rename', { entry: info.renameEntry, newName: message.name, validateOnly: true });
+                    const result = await this.backend.request('entry/rename', {
+                        entry: info.renameEntry,
+                        newName: message.name,
+                        validateOnly: true,
+                    });
                     const errors = result.messages.filter(candidate => candidate.type === 'error');
                     const warnings = result.messages.filter(candidate => candidate.type === 'warning');
-                    problem = message.name.length === 0 ? { severity: 'error', message: t('common.theNameCannotBeEmpty') }
-                        : errors.length > 0 ? { severity: 'error', message: errors.map(candidate => candidate.text).join(' ') }
-                            : warnings.length > 0 ? { severity: 'warning', message: warnings.map(candidate => candidate.text).join(' ') } : null;
+                    problem =
+                        message.name.length === 0
+                            ? { severity: 'error', message: t('common.theNameCannotBeEmpty') }
+                            : errors.length > 0
+                              ? { severity: 'error', message: errors.map(candidate => candidate.text).join(' ') }
+                              : warnings.length > 0
+                                ? { severity: 'warning', message: warnings.map(candidate => candidate.text).join(' ') }
+                                : null;
                 } catch (error) {
                     problem = problemOf(error);
                 }
@@ -231,7 +247,11 @@ export class EntryPane implements vscode.WebviewViewProvider, vscode.Disposable 
                 try {
                     // warnings are asked about; declining leaves the name as it was typed, to be changed or given up
                     const applied = await this.editing.rename(info.renameEntry, message.name);
-                    this.post({ type: 'renameResult', key: message.key, problem: applied ? null : { severity: 'warning', message: t('entryPane.notRenamed') } });
+                    this.post({
+                        type: 'renameResult',
+                        key: message.key,
+                        problem: applied ? null : { severity: 'warning', message: t('entryPane.notRenamed') },
+                    });
                 } catch (error) {
                     this.post({ type: 'renameResult', key: message.key, problem: problemOf(error) });
                 }
@@ -240,7 +260,11 @@ export class EntryPane implements vscode.WebviewViewProvider, vscode.Disposable 
             case 'saveJavadoc':
                 try {
                     const applied = await this.editing.setJavadoc(info.entry, message.text);
-                    this.post({ type: 'javadocResult', key: message.key, problem: applied ? null : { severity: 'warning', message: t('entryPane.notSaved') } });
+                    this.post({
+                        type: 'javadocResult',
+                        key: message.key,
+                        problem: applied ? null : { severity: 'warning', message: t('entryPane.notSaved') },
+                    });
                 } catch (error) {
                     this.post({ type: 'javadocResult', key: message.key, problem: problemOf(error) });
                 }
@@ -263,6 +287,8 @@ export class EntryPane implements vscode.WebviewViewProvider, vscode.Disposable 
 
     dispose(): void {
         clearTimeout(this.timer);
-        this.disposables.forEach(disposable => disposable.dispose());
+        for (const disposable of this.disposables) {
+            disposable.dispose();
+        }
     }
 }

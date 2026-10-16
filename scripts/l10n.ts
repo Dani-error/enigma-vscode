@@ -82,7 +82,9 @@ for (const file of fs.readdirSync(completions).filter(name => name.endsWith('.js
     }
 }
 
-console.log(`${Object.keys(english).length} texts (${inManifest.length} of the manifest) in ${languages(root).length} languages; ${problems.length} problem(s).`);
+console.log(
+    `${Object.keys(english).length} texts (${inManifest.length} of the manifest) in ${languages(root).length} languages; ${problems.length} problem(s).`,
+);
 problems.forEach(problem => console.log(`  ${problem}`));
 if (problems.length > 0 && process.argv.includes('--check')) {
     process.exit(1);

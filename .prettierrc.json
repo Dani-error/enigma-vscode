@@ -1,0 +1,24 @@
+{
+    "$schema": "https://json.schemastore.org/prettierrc",
+    "printWidth": 140,
+    "tabWidth": 4,
+    "useTabs": false,
+    "semi": true,
+    "singleQuote": true,
+    "jsxSingleQuote": false,
+    "quoteProps": "consistent",
+    "trailingComma": "all",
+    "bracketSpacing": true,
+    "arrowParens": "avoid",
+    "endOfLine": "lf",
+    "overrides": [
+        {
+            "files": ["package.json", "bun.lock"],
+            "options": { "tabWidth": 2 }
+        },
+        {
+            "files": "*.md",
+            "options": { "printWidth": 120, "proseWrap": "preserve" }
+        }
+    ]
+}

@@ -19,7 +19,6 @@ import { t } from '../l10n';
  * showing the state (status.ts).
  */
 export class Project implements vscode.Disposable {
-
     /** The project that is open, if one is. */
     state?: OpenState;
     private documents!: EnigmaDocuments;
@@ -109,7 +108,11 @@ export class Project implements vscode.Disposable {
         this.status.show(current, this.backend.info?.decompilers.find(decompiler => decompiler.id === current?.decompiler)?.name);
         if (current) {
             this.openedHere = true;
-            this.memory.remember({ jar: current.jarPath, mappings: current.mappingsPath ?? undefined, format: current.mappingsFormat ?? undefined });
+            this.memory.remember({
+                jar: current.jarPath,
+                mappings: current.mappingsPath ?? undefined,
+                format: current.mappingsFormat ?? undefined,
+            });
         }
 
         this.recovery.track(previous, current);
@@ -150,14 +153,17 @@ export class Project implements vscode.Disposable {
             return;
         }
 
-        const needsRestart = ['enigma.java.vmArgs', 'enigma.profile', 'enigma.pluginJars']
-            .some(setting => event.affectsConfiguration(setting));
+        const needsRestart = ['enigma.java.vmArgs', 'enigma.profile', 'enigma.pluginJars'].some(setting =>
+            event.affectsConfiguration(setting),
+        );
         if (needsRestart) {
-            void vscode.window.showInformationMessage(t('project.thisEnigmaSettingTakesEffectAfter'), t('project.restartNow')).then(choice => {
-                if (choice) {
-                    void vscode.commands.executeCommand('enigma.restartBackend');
-                }
-            });
+            void vscode.window
+                .showInformationMessage(t('project.thisEnigmaSettingTakesEffectAfter'), t('project.restartNow'))
+                .then(choice => {
+                    if (choice) {
+                        void vscode.commands.executeCommand('enigma.restartBackend');
+                    }
+                });
             return;
         }
 
@@ -183,7 +189,10 @@ export class Project implements vscode.Disposable {
         }
 
         const runtime = this.backend.runtime;
-        vscode.window.setStatusBarMessage(runtime ? t('project.enigmaEngineStartedWithJava', runtime.version) : t('project.enigmaEngineStarted'), 6000);
+        vscode.window.setStatusBarMessage(
+            runtime ? t('project.enigmaEngineStartedWithJava', runtime.version) : t('project.enigmaEngineStarted'),
+            6000,
+        );
 
         const descriptor = this.pendingOpen ?? (this.openedHere ? this.memory.ofWindow : undefined);
         if (descriptor && !this.isOpen && fs.existsSync(descriptor.jar)) {
@@ -226,15 +235,24 @@ export class Project implements vscode.Disposable {
         // Not part of what is waited for. The classes the editor restored in tabs are closed until the jar is open:
         // they come back with it, also when that is later, from "Open Recent Project...".
         void this.setAsideTabs(descriptor.jar);
-        void vscode.window.showInformationMessage(descriptor.mappings ? t('project.enigmaReopenWith', path.basename(descriptor.jar), path.basename(descriptor.mappings)) : t('project.enigmaReopen', path.basename(descriptor.jar)), t('project.reopen'), t('project.alwaysReopen'), t('project.notNow')).then(async choice => {
-            if (choice === t('project.alwaysReopen')) {
-                await settings.update('reopenLastProject', 'always');
-            }
+        void vscode.window
+            .showInformationMessage(
+                descriptor.mappings
+                    ? t('project.enigmaReopenWith', path.basename(descriptor.jar), path.basename(descriptor.mappings))
+                    : t('project.enigmaReopen', path.basename(descriptor.jar)),
+                t('project.reopen'),
+                t('project.alwaysReopen'),
+                t('project.notNow'),
+            )
+            .then(async choice => {
+                if (choice === t('project.alwaysReopen')) {
+                    await settings.update('reopenLastProject', 'always');
+                }
 
-            if ((choice === t('project.reopen') || choice === t('project.alwaysReopen')) && !this.isOpen) {
-                await reopen();
-            }
-        });
+                if ((choice === t('project.reopen') || choice === t('project.alwaysReopen')) && !this.isOpen) {
+                    await reopen();
+                }
+            });
         return this.restoring;
     }
 
@@ -250,11 +268,12 @@ export class Project implements vscode.Disposable {
         const choice = await vscode.window.showWarningMessage(
             t('project.yourMappingsHaveUnsavedChanges'),
             { modal: true, detail: question },
-            t('project.save'), t('project.dontSave'),
+            t('project.save'),
+            t('project.dontSave'),
         );
 
         if (choice === t('project.save')) {
-            return await this.saveMappings() && !this.state?.dirty;
+            return (await this.saveMappings()) && !this.state?.dirty;
         }
 
         if (choice === t('project.dontSave')) {
@@ -269,7 +288,8 @@ export class Project implements vscode.Disposable {
     private async onBackendCrashed(jar: string | undefined): Promise<void> {
         const choice = await vscode.window.showErrorMessage(
             jar ? t('project.theEnigmaEngineStoppedUnexpectedlyChanges') : t('project.theEnigmaEngineStoppedUnexpectedly'),
-            t('project.restart'), t('common.showLog'),
+            t('project.restart'),
+            t('common.showLog'),
         );
 
         if (choice === t('project.restart')) {
@@ -281,7 +301,8 @@ export class Project implements vscode.Disposable {
 
     /** Restarts the engine, bringing the project and its unsaved changes back. */
     async restartBackend(): Promise<void> {
-        const descriptor = this.state ? { jar: this.state.jarPath, mappings: this.state.mappingsPath ?? undefined, format: this.state.mappingsFormat ?? undefined }
+        const descriptor = this.state
+            ? { jar: this.state.jarPath, mappings: this.state.mappingsPath ?? undefined, format: this.state.mappingsFormat ?? undefined }
             : this.memory.ofWindow;
         this.restarting = true;
         try {
@@ -357,7 +378,8 @@ export class Project implements vscode.Disposable {
         // the one that was looked at comes last, so that it ends up in front
         const tabs = aside.tabs.filter(tab => this.index.get(tab.class));
         for (const tab of [...tabs.filter(candidate => !candidate.active), ...tabs.filter(candidate => candidate.active)]) {
-            await this.editors.openClass(tab.class, tab.view, { preview: false, viewColumn: tab.column, preserveFocus: !tab.active })
+            await this.editors
+                .openClass(tab.class, tab.view, { preview: false, viewColumn: tab.column, preserveFocus: !tab.active })
                 .then(undefined, error => this.backend.output.warn(`Could not reopen ${tab.class}: ${error}`));
         }
     }
@@ -373,7 +395,7 @@ export class Project implements vscode.Disposable {
             jar = picked?.[0]?.fsPath;
         }
 
-        if (!jar || !await this.confirmDiscard(t('project.saveBeforeOpeningJar'))) {
+        if (!jar || !(await this.confirmDiscard(t('project.saveBeforeOpeningJar')))) {
             return;
         }
 
@@ -391,12 +413,15 @@ export class Project implements vscode.Disposable {
             return;
         }
 
-        const picked = await vscode.window.showQuickPick(recent.map(project => ({
-            label: path.basename(project.jar),
-            description: project.mappings ? `→ ${path.basename(project.mappings)}` : t('project.noMappings'),
-            detail: project.mappings ? `${project.jar}  •  ${project.mappings}` : project.jar,
-            project,
-        })), { title: t('project.openRecentEnigmaProject'), matchOnDescription: true, matchOnDetail: true });
+        const picked = await vscode.window.showQuickPick(
+            recent.map(project => ({
+                label: path.basename(project.jar),
+                description: project.mappings ? `→ ${path.basename(project.mappings)}` : t('project.noMappings'),
+                detail: project.mappings ? `${project.jar}  •  ${project.mappings}` : project.jar,
+                project,
+            })),
+            { title: t('project.openRecentEnigmaProject'), matchOnDescription: true, matchOnDetail: true },
+        );
 
         if (!picked) {
             return;
@@ -414,7 +439,7 @@ export class Project implements vscode.Disposable {
     }
 
     async closeJar(): Promise<void> {
-        if (!this.isOpen || !await this.confirmDiscard(t('project.saveBeforeClosingJar'))) {
+        if (!this.isOpen || !(await this.confirmDiscard(t('project.saveBeforeClosingJar')))) {
             return;
         }
 
@@ -424,7 +449,7 @@ export class Project implements vscode.Disposable {
     }
 
     async reloadAll(): Promise<void> {
-        if (this.isOpen && await this.confirmDiscard(t('project.saveBeforeReloading'))) {
+        if (this.isOpen && (await this.confirmDiscard(t('project.saveBeforeReloading')))) {
             const libraries = settings.libraries;
             await this.reporter.run(() => this.backend.request('project/reload', { libraries }));
             await this.index.reload().catch(() => undefined);
@@ -470,13 +495,15 @@ export class Project implements vscode.Disposable {
                 canSelectFiles: !folder,
                 // only macOS has a dialogue that takes either; elsewhere, folders have their own command
                 canSelectFolders: folder || process.platform === 'darwin',
-                filters: folder ? undefined : { [t('common.mappings')]: Object.values(filters).flat(), ...filters, [t('project.allFiles')]: ['*'] },
+                filters: folder
+                    ? undefined
+                    : { [t('common.mappings')]: Object.values(filters).flat(), ...filters, [t('project.allFiles')]: ['*'] },
                 defaultUri: this.defaultDirectory(),
             });
             mappingsPath = picked?.[0]?.fsPath;
         }
 
-        if (mappingsPath && await this.confirmDiscard(t('project.saveBeforeOpeningMappings'))) {
+        if (mappingsPath && (await this.confirmDiscard(t('project.saveBeforeOpeningMappings')))) {
             await this.loadMappings(mappingsPath);
             await this.recovery.offer();
         }
@@ -498,11 +525,13 @@ export class Project implements vscode.Disposable {
             return this.saveMappingsAs();
         }
 
-        return await this.reporter.run(async () => {
-            await this.backend.request('mappings/save');
-            vscode.window.setStatusBarMessage(t('project.enigmaMappingsSaved'), 3000);
-            return true;
-        }) ?? false;
+        return (
+            (await this.reporter.run(async () => {
+                await this.backend.request('mappings/save');
+                vscode.window.setStatusBarMessage(t('project.enigmaMappingsSaved'), 3000);
+                return true;
+            })) ?? false
+        );
     }
 
     async saveMappingsAs(): Promise<boolean> {
@@ -512,11 +541,14 @@ export class Project implements vscode.Disposable {
 
         const writable = this.formats.filter(format => format.write);
         const current = this.state?.mappingsFormat;
-        const picked = await vscode.window.showQuickPick(writable.map(format => ({
-            label: `$(${format.directory ? 'folder' : format.extensions.includes('zip') ? 'file-zip' : 'file'}) ${format.name}`,
-            description: `${format.directory ? t('project.aFolderWithOneFilePer') : format.extensions.map(extension => `.${extension}`).join(', ')}${format.id === current ? `  ·  ${t('project.currentFormat')}` : ''}`,
-            format,
-        })), { title: t('project.saveMappingsAs'), placeHolder: t('project.whichFormat'), matchOnDescription: true });
+        const picked = await vscode.window.showQuickPick(
+            writable.map(format => ({
+                label: `$(${format.directory ? 'folder' : format.extensions.includes('zip') ? 'file-zip' : 'file'}) ${format.name}`,
+                description: `${format.directory ? t('project.aFolderWithOneFilePer') : format.extensions.map(extension => `.${extension}`).join(', ')}${format.id === current ? `  ·  ${t('project.currentFormat')}` : ''}`,
+                format,
+            })),
+            { title: t('project.saveMappingsAs'), placeHolder: t('project.whichFormat'), matchOnDescription: true },
+        );
         if (!picked) {
             return false;
         }
@@ -532,21 +564,23 @@ export class Project implements vscode.Disposable {
             return false;
         }
 
-        return await this.reporter.run(async () => {
-            await this.backend.request('mappings/save', { path: target.fsPath, format: format.id });
-            vscode.window.setStatusBarMessage(t('project.enigmaMappingsSaved'), 3000);
-            return true;
-        }) ?? false;
+        return (
+            (await this.reporter.run(async () => {
+                await this.backend.request('mappings/save', { path: target.fsPath, format: format.id });
+                vscode.window.setStatusBarMessage(t('project.enigmaMappingsSaved'), 3000);
+                return true;
+            })) ?? false
+        );
     }
 
     async closeMappings(): Promise<void> {
-        if (this.isOpen && await this.confirmDiscard(t('project.saveBeforeClosingMappings'))) {
+        if (this.isOpen && (await this.confirmDiscard(t('project.saveBeforeClosingMappings')))) {
             await this.reporter.run(() => this.backend.request('mappings/close'));
         }
     }
 
     async reloadMappings(): Promise<void> {
-        if (this.isOpen && await this.confirmDiscard(t('project.saveBeforeReloadingMappings'))) {
+        if (this.isOpen && (await this.confirmDiscard(t('project.saveBeforeReloadingMappings')))) {
             await this.reporter.run(() => this.backend.request('mappings/reload'));
         }
     }
@@ -571,7 +605,9 @@ export class Project implements vscode.Disposable {
         }
 
         const choice = await vscode.window.showInformationMessage(
-            t('project.enigmaDroppedMappingSThatDo', result.dropped.length), t('common.showLog'));
+            t('project.enigmaDroppedMappingSThatDo', result.dropped.length),
+            t('common.showLog'),
+        );
         if (choice) {
             this.backend.output.show();
         }
@@ -623,7 +659,9 @@ export class Project implements vscode.Disposable {
     }
 
     dispose(): void {
-        this.disposables.forEach(disposable => disposable.dispose());
+        for (const disposable of this.disposables) {
+            disposable.dispose();
+        }
         this.emitter.dispose();
     }
 }

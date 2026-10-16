@@ -12,11 +12,11 @@ import { t } from '../l10n';
 
 const describe = (messages: ValidationMessage[]) => {
     return messages.map(message => message.text).join(' ');
-}
+};
 
 const delay = (milliseconds: number) => {
     return new Promise<void>(resolve => setTimeout(resolve, milliseconds));
-}
+};
 
 /**
  * Turns decompiled classes into a constrained editor.
@@ -28,7 +28,11 @@ export class EditorController implements vscode.Disposable {
     private lastRefusal = 0;
     private readonly saves = new Map<string, number[]>();
 
-    constructor(private readonly backend: Backend, private readonly documents: EnigmaDocuments, private readonly editors: ClassEditors) {
+    constructor(
+        private readonly backend: Backend,
+        private readonly documents: EnigmaDocuments,
+        private readonly editors: ClassEditors,
+    ) {
         documents.isEditing = uri => this.states.get(uri.toString())?.session !== undefined;
         documents.settle = document => this.settle(document);
 
@@ -69,7 +73,9 @@ export class EditorController implements vscode.Disposable {
                 // a name left behind in another tab is applied, like when moving the cursor away from it
                 for (const state of this.states.values()) {
                     if (state.session && state.uri.toString() !== editor?.document.uri.toString()) {
-                        const document = vscode.workspace.textDocuments.find(candidate => candidate.uri.toString() === state.uri.toString());
+                        const document = vscode.workspace.textDocuments.find(
+                            candidate => candidate.uri.toString() === state.uri.toString(),
+                        );
                         if (document) {
                             void this.commit(document, 'leave');
                         }
@@ -100,7 +106,6 @@ export class EditorController implements vscode.Disposable {
         this.backend.output.debug(`[editor] ${uri.path.substring(uri.path.lastIndexOf('/') + 1)}: ${message}`);
     }
 
-
     private stateOf(document: vscode.TextDocument): State | undefined {
         return this.states.get(document.uri.toString());
     }
@@ -119,14 +124,21 @@ export class EditorController implements vscode.Disposable {
 
         const editable = parseClassUri(uri)?.view === 'source' && this.enabled && !source.error;
         // without the "renamable" flag, names are still highlighted but cannot be typed over
-        const refs = editable ? source.refs : source.refs.map((ref): RefTuple => [ref[0], ref[1], ref[2], ref[3], ref[4] & ~FLAG_RENAMABLE, ref[5]]);
+        const refs = editable
+            ? source.refs
+            : source.refs.map((ref): RefTuple => [ref[0], ref[1], ref[2], ref[3], ref[4] & ~FLAG_RENAMABLE, ref[5]]);
         const model = new ZoneModel(source.text, refs, source.groups);
         const document = vscode.workspace.textDocuments.find(candidate => candidate.uri.toString() === key);
         this.debug(uri, `source revision ${source.revision} loaded${previous?.session ? ', which ends the name being typed' : ''}`);
         this.states.set(key, {
-            uri, model, parsed: model.original, expected: model.text, settling: previous?.settling ?? Promise.resolve(),
+            uri,
+            model,
+            parsed: model.original,
+            expected: model.text,
+            settling: previous?.settling ?? Promise.resolve(),
             // a document that is open still shows the previous text, until the editor reloads it
-            synced: !document || document.getText() === model.text, awaitingSource: false,
+            synced: !document || document.getText() === model.text,
+            awaitingSource: false,
         });
         this.updateContext();
         // the document gets the new text a moment later
@@ -151,7 +163,6 @@ export class EditorController implements vscode.Disposable {
         const active = vscode.window.activeTextEditor;
         return active !== undefined && this.stateOf(active.document)?.session !== undefined;
     }
-
 
     private onChange(document: vscode.TextDocument): void {
         const state = this.stateOf(document);
@@ -212,21 +223,37 @@ export class EditorController implements vscode.Disposable {
         state.parsed = parsed!;
         state.expected = text;
 
-        const editor = vscode.window.visibleTextEditors.find(candidate => candidate.document === document && candidate === vscode.window.activeTextEditor)
-            ?? vscode.window.visibleTextEditors.find(candidate => candidate.document === document);
+        const editor =
+            vscode.window.visibleTextEditors.find(
+                candidate => candidate.document === document && candidate === vscode.window.activeTextEditor,
+            ) ?? vscode.window.visibleTextEditors.find(candidate => candidate.document === document);
         const cursorZone = editor ? state.model.zoneAt(state.parsed, document.offsetAt(editor.selection.active)) : -1;
-        const primary = cursorZone >= 0 && state.model.zones[cursorZone].group === verdict.group && state.model.zones[cursorZone].inline
-            ? cursorZone
-            : session && verdict.zones.includes(session.primary) ? session.primary : verdict.zones[0];
+        const primary =
+            cursorZone >= 0 && state.model.zones[cursorZone].group === verdict.group && state.model.zones[cursorZone].inline
+                ? cursorZone
+                : session && verdict.zones.includes(session.primary)
+                  ? session.primary
+                  : verdict.zones[0];
 
         if (session) {
             session.primary = primary;
             session.problem = undefined;
         } else {
-            const replacing = state.model.zones[primary].category === CATEGORY_OBFUSCATED
-                && (settings.replaceObfuscatedNames);
-            state.session = { group: verdict.group, primary, busy: false, replacing, stripping: false, mirroring: false, mirrorFailures: 0, validationRequest: 0 };
-            this.debug(document, `started renaming ${state.model.groups[verdict.group].name}${replacing ? ', replacing the obfuscated name' : ''}`);
+            const replacing = state.model.zones[primary].category === CATEGORY_OBFUSCATED && settings.replaceObfuscatedNames;
+            state.session = {
+                group: verdict.group,
+                primary,
+                busy: false,
+                replacing,
+                stripping: false,
+                mirroring: false,
+                mirrorFailures: 0,
+                validationRequest: 0,
+            };
+            this.debug(
+                document,
+                `started renaming ${state.model.groups[verdict.group].name}${replacing ? ', replacing the obfuscated name' : ''}`,
+            );
             this.updateContext();
         }
 
@@ -244,15 +271,19 @@ export class EditorController implements vscode.Disposable {
         if (now - this.lastRefusal > 4000) {
             this.lastRefusal = now;
             vscode.window.setStatusBarMessage(
-                state.session ? `$(edit) ${t('controller.finishTheNameYouAreEditing')}` : `$(lock) ${t('controller.onlyTheHighlightedNamesCanBe')}`,
+                state.session
+                    ? `$(edit) ${t('controller.finishTheNameYouAreEditing')}`
+                    : `$(lock) ${t('controller.onlyTheHighlightedNamesCanBe')}`,
                 3500,
             );
         }
     }
 
     private async replaceText(document: vscode.TextDocument, target: string): Promise<boolean> {
-        const changes = changesBetween(this.stateOf(document)?.model, document.getText(), target)
-            .map(change => ({ range: new vscode.Range(document.positionAt(change.start), document.positionAt(change.end)), text: change.text }));
+        const changes = changesBetween(this.stateOf(document)?.model, document.getText(), target).map(change => ({
+            range: new vscode.Range(document.positionAt(change.start), document.positionAt(change.end)),
+            text: change.text,
+        }));
         if (changes.length === 0) {
             return true;
         }
@@ -262,7 +293,10 @@ export class EditorController implements vscode.Disposable {
             // part of the user's own edit as far as undo is concerned; fails if the document changed in the meantime,
             // in which case the next change event brings us back here
             try {
-                return await editor.edit(builder => changes.forEach(change => builder.replace(change.range, change.text)), { undoStopBefore: false, undoStopAfter: false });
+                return await editor.edit(builder => changes.forEach(change => builder.replace(change.range, change.text)), {
+                    undoStopBefore: false,
+                    undoStopAfter: false,
+                });
             } catch {
                 // The editor is on its way out: a class that was renamed moves to a tab of its new name, and the one
                 // it had is closed. Not through the document instead, which would leave unsaved changes in a
@@ -313,26 +347,34 @@ export class EditorController implements vscode.Disposable {
 
         session.stripping = true;
         const version = document.version;
-        editor.edit(builder => {
-            // only what was not typed is removed, so that the cursor stays where it is
-            builder.delete(new vscode.Range(document.positionAt(start + at + typed.length), document.positionAt(end)));
-            builder.delete(new vscode.Range(document.positionAt(start), document.positionAt(start + at)));
-        }, { undoStopBefore: false, undoStopAfter: false }).then(applied => {
-            session.stripping = false;
-            if (state.session !== session) {
-                return;
-            }
+        editor
+            .edit(
+                builder => {
+                    // only what was not typed is removed, so that the cursor stays where it is
+                    builder.delete(new vscode.Range(document.positionAt(start + at + typed.length), document.positionAt(end)));
+                    builder.delete(new vscode.Range(document.positionAt(start), document.positionAt(start + at)));
+                },
+                { undoStopBefore: false, undoStopAfter: false },
+            )
+            .then(
+                applied => {
+                    session.stripping = false;
+                    if (state.session !== session) {
+                        return;
+                    }
 
-            if (applied) {
-                session.replacing = false;
-                this.mirror(document, state);
-            } else if (document.version !== version) {
-                // something else was typed in the meantime; that is known here by now, so look again
-                this.stripOriginalName(document, state);
-            }
-        }, () => {
-            session.stripping = false;
-        });
+                    if (applied) {
+                        session.replacing = false;
+                        this.mirror(document, state);
+                    } else if (document.version !== version) {
+                        // something else was typed in the meantime; that is known here by now, so look again
+                        this.stripOriginalName(document, state);
+                    }
+                },
+                () => {
+                    session.stripping = false;
+                },
+            );
     }
 
     /**
@@ -352,7 +394,8 @@ export class EditorController implements vscode.Disposable {
 
         const text = state.expected;
         const { typed } = this.typedName(state, document);
-        const behind = state.model.siblings(session.primary)
+        const behind = state.model
+            .siblings(session.primary)
             .filter(index => index !== session.primary && text.substring(state.parsed.starts[index], state.parsed.ends[index]) !== typed)
             .map(index => new vscode.Range(document.positionAt(state.parsed.starts[index]), document.positionAt(state.parsed.ends[index])));
         const editor = vscode.window.visibleTextEditors.find(candidate => candidate.document === document);
@@ -361,16 +404,21 @@ export class EditorController implements vscode.Disposable {
         }
 
         session.mirroring = true;
-        editor.edit(builder => behind.forEach(range => builder.replace(range, typed)), { undoStopBefore: false, undoStopAfter: false }).then(applied => {
-            session.mirroring = false;
-            session.mirrorFailures = applied ? 0 : session.mirrorFailures + 1;
-            if (state.session === session) {
-                // refused when another key was typed in the meantime, which is known here by now
-                this.mirror(document, state);
-            }
-        }, () => {
-            session.mirroring = false;
-        });
+        editor
+            .edit(builder => behind.forEach(range => builder.replace(range, typed)), { undoStopBefore: false, undoStopAfter: false })
+            .then(
+                applied => {
+                    session.mirroring = false;
+                    session.mirrorFailures = applied ? 0 : session.mirrorFailures + 1;
+                    if (state.session === session) {
+                        // refused when another key was typed in the meantime, which is known here by now
+                        this.mirror(document, state);
+                    }
+                },
+                () => {
+                    session.mirroring = false;
+                },
+            );
     }
 
     private onSelection(event: vscode.TextEditorSelectionChangeEvent): void {
@@ -405,7 +453,7 @@ export class EditorController implements vscode.Disposable {
         const session = state.session!;
         const zone = state.model.zones[session.primary];
         const text = document.getText().substring(state.parsed.starts[session.primary], state.parsed.ends[session.primary]);
-        const typed = session.replacing ? insertedText(zone.text, text) ?? text : text;
+        const typed = session.replacing ? (insertedText(zone.text, text) ?? text) : text;
         return { typed, newName: newNameOf(zone, typed) };
     }
 
@@ -417,32 +465,48 @@ export class EditorController implements vscode.Disposable {
 
         clearTimeout(session.validation);
         const request = ++session.validationRequest;
-        session.validation = setTimeout(async () => {
-            if (state.session !== session || session.busy) {
-                return;
-            }
+        session.validation = setTimeout(() => void this.validateTyped(document, state, session, request), 220);
+    }
 
-            const { typed, newName } = this.typedName(state, document);
-            let problem: Problem | undefined;
-            if (typed.length === 0) {
-                problem = { severity: 'error', message: t('controller.theNameCannotBeEmpty') };
-            } else {
-                try {
-                    const result = await this.backend.request('entry/rename', { entry: state.model.groups[session.group].entry, newName, validateOnly: true });
-                    const errors = result.messages.filter(message => message.type === 'error');
-                    const warnings = result.messages.filter(message => message.type === 'warning');
-                    problem = errors.length > 0 ? { severity: 'error', message: describe(errors) }
-                        : warnings.length > 0 ? { severity: 'warning', message: describe(warnings) } : undefined;
-                } catch {
-                    // the commit will report it
-                }
-            }
+    /** Asks the engine whether the name being typed would do, and shows its answer next to it. */
+    private async validateTyped(
+        document: vscode.TextDocument,
+        state: State,
+        session: NonNullable<State['session']>,
+        request: number,
+    ): Promise<void> {
+        if (state.session !== session || session.busy) {
+            return;
+        }
 
-            if (state.session === session && session.validationRequest === request) {
-                session.problem = problem;
-                this.decorateDocument(document);
+        const { typed, newName } = this.typedName(state, document);
+        let problem: Problem | undefined;
+        if (typed.length === 0) {
+            problem = { severity: 'error', message: t('controller.theNameCannotBeEmpty') };
+        } else {
+            try {
+                const result = await this.backend.request('entry/rename', {
+                    entry: state.model.groups[session.group].entry,
+                    newName,
+                    validateOnly: true,
+                });
+                const errors = result.messages.filter(message => message.type === 'error');
+                const warnings = result.messages.filter(message => message.type === 'warning');
+                problem =
+                    errors.length > 0
+                        ? { severity: 'error', message: describe(errors) }
+                        : warnings.length > 0
+                          ? { severity: 'warning', message: describe(warnings) }
+                          : undefined;
+            } catch {
+                // the commit will report it
             }
-        }, 220);
+        }
+
+        if (state.session === session && session.validationRequest === request) {
+            session.problem = problem;
+            this.decorateDocument(document);
+        }
     }
 
     async commitActive(reason: CommitReason = 'enter'): Promise<boolean> {
@@ -524,7 +588,11 @@ export class EditorController implements vscode.Disposable {
 
             const warnings = check.messages.filter(message => message.type === 'warning');
             if (warnings.length > 0) {
-                const choice = await vscode.window.showWarningMessage(describe(warnings), { modal: true, detail: t('controller.renameToAnyway', zone.text, typed) }, t('common.rename'));
+                const choice = await vscode.window.showWarningMessage(
+                    describe(warnings),
+                    { modal: true, detail: t('controller.renameToAnyway', zone.text, typed) },
+                    t('common.rename'),
+                );
                 if (choice !== t('common.rename')) {
                     return await reject({ severity: 'warning', message: describe(warnings) });
                 }
@@ -588,53 +656,58 @@ export class EditorController implements vscode.Disposable {
             return Promise.resolve();
         }
 
-        state.settling = state.settling.then(async () => {
-            for (let attempt = 0; attempt < 8 && !document.isClosed; attempt++) {
-                const current = this.stateOf(document);
-                if (!current || current.awaitingSource || this.documents.isRetired(document.uri)) {
-                    return;
-                }
-
-                const target = current.session ? current.expected : current.model.text;
-                if (document.getText() !== target) {
-                    // Name by name, which leaves cursors where they are. The editor would bring an unmodified file
-                    // in line by itself, but by replacing all the lines from the first to the last that differ at
-                    // once: a cursor among them ends up behind them, off the name that was just renamed from a pane.
-                    // Where there is no cursor, in a document nobody looks at, the editor is left to do it: that
-                    // does not make the document one with unsaved changes, which nothing shown could save again.
-                    if (!document.isDirty && !vscode.window.visibleTextEditors.some(candidate => candidate.document === document)) {
-                        for (let waited = 0; waited < 12 && document.getText() !== target && !document.isDirty; waited++) {
-                            await delay(15);
-                        }
-
-                        if (this.stateOf(document) !== current || document.getText() === target) {
-                            continue;
-                        }
-                    }
-
-                    const replaced = await this.replaceText(document, target);
-                    this.debug(document, `text brought in line with ${current.session ? 'the name being typed' : 'the engine'}: ${replaced ? 'done' : 'not accepted, trying again'}`);
-                    continue;
-                }
-
-                if (!current.synced) {
-                    current.synced = true;
-                    this.decorateDocument(document);
-                }
-
-                if (!current.session && document.isDirty) {
-                    if (!this.maySave(document)) {
+        state.settling = state.settling
+            .then(async () => {
+                for (let attempt = 0; attempt < 8 && !document.isClosed; attempt++) {
+                    const current = this.stateOf(document);
+                    if (!current || current.awaitingSource || this.documents.isRetired(document.uri)) {
                         return;
                     }
 
-                    const saved = await document.save();
-                    this.debug(document, `marked as unmodified: ${saved}`);
-                    continue;
-                }
+                    const target = current.session ? current.expected : current.model.text;
+                    if (document.getText() !== target) {
+                        // Name by name, which leaves cursors where they are. The editor would bring an unmodified file
+                        // in line by itself, but by replacing all the lines from the first to the last that differ at
+                        // once: a cursor among them ends up behind them, off the name that was just renamed from a pane.
+                        // Where there is no cursor, in a document nobody looks at, the editor is left to do it: that
+                        // does not make the document one with unsaved changes, which nothing shown could save again.
+                        if (!document.isDirty && !vscode.window.visibleTextEditors.some(candidate => candidate.document === document)) {
+                            for (let waited = 0; waited < 12 && document.getText() !== target && !document.isDirty; waited++) {
+                                await delay(15);
+                            }
 
-                return;
-            }
-        }).catch(error => this.backend.output.warn(`Could not synchronize ${document.uri.path}: ${error}`));
+                            if (this.stateOf(document) !== current || document.getText() === target) {
+                                continue;
+                            }
+                        }
+
+                        const replaced = await this.replaceText(document, target);
+                        this.debug(
+                            document,
+                            `text brought in line with ${current.session ? 'the name being typed' : 'the engine'}: ${replaced ? 'done' : 'not accepted, trying again'}`,
+                        );
+                        continue;
+                    }
+
+                    if (!current.synced) {
+                        current.synced = true;
+                        this.decorateDocument(document);
+                    }
+
+                    if (!current.session && document.isDirty) {
+                        if (!this.maySave(document)) {
+                            return;
+                        }
+
+                        const saved = await document.save();
+                        this.debug(document, `marked as unmodified: ${saved}`);
+                        continue;
+                    }
+
+                    return;
+                }
+            })
+            .catch(error => this.backend.output.warn(`Could not synchronize ${document.uri.path}: ${error}`));
         return state.settling;
     }
 
@@ -658,7 +731,10 @@ export class EditorController implements vscode.Disposable {
 
         const zone = state.model.zoneAt(state.parsed, editor.document.offsetAt(editor.selection.active));
         if (zone >= 0 && state.model.zones[zone].inline) {
-            editor.selection = new vscode.Selection(editor.document.positionAt(state.parsed.starts[zone]), editor.document.positionAt(state.parsed.ends[zone]));
+            editor.selection = new vscode.Selection(
+                editor.document.positionAt(state.parsed.starts[zone]),
+                editor.document.positionAt(state.parsed.ends[zone]),
+            );
         }
     }
 
@@ -667,7 +743,6 @@ export class EditorController implements vscode.Disposable {
         const state = this.stateOf(document);
         return !!state && state.synced && document.getText() === state.expected;
     }
-
 
     private decorateUri(uri: vscode.Uri): void {
         for (const editor of vscode.window.visibleTextEditors) {
@@ -692,7 +767,9 @@ export class EditorController implements vscode.Disposable {
             this.endSession(state);
         }
 
-        this.disposables.forEach(disposable => disposable.dispose());
+        for (const disposable of this.disposables) {
+            disposable.dispose();
+        }
         this.decorations.dispose();
     }
 }

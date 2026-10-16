@@ -32,7 +32,8 @@ const SAID: Record<Problem, (...args: string[]) => string> = {
     'snapshot-failed': reason => t('messages.failedToWriteRecoverySnapshot', reason),
     'class-not-found': name => t('messages.classNotFoundInJar', name),
     'export-source-failed': (count, first) => t('messages.failedToWriteSourceFileS', count, first),
-    'editing-disabled': what => t('messages.editingNamesIsDisabledByThe', (EDITABLE[what as Editable] as (() => string) | undefined)?.() ?? what),
+    'editing-disabled': what =>
+        t('messages.editingNamesIsDisabledByThe', (EDITABLE[what as Editable] as (() => string) | undefined)?.() ?? what),
     'not-renamable': () => t('messages.thisEntryCannotBeRenamed'),
     'nothing-to-undo': () => t('messages.nothingToUndo'),
     'nothing-to-redo': () => t('messages.nothingToRedo'),
@@ -56,13 +57,13 @@ const TASKS: Record<Task, (...args: string[]) => string> = {
  */
 export function describeSaid(text: string, said?: ErrorData | { key?: Problem; args?: string[] }): string {
     // an engine that is newer than this may name what there are no words for here
-    const words = said && 'key' in said && said.key ? SAID[said.key] as typeof SAID[Problem] | undefined : undefined;
-    return words ? words(...(said && 'args' in said ? said.args ?? [] : [])) : text;
+    const words = said && 'key' in said && said.key ? (SAID[said.key] as (typeof SAID)[Problem] | undefined) : undefined;
+    return words ? words(...(said && 'args' in said ? (said.args ?? []) : [])) : text;
 }
 
 /** What the engine is doing, in the language of the editor. */
 export function describeTask(task: Task, args: string[] = []): string {
-    const words = TASKS[task] as typeof TASKS[Task] | undefined;
+    const words = TASKS[task] as (typeof TASKS)[Task] | undefined;
     return words?.(...args) ?? [task, ...args].join(' ');
 }
 
@@ -78,6 +79,6 @@ const CHANGES: Record<ChangeKind, (...args: string[]) => string> = {
 
 /** A change of the mappings, for "Undo ..." and "Redo ...", in the language of the editor. */
 export function describeChange(change: Change | null | undefined): string {
-    const words = change ? CHANGES[change.kind] as typeof CHANGES[ChangeKind] | undefined : undefined;
+    const words = change ? (CHANGES[change.kind] as (typeof CHANGES)[ChangeKind] | undefined) : undefined;
     return change && words ? words(...change.args) : change ? [change.kind, ...change.args].join(' ') : '';
 }

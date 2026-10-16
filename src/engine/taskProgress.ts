@@ -1,6 +1,6 @@
-import * as vscode from 'vscode'
-import { describeTask } from './messages'
-import { ProgressParams } from "./protocol";
+import * as vscode from 'vscode';
+import { describeTask } from './messages';
+import { ProgressParams } from './protocol';
 
 /** A quick task is not worth a notification. */
 const SHOW_AFTER_MS = 400;
@@ -8,7 +8,6 @@ const MAX_MESSAGE_LENGTH = 120;
 
 /** One task of the engine, and the notification that shows how far it is. */
 class ShownTask {
-
     private latest: ProgressParams;
     private reporter?: vscode.Progress<{ message?: string; increment?: number }>;
     private finish?: () => void;
@@ -18,7 +17,7 @@ class ShownTask {
 
     constructor(begin: ProgressParams) {
         this.latest = begin;
-        this.timer = setTimeout(() => this.show(begin), SHOW_AFTER_MS)
+        this.timer = setTimeout(() => this.show(begin), SHOW_AFTER_MS);
     }
 
     private show(begin: ProgressParams): void {
@@ -29,10 +28,12 @@ class ShownTask {
             this.update();
 
             // it may have ended while the notification was coming up
-            return this.ended ? Promise.resolve() : new Promise<void>(resolve => {
-                this.finish = resolve;
-            });
-        })
+            return this.ended
+                ? Promise.resolve()
+                : new Promise<void>(resolve => {
+                      this.finish = resolve;
+                  });
+        });
     }
 
     report(next: ProgressParams): void {
@@ -51,13 +52,16 @@ class ShownTask {
         }
 
         const { done, total, title, message } = this.latest;
-        const percent = Math.min(100, Math.round(done / Math.max(total, 1) * 100));
+        const percent = Math.min(100, Math.round((done / Math.max(total, 1)) * 100));
         const text = [title, message].filter(part => part).join(' - ');
 
         // the bar only ever moves forward within a phase
         const increment = Math.max(0, percent - this.reported);
         this.reported = Math.max(this.reported, percent);
-        this.reporter.report({ message: text.length > MAX_MESSAGE_LENGTH ? `${text.substring(0, MAX_MESSAGE_LENGTH - 3)}...` : text, increment });
+        this.reporter.report({
+            message: text.length > MAX_MESSAGE_LENGTH ? `${text.substring(0, MAX_MESSAGE_LENGTH - 3)}...` : text,
+            increment,
+        });
     }
 
     end(): void {
@@ -65,7 +69,6 @@ class ShownTask {
         clearTimeout(this.timer);
         this.finish?.();
     }
-
 }
 
 /** Shows what the engine is busy with as notifications of the editor. */
@@ -73,7 +76,7 @@ export class TaskProgress {
     private readonly tasks = new Map<number, ShownTask>();
 
     handle(params: ProgressParams): void {
-        switch(params.phase) {
+        switch (params.phase) {
             case 'begin':
                 this.tasks.set(params.id, new ShownTask(params));
                 break;
@@ -91,5 +94,4 @@ export class TaskProgress {
         this.tasks.forEach(task => task.end());
         this.tasks.clear();
     }
-
 }

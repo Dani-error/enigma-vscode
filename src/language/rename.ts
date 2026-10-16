@@ -6,8 +6,10 @@ import { Editing } from '../project/editing';
 import { t } from '../l10n';
 
 export class RenameProvider implements vscode.RenameProvider {
-    constructor(private readonly documents: EnigmaDocuments, private readonly editing: Editing) {
-    }
+    constructor(
+        private readonly documents: EnigmaDocuments,
+        private readonly editing: Editing,
+    ) {}
 
     async prepareRename(document: vscode.TextDocument, position: vscode.Position): Promise<{ range: vscode.Range; placeholder: string }> {
         const token = await this.documents.tokenAt(document, position);

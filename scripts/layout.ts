@@ -23,14 +23,7 @@ export const layout = (root: string) => {
 };
 
 /** What of the repository ships as it is, next to what is built. Files that do not exist are left out. */
-export const SHIPPED = [
-    'README.md',
-    'LICENSE',
-    'THIRD_PARTY_NOTICES.md',
-    'language-configuration.json',
-    'syntaxes',
-    'resources',
-];
+export const SHIPPED = ['README.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'language-configuration.json', 'syntaxes', 'resources'];
 
 /** Parts of package.json that are about developing the extension, not running it. */
 export const DEVELOPMENT_ONLY = ['scripts', 'devDependencies'];

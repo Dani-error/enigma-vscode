@@ -29,24 +29,29 @@ export const registerSearchCommands = (register: Register, targets: Targets, { b
             }
 
             quickPick.busy = true;
-            backend.request('search', { query, types, limit: 150 }).then(results => {
-                if (current !== request) {
-                    return;
-                }
+            backend.request('search', { query, types, limit: 150 }).then(
+                results => {
+                    if (current !== request) {
+                        return;
+                    }
 
-                // the engine has ranked the results already; keep its order instead of letting the picker re-filter
-                quickPick.items = results.map(result => ({
-                    label: `$(${themeIcon(result.kind).id}) ${result.name}${result.kind === 'method' ? result.detail ?? '' : ''}`,
-                    description: [result.deobfuscated ? result.obfName : undefined, result.kind === 'field' ? result.detail : undefined].filter(Boolean).join('  '),
-                    detail: (result.container ?? '').replace(/\//g, '.') || undefined,
-                    alwaysShow: true,
-                    result,
-                }));
-                quickPick.busy = false;
-            }, error => {
-                quickPick.busy = false;
-                reporter.report(error);
-            });
+                    // the engine has ranked the results already; keep its order instead of letting the picker re-filter
+                    quickPick.items = results.map(result => ({
+                        label: `$(${themeIcon(result.kind).id}) ${result.name}${result.kind === 'method' ? (result.detail ?? '') : ''}`,
+                        description: [result.deobfuscated ? result.obfName : undefined, result.kind === 'field' ? result.detail : undefined]
+                            .filter(Boolean)
+                            .join('  '),
+                        detail: (result.container ?? '').replace(/\//g, '.') || undefined,
+                        alwaysShow: true,
+                        result,
+                    }));
+                    quickPick.busy = false;
+                },
+                error => {
+                    quickPick.busy = false;
+                    reporter.report(error);
+                },
+            );
         };
 
         quickPick.onDidChangeValue(() => {
@@ -72,4 +77,4 @@ export const registerSearchCommands = (register: Register, targets: Targets, { b
     register('enigma.searchClasses', () => search(['class'], t('searchCommands.searchClasses')));
     register('enigma.searchMethods', () => search(['method'], t('searchCommands.searchMethods')));
     register('enigma.searchFields', () => search(['field'], t('searchCommands.searchFields')));
-}
+};

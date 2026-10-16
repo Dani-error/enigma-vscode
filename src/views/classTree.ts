@@ -29,7 +29,7 @@ export type ClassTreeNode = PackageNode | ClassNode;
 
 const simpleName = (name: string) => {
     return name.substring(name.lastIndexOf('/') + 1);
-}
+};
 
 /**
  * One of Enigma's class dockers: obfuscated, deobfuscated or all classes, nested by package.
@@ -49,7 +49,11 @@ export class ClassTreeProvider implements vscode.TreeDataProvider<ClassTreeNode>
      * @param index
      * @param icons the folder of the pictures of classes
      */
-    constructor(private readonly mode: ClassTreeMode, private readonly index: ClassIndex, private readonly icons: vscode.Uri) {
+    constructor(
+        private readonly mode: ClassTreeMode,
+        private readonly index: ClassIndex,
+        private readonly icons: vscode.Uri,
+    ) {
         this.disposables.push(
             index.onDidChange(() => this.rebuild()),
             vscode.workspace.onDidChangeConfiguration(event => {
@@ -82,7 +86,14 @@ export class ClassTreeProvider implements vscode.TreeDataProvider<ClassTreeNode>
                 path = path ? `${path}/${segment}` : segment;
                 let next = parent.packages.get(segment);
                 if (!next) {
-                    next = { type: 'package', name: path, label: segment, parent: parent === root ? undefined : parent, packages: new Map(), classes: [] };
+                    next = {
+                        type: 'package',
+                        name: path,
+                        label: segment,
+                        parent: parent === root ? undefined : parent,
+                        packages: new Map(),
+                        classes: [],
+                    };
                     parent.packages.set(segment, next);
                 }
 
@@ -135,7 +146,9 @@ export class ClassTreeProvider implements vscode.TreeDataProvider<ClassTreeNode>
 
         let current = root;
         for (;;) {
-            const next = [...current.packages.values()].find(candidate => packageName === candidate.name || packageName.startsWith(`${candidate.name}/`));
+            const next = [...current.packages.values()].find(
+                candidate => packageName === candidate.name || packageName.startsWith(`${candidate.name}/`),
+            );
             if (!next) {
                 return current === root ? undefined : current;
             }
@@ -197,7 +210,7 @@ export class ClassTreeProvider implements vscode.TreeDataProvider<ClassTreeNode>
         }
 
         if (stats && stats[1] > 0) {
-            details.push(`${Math.floor(stats[0] / stats[1] * 100)}%`);
+            details.push(`${Math.floor((stats[0] / stats[1]) * 100)}%`);
         }
 
         item.description = details.join('  ');
@@ -207,9 +220,21 @@ export class ClassTreeProvider implements vscode.TreeDataProvider<ClassTreeNode>
         item.iconPath = vscode.Uri.joinPath(this.icons, `${look}.svg`);
         item.resourceUri = ClassDecorations.uri(obf);
 
-        const what = { exception: t('classTree.exception'), abstract: t('classTree.abstractClass'), class: t('common.class'), interface: t('common.interface'), annotation: t('common.annotation'), enum: t('common.enum'), record: t('common.record') }[look] ?? kind;
-        const state = tokenType === 'obfuscated' ? t('common.notMapped') : tokenType === 'deobfuscated' ? t('common.mapped') : t('common.proposed');
-        const tooltip = new vscode.MarkdownString(`**${deobf.replace(/\//g, '.')}**\n\n${t('common.obfuscated')}: \`${obf}\`\n\n${what}, ${state}`);
+        const what =
+            {
+                exception: t('classTree.exception'),
+                abstract: t('classTree.abstractClass'),
+                class: t('common.class'),
+                interface: t('common.interface'),
+                annotation: t('common.annotation'),
+                enum: t('common.enum'),
+                record: t('common.record'),
+            }[look] ?? kind;
+        const state =
+            tokenType === 'obfuscated' ? t('common.notMapped') : tokenType === 'deobfuscated' ? t('common.mapped') : t('common.proposed');
+        const tooltip = new vscode.MarkdownString(
+            `**${deobf.replace(/\//g, '.')}**\n\n${t('common.obfuscated')}: \`${obf}\`\n\n${what}, ${state}`,
+        );
         if (stats) {
             tooltip.appendMarkdown(`\n\n${t('classTree.mappedOfNames', stats[0], stats[1])}`);
         }
@@ -219,7 +244,9 @@ export class ClassTreeProvider implements vscode.TreeDataProvider<ClassTreeNode>
     }
 
     dispose(): void {
-        this.disposables.forEach(disposable => disposable.dispose());
+        for (const disposable of this.disposables) {
+            disposable.dispose();
+        }
         this.emitter.dispose();
     }
 }

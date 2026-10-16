@@ -28,7 +28,10 @@ const askName = (backend: Backend, entry: EntryRef, title: string, value: string
 
                 const warnings = result.messages.filter(message => message.type === 'warning');
                 if (warnings.length > 0) {
-                    return { message: warnings.map(message => message.text).join(' '), severity: vscode.InputBoxValidationSeverity.Warning };
+                    return {
+                        message: warnings.map(message => message.text).join(' '),
+                        severity: vscode.InputBoxValidationSeverity.Warning,
+                    };
                 }
             } catch (error) {
                 return error instanceof Error ? error.message : String(error);
@@ -37,7 +40,7 @@ const askName = (backend: Backend, entry: EntryRef, title: string, value: string
             return undefined;
         },
     });
-}
+};
 
 /** Changes to the mappings that are not made by typing in the code: from the class trees, from keys, undo. */
 export const registerEditCommands = (register: Register, targets: Targets, { backend, project, editing, entryPane }: Enigma) => {
@@ -86,8 +89,17 @@ export const registerEditCommands = (register: Register, targets: Targets, { bac
 
         const title = mode === 'move' ? t('editCommands.movePackage') : t('editCommands.renamePackage');
         // on a class, its package is meant; classes without a package have none to rename
-        const from = (node?.type === 'package' ? node.name : node?.type === 'class' ? node.parent?.name
-            : await vscode.window.showInputBox({ title, prompt: t('editCommands.packageToChangeWithBetweenIts'), placeHolder: 'com/example/old' }))?.trim();
+        const from = (
+            node?.type === 'package'
+                ? node.name
+                : node?.type === 'class'
+                  ? node.parent?.name
+                  : await vscode.window.showInputBox({
+                        title,
+                        prompt: t('editCommands.packageToChangeWithBetweenIts'),
+                        placeHolder: 'com/example/old',
+                    })
+        )?.trim();
         if (!from) {
             return;
         }
@@ -95,10 +107,11 @@ export const registerEditCommands = (register: Register, targets: Targets, { bac
         const to = await vscode.window.showInputBox({
             title: `${title}: ${from.replace(/\//g, '.')}`,
             value: from,
-            prompt: mode === 'move'
-                ? t('editCommands.whereToMoveTheClassesThat')
-                : t('editCommands.newNameOfThePackageClasses'),
-            validateInput: text => /^[a-zA-Z0-9_/]+$/.test(text) && !text.startsWith('/') && !text.endsWith('/') ? undefined : t('editCommands.useLettersDigitsAndWithBetween'),
+            prompt: mode === 'move' ? t('editCommands.whereToMoveTheClassesThat') : t('editCommands.newNameOfThePackageClasses'),
+            validateInput: text =>
+                /^[a-zA-Z0-9_/]+$/.test(text) && !text.startsWith('/') && !text.endsWith('/')
+                    ? undefined
+                    : t('editCommands.useLettersDigitsAndWithBetween'),
         });
         if (to && to !== from) {
             await editing.renamePackage(from, to, mode);
@@ -107,4 +120,4 @@ export const registerEditCommands = (register: Register, targets: Targets, { bac
 
     register('enigma.renamePackage', (node?: PackageNode | ClassNode) => changePackage(node, 'refactor'));
     register('enigma.movePackage', (node?: PackageNode | ClassNode) => changePackage(node, 'move'));
-}
+};

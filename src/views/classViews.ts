@@ -22,23 +22,32 @@ export class ClassViews implements vscode.Disposable {
     /** How far each class is mapped, shown next to its name in every tree. */
     readonly decorations = new ClassDecorations();
 
-    constructor(extensionUri: vscode.Uri, index: ClassIndex, private readonly isOpen: () => boolean) {
+    constructor(
+        extensionUri: vscode.Uri,
+        index: ClassIndex,
+        private readonly isOpen: () => boolean,
+    ) {
         const icons = vscode.Uri.joinPath(extensionUri, 'resources', 'icons');
         const tree = (mode: ClassTreeMode) => new ClassTreeProvider(mode, index, icons);
         this.trees = { obfuscated: tree('obfuscated'), deobfuscated: tree('deobfuscated'), all: tree('all') };
-        const view = (mode: ClassTreeMode) => vscode.window.createTreeView(`enigma.classes.${mode}`, { treeDataProvider: this.trees[mode], showCollapseAll: true });
+        const view = (mode: ClassTreeMode) =>
+            vscode.window.createTreeView(`enigma.classes.${mode}`, { treeDataProvider: this.trees[mode], showCollapseAll: true });
         this.views = { obfuscated: view('obfuscated'), deobfuscated: view('deobfuscated'), all: view('all') };
 
         this.disposables.push(
-            ...Object.values(this.trees), ...Object.values(this.views), this.decorations,
+            ...Object.values(this.trees),
+            ...Object.values(this.views),
+            this.decorations,
             // after the trees took in the classes
             index.onDidChange(() => this.updateCounts()),
-            ...Object.values(this.views).map(candidate => candidate.onDidChangeSelection(event => {
-                const node = event.selection[0];
-                if (node?.type === 'class') {
-                    this.selected.fire(node.item.obf);
-                }
-            })),
+            ...Object.values(this.views).map(candidate =>
+                candidate.onDidChangeSelection(event => {
+                    const node = event.selection[0];
+                    if (node?.type === 'class') {
+                        this.selected.fire(node.item.obf);
+                    }
+                }),
+            ),
         );
     }
 
@@ -73,7 +82,7 @@ export class ClassViews implements vscode.Disposable {
 
     /** Selects a class in the tree it is listed in. */
     async reveal(obf: string): Promise<void> {
-        for (const mode of settings.oneClassTree ? ['all'] as const : ['deobfuscated', 'obfuscated'] as const) {
+        for (const mode of settings.oneClassTree ? (['all'] as const) : (['deobfuscated', 'obfuscated'] as const)) {
             const node = this.trees[mode].nodeOf(obf);
             if (node) {
                 await this.views[mode].reveal(node, { select: true, focus: true, expand: true });
@@ -89,6 +98,8 @@ export class ClassViews implements vscode.Disposable {
     }
 
     dispose(): void {
-        this.disposables.forEach(disposable => disposable.dispose());
+        for (const disposable of this.disposables) {
+            disposable.dispose();
+        }
     }
 }

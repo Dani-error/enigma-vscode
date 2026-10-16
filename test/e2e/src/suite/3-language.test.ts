@@ -1,8 +1,6 @@
 import * as assert from 'node:assert/strict';
 import * as vscode from 'vscode';
-import {
-    Api, activate, classDocument, execute, positionOf, waitFor,
-} from './harness';
+import { Api, activate, classDocument, execute, positionOf, waitFor } from './harness';
 
 describe('Enigma in VS Code: the features of the editor on decompiled classes', () => {
     let api: Api;
@@ -23,7 +21,15 @@ describe('Enigma in VS Code: the features of the editor on decompiled classes', 
         await waitFor('the base class to show the new name', () => classDocument('a').getText().includes('void doBaseThings()'));
         assert.equal(document.isDirty, false);
 
-        await assert.rejects(execute('vscode.executeDocumentRenameProvider', document.uri, positionOf(document, 'void doBaseThings()', 'void '.length), 'class'), /reserved/i);
+        await assert.rejects(
+            execute(
+                'vscode.executeDocumentRenameProvider',
+                document.uri,
+                positionOf(document, 'void doBaseThings()', 'void '.length),
+                'class',
+            ),
+            /reserved/i,
+        );
         // names that are not part of the jar cannot be renamed at all
         await assert.rejects(execute('vscode.prepareRename', classDocument('a').uri, positionOf(classDocument('a'), 'String')));
     });
@@ -40,10 +46,16 @@ describe('Enigma in VS Code: the features of the editor on decompiled classes', 
 
         const references = await execute<vscode.Location[]>('vscode.executeReferenceProvider', subclass.uri, position);
         const referencing = new Set(references.map(location => new URLSearchParams(location.uri.query).get('class')));
-        assert.ok(referencing.has('a') && referencing.has('d') && referencing.has('e'), `references in a, d and e: ${[...referencing]}`);
+        assert.ok(
+            referencing.has('a') && referencing.has('d') && referencing.has('e'),
+            `references in a, d and e: ${[...referencing].join(', ')}`,
+        );
 
         const hovers = await execute<vscode.Hover[]>('vscode.executeHoverProvider', subclass.uri, position);
-        const hoverText = hovers.flatMap(hover => hover.contents).map(content => typeof content === 'string' ? content : content.value).join('\n');
+        const hoverText = hovers
+            .flatMap(hover => hover.contents)
+            .map(content => (typeof content === 'string' ? content : content.value))
+            .join('\n');
         assert.match(hoverText, /doBaseThings\(\): void/);
         assert.match(hoverText, /Obfuscated: `a` `\(\)V`/);
 

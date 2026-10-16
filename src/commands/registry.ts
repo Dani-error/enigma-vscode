@@ -7,30 +7,29 @@ import { Project } from '../project/project';
 import { ClassTreeNode } from '../views/classTree';
 import { t } from '../l10n';
 
-/** Registers a command of the extension. What it throws is shown to the user. */
-export type Register = (id: string, handler: (...args: any[]) => unknown) => void;
+/**
+ * Registers a command of the extension. What it throws is shown to the user. A handler says what it takes; the editor
+ * passes what it has, from a menu, a key or another command.
+ */
+export type Register = (id: string, handler: (...args: never[]) => unknown) => void;
 
 export const commandRegistry = (context: vscode.ExtensionContext, report: (error: unknown) => void): Register => {
     return (id, handler) => {
-        context.subscriptions.push(vscode.commands.registerCommand(id, async (...args: any[]) => {
-            try {
-                return await handler(...args);
-            } catch (error) {
-                report(error);
-                return undefined;
-            }
-        }));
+        context.subscriptions.push(
+            vscode.commands.registerCommand(id, async (...args: unknown[]) => {
+                try {
+                    return await (handler as (...given: unknown[]) => unknown)(...args);
+                } catch (error) {
+                    report(error);
+                    return undefined;
+                }
+            }),
+        );
     };
-}
+};
 
 const isEntry = (value: unknown): value is EntryRef => {
-    return (
-        typeof value === 'object' &&
-        value !== null &&
-        'kind' in value &&
-        typeof value.kind === 'string' &&
-        !('type' in value)
-    );
+    return typeof value === 'object' && value !== null && 'kind' in value && typeof value.kind === 'string' && !('type' in value);
 };
 
 /**
@@ -38,8 +37,11 @@ const isEntry = (value: unknown): value is EntryRef => {
  * code, and get something different to work with each time.
  */
 export class Targets {
-    constructor(private readonly backend: Backend, private readonly documents: EnigmaDocuments, private readonly project: Project) {
-    }
+    constructor(
+        private readonly backend: Backend,
+        private readonly documents: EnigmaDocuments,
+        private readonly project: Project,
+    ) {}
 
     /** Whether a jar is open; says what to do about it if not. */
     requireProject(): boolean {

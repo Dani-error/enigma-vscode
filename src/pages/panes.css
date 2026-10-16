@@ -1,8 +1,12 @@
 /* Shared styling of the Enigma panes. Only VS Code theme variables are used, so the panes follow any theme. */
 
-* { box-sizing: border-box; }
+* {
+    box-sizing: border-box;
+}
 
-html, body, #root {
+html,
+body,
+#root {
     height: 100%;
     margin: 0;
     padding: 0;
@@ -17,15 +21,38 @@ body {
     background: transparent;
 }
 
-.pane { padding: 10px 16px 16px 20px; }
-.pane.fill { display: flex; flex-direction: column; height: 100%; padding-bottom: 10px; }
+.pane {
+    padding: 10px 16px 16px 20px;
+}
+.pane.fill {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding-bottom: 10px;
+}
 
-.muted { color: var(--vscode-descriptionForeground); }
-.mono { font-family: var(--vscode-editor-font-family); font-size: var(--vscode-editor-font-size, 12px); }
-.hidden { display: none !important; }
-.grow { flex: 1 1 auto; min-height: 0; }
-.row { display: flex; align-items: center; gap: 6px; }
-.spacer { flex: 1 1 auto; }
+.muted {
+    color: var(--vscode-descriptionForeground);
+}
+.mono {
+    font-family: var(--vscode-editor-font-family);
+    font-size: var(--vscode-editor-font-size, 12px);
+}
+.hidden {
+    display: none !important;
+}
+.grow {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+.row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.spacer {
+    flex: 1 1 auto;
+}
 
 h2 {
     margin: 0 0 6px;
@@ -37,8 +64,12 @@ h2 {
     opacity: 0.85;
 }
 
-section { margin-top: 14px; }
-section:first-child { margin-top: 0; }
+section {
+    margin-top: 14px;
+}
+section:first-child {
+    margin-top: 0;
+}
 
 hr {
     border: 0;
@@ -52,15 +83,31 @@ hr {
     padding: 18px 4px;
     color: var(--vscode-descriptionForeground);
 }
-.empty .codicon { font-size: 28px; display: block; margin-bottom: 8px; opacity: 0.7; }
-.empty p { margin: 0 0 6px; }
+.empty .codicon {
+    font-size: 28px;
+    display: block;
+    margin-bottom: 8px;
+    opacity: 0.7;
+}
+.empty p {
+    margin: 0 0 6px;
+}
 
 /* inputs */
 
-label { display: block; margin: 8px 0 3px; color: var(--vscode-foreground); }
-label .muted { font-weight: normal; }
+label {
+    display: block;
+    margin: 8px 0 3px;
+    color: var(--vscode-foreground);
+}
+label .muted {
+    font-weight: normal;
+}
 
-input[type="text"], input[type="password"], input[type="number"], textarea {
+input[type='text'],
+input[type='password'],
+input[type='number'],
+textarea {
     width: 100%;
     padding: 4px 6px;
     color: var(--vscode-input-foreground);
@@ -71,17 +118,38 @@ input[type="text"], input[type="password"], input[type="number"], textarea {
     font-size: inherit;
     line-height: 1.4;
 }
-input::placeholder, textarea::placeholder { color: var(--vscode-input-placeholderForeground); }
-input:focus, textarea:focus, button:focus-visible, .segmented button:focus-visible {
+input::placeholder,
+textarea::placeholder {
+    color: var(--vscode-input-placeholderForeground);
+}
+input:focus,
+textarea:focus,
+button:focus-visible,
+.segmented button:focus-visible {
     outline: 1px solid var(--vscode-focusBorder);
     outline-offset: -1px;
 }
-input:disabled, textarea:disabled { opacity: 0.6; cursor: default; }
-input.mono, textarea.mono { font-family: var(--vscode-editor-font-family); }
-input.invalid { border-color: var(--vscode-inputValidation-errorBorder); }
-input.warning { border-color: var(--vscode-inputValidation-warningBorder); }
+input:disabled,
+textarea:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+input.mono,
+textarea.mono {
+    font-family: var(--vscode-editor-font-family);
+}
+input.invalid {
+    border-color: var(--vscode-inputValidation-errorBorder);
+}
+input.warning {
+    border-color: var(--vscode-inputValidation-warningBorder);
+}
 
-textarea { resize: vertical; min-height: 84px; display: block; }
+textarea {
+    resize: vertical;
+    min-height: 84px;
+    display: block;
+}
 
 .message {
     margin-top: 4px;
@@ -100,7 +168,10 @@ textarea { resize: vertical; min-height: 84px; display: block; }
     background: var(--vscode-inputValidation-warningBackground);
     border-color: var(--vscode-inputValidation-warningBorder);
 }
-.message.info { color: var(--vscode-descriptionForeground); padding-left: 0; }
+.message.info {
+    color: var(--vscode-descriptionForeground);
+    padding-left: 0;
+}
 
 /* buttons */
 
@@ -116,15 +187,29 @@ button {
     cursor: pointer;
     white-space: nowrap;
 }
-button:hover { background: var(--vscode-button-hoverBackground); }
+button:hover {
+    background: var(--vscode-button-hoverBackground);
+}
 button.secondary {
     color: var(--vscode-button-secondaryForeground);
     background: var(--vscode-button-secondaryBackground);
 }
-button.secondary:hover { background: var(--vscode-button-secondaryHoverBackground); }
-button:disabled { opacity: 0.5; cursor: default; pointer-events: none; }
-button.wide { width: 100%; }
-button .codicon { vertical-align: text-bottom; margin-right: 4px; font-size: 14px; }
+button.secondary:hover {
+    background: var(--vscode-button-secondaryHoverBackground);
+}
+button:disabled {
+    opacity: 0.5;
+    cursor: default;
+    pointer-events: none;
+}
+button.wide {
+    width: 100%;
+}
+button .codicon {
+    vertical-align: text-bottom;
+    margin-right: 4px;
+    font-size: 14px;
+}
 
 button.icon {
     padding: 2px;
@@ -139,8 +224,13 @@ button.icon {
     border-radius: 4px;
     flex: none;
 }
-button.icon:hover { background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.2)); }
-button.icon .codicon { margin: 0; font-size: 16px; }
+button.icon:hover {
+    background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.2));
+}
+button.icon .codicon {
+    margin: 0;
+    font-size: 16px;
+}
 
 button.link {
     padding: 0;
@@ -150,12 +240,27 @@ button.link {
     text-align: left;
     white-space: normal;
 }
-button.link:hover { color: var(--vscode-textLink-activeForeground); text-decoration: underline; background: none; }
+button.link:hover {
+    color: var(--vscode-textLink-activeForeground);
+    text-decoration: underline;
+    background: none;
+}
 
-.buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
+.buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+    align-items: center;
+}
 
 /* small buttons that insert something */
-.chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+}
 .chips button {
     padding: 1px 6px;
     font-family: var(--vscode-editor-font-family);
@@ -165,7 +270,9 @@ button.link:hover { color: var(--vscode-textLink-activeForeground); text-decorat
     border: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.35));
     border-radius: 10px;
 }
-.chips button:hover { background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.2)); }
+.chips button:hover {
+    background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.2));
+}
 
 /* two or three exclusive choices */
 .segmented {
@@ -182,7 +289,10 @@ button.link:hover { color: var(--vscode-textLink-activeForeground); text-decorat
     border-radius: 0;
     opacity: 0.75;
 }
-.segmented button:hover { background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.2)); opacity: 1; }
+.segmented button:hover {
+    background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.2));
+    opacity: 1;
+}
 /* the colours of a switched-on option, as in the search box: they exist to be told apart in every theme */
 .segmented button.selected {
     color: var(--vscode-inputOption-activeForeground, var(--vscode-button-secondaryForeground));
@@ -192,8 +302,17 @@ button.link:hover { color: var(--vscode-textLink-activeForeground); text-decorat
     opacity: 1;
 }
 
-.check { display: flex; align-items: center; gap: 6px; margin: 4px 0; cursor: pointer; }
-.check input { margin: 0; accent-color: var(--vscode-button-background); }
+.check {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 4px 0;
+    cursor: pointer;
+}
+.check input {
+    margin: 0;
+    accent-color: var(--vscode-button-background);
+}
 
 /* pieces */
 
@@ -218,11 +337,26 @@ button.link:hover { color: var(--vscode-textLink-activeForeground); text-decorat
     font-size: 0.9em;
     white-space: nowrap;
 }
-.state.obfuscated { background: var(--vscode-enigma-obfuscatedBackground); border-color: var(--vscode-enigma-obfuscatedBorder); }
-.state.deobfuscated { background: var(--vscode-enigma-deobfuscatedBackground); border-color: var(--vscode-enigma-deobfuscatedBorder); }
-.state.proposed { background: var(--vscode-enigma-proposedBackground); border-color: var(--vscode-enigma-proposedBorder); }
-.state.fallback { background: var(--vscode-enigma-fallbackBackground); border-color: var(--vscode-enigma-fallbackBorder); }
-.state.library { border-color: var(--vscode-widget-border, rgba(128, 128, 128, 0.35)); color: var(--vscode-descriptionForeground); }
+.state.obfuscated {
+    background: var(--vscode-enigma-obfuscatedBackground);
+    border-color: var(--vscode-enigma-obfuscatedBorder);
+}
+.state.deobfuscated {
+    background: var(--vscode-enigma-deobfuscatedBackground);
+    border-color: var(--vscode-enigma-deobfuscatedBorder);
+}
+.state.proposed {
+    background: var(--vscode-enigma-proposedBackground);
+    border-color: var(--vscode-enigma-proposedBorder);
+}
+.state.fallback {
+    background: var(--vscode-enigma-fallbackBackground);
+    border-color: var(--vscode-enigma-fallbackBorder);
+}
+.state.library {
+    border-color: var(--vscode-widget-border, rgba(128, 128, 128, 0.35));
+    color: var(--vscode-descriptionForeground);
+}
 
 dl.facts {
     display: grid;
@@ -231,13 +365,32 @@ dl.facts {
     margin: 0;
     align-items: center;
 }
-dl.facts dt { color: var(--vscode-descriptionForeground); white-space: nowrap; }
-dl.facts dd { margin: 0; overflow-wrap: break-word; min-width: 0; }
-dl.facts dd.action { justify-self: end; height: 22px; }
+dl.facts dt {
+    color: var(--vscode-descriptionForeground);
+    white-space: nowrap;
+}
+dl.facts dd {
+    margin: 0;
+    overflow-wrap: break-word;
+    min-width: 0;
+}
+dl.facts dd.action {
+    justify-self: end;
+    height: 22px;
+}
 
-.kind { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
-.kind .codicon { font-size: 16px; }
-.kind .label { font-weight: 600; }
+.kind {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+.kind .codicon {
+    font-size: 16px;
+}
+.kind .label {
+    font-weight: 600;
+}
 
 kbd {
     font-family: var(--vscode-font-family);
@@ -262,7 +415,11 @@ kbd {
 
 /* identifier */
 
-.kind .toolbar { display: none; gap: 1px; margin-left: 4px; }
+.kind .toolbar {
+    display: none;
+    gap: 1px;
+    margin-left: 4px;
+}
 
 /* In the panel at the bottom there is width to spare and little height: the sections stand side by side and the
    javadoc takes the height there is. In a side bar they are stacked. */
@@ -272,26 +429,55 @@ kbd {
         grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
         grid-template-rows: auto auto minmax(0, 1fr);
         grid-template-areas:
-			"banner banner"
-			"identity javadoc"
-			"details javadoc";
+            'banner banner'
+            'identity javadoc'
+            'details javadoc';
         gap: 8px 20px;
         min-height: 100%;
         padding: 8px 16px 8px 20px;
     }
-    .entry > hr, .entry > .actions { display: none; }
-    .entry dl.facts { gap: 2px 10px; }
-    .entry dl.facts dd.action, .entry dl.facts button.icon { height: 20px; }
-    .entry > section { margin-top: 0; min-width: 0; }
-    .entry > .banner { grid-area: banner; margin: 0; }
-    .entry > .identity { grid-area: identity; }
-    .entry > .details { grid-area: details; }
-    .entry > .details .buttons { margin-top: 6px; }
-    .entry > .details .buttons button { padding: 2px 9px; }
-    .entry .kind { margin-bottom: 5px; min-height: 22px; }
-    .entry .kind .toolbar { display: inline-flex; }
+    .entry > hr,
+    .entry > .actions {
+        display: none;
+    }
+    .entry dl.facts {
+        gap: 2px 10px;
+    }
+    .entry dl.facts dd.action,
+    .entry dl.facts button.icon {
+        height: 20px;
+    }
+    .entry > section {
+        margin-top: 0;
+        min-width: 0;
+    }
+    .entry > .banner {
+        grid-area: banner;
+        margin: 0;
+    }
+    .entry > .identity {
+        grid-area: identity;
+    }
+    .entry > .details {
+        grid-area: details;
+    }
+    .entry > .details .buttons {
+        margin-top: 6px;
+    }
+    .entry > .details .buttons button {
+        padding: 2px 9px;
+    }
+    .entry .kind {
+        margin-bottom: 5px;
+        min-height: 22px;
+    }
+    .entry .kind .toolbar {
+        display: inline-flex;
+    }
     /* said by the tooltip of the field instead, to leave the height to what is looked up more often */
-    .entry .identity .hint { display: none; }
+    .entry .identity .hint {
+        display: none;
+    }
 
     .entry > .javadoc {
         grid-area: javadoc;
@@ -299,29 +485,63 @@ kbd {
         grid-template-columns: minmax(0, 1fr) auto;
         grid-template-rows: auto minmax(0, 1fr) auto auto;
         grid-template-areas:
-			"title buttons"
-			"area area"
-			"chips chips"
-			"message message";
+            'title buttons'
+            'area area'
+            'chips chips'
+            'message message';
         align-items: center;
         padding-left: 20px;
         border-left: 1px solid var(--vscode-widget-border, var(--vscode-editorWidget-border, rgba(128, 128, 128, 0.35)));
         container-type: inline-size;
     }
-    .entry > .javadoc h2 { grid-area: title; margin: 0; white-space: nowrap; }
-    .entry > .javadoc .buttons { grid-area: buttons; margin: 0 0 6px; justify-content: flex-end; flex-wrap: nowrap; }
-    .entry > .javadoc .buttons button { padding: 2px 9px; }
-    .entry > .javadoc textarea { grid-area: area; align-self: stretch; height: 100%; min-height: 56px; resize: none; }
-    .entry > .javadoc .chips { grid-area: chips; }
-    .entry > .javadoc .message { grid-area: message; }
+    .entry > .javadoc h2 {
+        grid-area: title;
+        margin: 0;
+        white-space: nowrap;
+    }
+    .entry > .javadoc .buttons {
+        grid-area: buttons;
+        margin: 0 0 6px;
+        justify-content: flex-end;
+        flex-wrap: nowrap;
+    }
+    .entry > .javadoc .buttons button {
+        padding: 2px 9px;
+    }
+    .entry > .javadoc textarea {
+        grid-area: area;
+        align-self: stretch;
+        height: 100%;
+        min-height: 56px;
+        resize: none;
+    }
+    .entry > .javadoc .chips {
+        grid-area: chips;
+    }
+    .entry > .javadoc .message {
+        grid-area: message;
+    }
     /* the reminder of the key is the first thing to go when the title and the buttons do not fit on one line */
     @container (max-width: 400px) {
-        .buttons .muted { display: none; }
+        .buttons .muted {
+            display: none;
+        }
     }
 
-    .pane > .empty { display: grid; grid-template-columns: auto 1fr; column-gap: 12px; align-items: center; padding: 10px 4px; }
-    .pane > .empty .codicon { grid-row: span 2; margin: 0; }
-    .pane > .empty p { margin: 0; }
+    .pane > .empty {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        column-gap: 12px;
+        align-items: center;
+        padding: 10px 4px;
+    }
+    .pane > .empty .codicon {
+        grid-row: span 2;
+        margin: 0;
+    }
+    .pane > .empty p {
+        margin: 0;
+    }
 }
 
 @media (min-width: 1000px) {
@@ -329,10 +549,12 @@ kbd {
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.4fr);
         grid-template-rows: auto minmax(0, 1fr);
         grid-template-areas:
-			"banner banner banner"
-			"identity details javadoc";
+            'banner banner banner'
+            'identity details javadoc';
     }
-    .entry .identity .hint { display: block; }
+    .entry .identity .hint {
+        display: block;
+    }
     .entry > .details {
         padding-left: 20px;
         border-left: 1px solid var(--vscode-widget-border, var(--vscode-editorWidget-border, rgba(128, 128, 128, 0.35)));
@@ -341,7 +563,11 @@ kbd {
 
 /* collaboration */
 
-.users { display: flex; flex-wrap: wrap; gap: 4px; }
+.users {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
 .users .user {
     display: inline-flex;
     align-items: center;
@@ -352,8 +578,12 @@ kbd {
     color: var(--vscode-badge-foreground);
     font-size: 0.92em;
 }
-.users .user.self { outline: 1px solid var(--vscode-focusBorder); }
-.users .codicon { font-size: 12px; }
+.users .user.self {
+    outline: 1px solid var(--vscode-focusBorder);
+}
+.users .codicon {
+    font-size: 12px;
+}
 
 .log {
     overflow-y: auto;
@@ -362,27 +592,83 @@ kbd {
     border-top: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.35));
     border-bottom: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.35));
 }
-.log .entry { padding: 3px 0; overflow-wrap: anywhere; }
-.log .entry .time { float: right; margin-left: 8px; font-size: 0.85em; color: var(--vscode-descriptionForeground); opacity: 0.8; }
-.log .entry.chat .who { font-weight: 600; }
-.log .entry.chat.self .who { color: var(--vscode-textLink-foreground); }
-.log .entry.event { color: var(--vscode-descriptionForeground); font-size: 0.95em; }
-.log .entry.event .codicon { font-size: 12px; margin-right: 4px; vertical-align: -1px; }
+.log .entry {
+    padding: 3px 0;
+    overflow-wrap: anywhere;
+}
+.log .entry .time {
+    float: right;
+    margin-left: 8px;
+    font-size: 0.85em;
+    color: var(--vscode-descriptionForeground);
+    opacity: 0.8;
+}
+.log .entry.chat .who {
+    font-weight: 600;
+}
+.log .entry.chat.self .who {
+    color: var(--vscode-textLink-foreground);
+}
+.log .entry.event {
+    color: var(--vscode-descriptionForeground);
+    font-size: 0.95em;
+}
+.log .entry.event .codicon {
+    font-size: 12px;
+    margin-right: 4px;
+    vertical-align: -1px;
+}
 /* entries that lead somewhere read as text, and wrap like text even when they are one long signature */
-.log .entry button.link { display: inline; color: inherit; overflow-wrap: anywhere; word-break: break-word; }
-.log .entry button.link:hover { color: var(--vscode-textLink-activeForeground); }
-.log .placeholder { padding: 12px 0; color: var(--vscode-descriptionForeground); text-align: center; }
+.log .entry button.link {
+    display: inline;
+    color: inherit;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+.log .entry button.link:hover {
+    color: var(--vscode-textLink-activeForeground);
+}
+.log .placeholder {
+    padding: 12px 0;
+    color: var(--vscode-descriptionForeground);
+    text-align: center;
+}
 
-.composer { display: flex; gap: 6px; margin-top: 8px; }
-.composer input { flex: 1 1 auto; }
+.composer {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+}
+.composer input {
+    flex: 1 1 auto;
+}
 
-.status { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
-.status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--vscode-testing-iconPassed, #3fb950); flex: none; }
+.status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+.status .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--vscode-testing-iconPassed, #3fb950);
+    flex: none;
+}
 
 /* statistics */
 
-.stats { max-width: 900px; margin: 0 auto; padding: 20px 28px 40px; }
-.stats h1 { font-size: 1.5em; font-weight: 600; margin: 0 0 2px; }
+.stats {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px 28px 40px;
+}
+.stats h1 {
+    font-size: 1.5em;
+    font-weight: 600;
+    margin: 0 0 2px;
+}
 .stats .controls {
     display: flex;
     flex-wrap: wrap;
@@ -394,18 +680,56 @@ kbd {
     border-radius: 4px;
     background: var(--vscode-editorWidget-background, transparent);
 }
-.stats .controls .group { min-width: 0; }
-.stats .controls .group > .title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; opacity: 0.8; margin-bottom: 4px; }
-.stats .controls .checks { display: flex; flex-wrap: wrap; gap: 2px 14px; }
-.stats .controls input[type="text"] { width: 220px; }
+.stats .controls .group {
+    min-width: 0;
+}
+.stats .controls .group > .title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.8;
+    margin-bottom: 4px;
+}
+.stats .controls .checks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 14px;
+}
+.stats .controls input[type='text'] {
+    width: 220px;
+}
 
-.totals { display: grid; grid-template-columns: max-content minmax(120px, 1fr) max-content max-content; gap: 8px 14px; align-items: center; }
-.totals .overall { font-weight: 600; }
-.totals .number { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.bar { height: 8px; border-radius: 4px; background: var(--vscode-enigma-obfuscatedBackground, rgba(128, 128, 128, 0.25)); overflow: hidden; }
-.bar > span { display: block; height: 100%; border-radius: 4px; background: var(--vscode-enigma-deobfuscatedBorder, var(--vscode-progressBar-background)); transition: width 0.2s ease; }
+.totals {
+    display: grid;
+    grid-template-columns: max-content minmax(120px, 1fr) max-content max-content;
+    gap: 8px 14px;
+    align-items: center;
+}
+.totals .overall {
+    font-weight: 600;
+}
+.totals .number {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.bar {
+    height: 8px;
+    border-radius: 4px;
+    background: var(--vscode-enigma-obfuscatedBackground, rgba(128, 128, 128, 0.25));
+    overflow: hidden;
+}
+.bar > span {
+    display: block;
+    height: 100%;
+    border-radius: 4px;
+    background: var(--vscode-enigma-deobfuscatedBorder, var(--vscode-progressBar-background));
+    transition: width 0.2s ease;
+}
 
-.tree { margin-top: 6px; }
+.tree {
+    margin-top: 6px;
+}
 .tree .node > .line {
     display: grid;
     grid-template-columns: 16px minmax(0, 1fr) 150px 60px;
@@ -415,17 +739,57 @@ kbd {
     border-radius: 3px;
     cursor: default;
 }
-.tree .node > .line:hover { background: var(--vscode-list-hoverBackground); }
-.tree .node.branch > .line { cursor: pointer; }
-.tree .node > .line .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tree .node > .line .count { text-align: right; font-variant-numeric: tabular-nums; color: var(--vscode-descriptionForeground); }
-.tree .node > .line .codicon { font-size: 14px; }
-.tree .node > .line .share { height: 6px; border-radius: 3px; background: rgba(128, 128, 128, 0.18); overflow: hidden; }
-.tree .node > .line .share > span { display: block; height: 100%; background: var(--vscode-enigma-obfuscatedBorder, var(--vscode-charts-red)); }
-.tree .children { margin-left: 16px; border-left: 1px solid var(--vscode-tree-indentGuidesStroke, rgba(128, 128, 128, 0.3)); padding-left: 4px; }
-.tree .node.collapsed > .children { display: none; }
-.tree .leaf .name button.link { color: var(--vscode-foreground); }
-.tree .leaf .name button.link:hover { color: var(--vscode-textLink-activeForeground); }
+.tree .node > .line:hover {
+    background: var(--vscode-list-hoverBackground);
+}
+.tree .node.branch > .line {
+    cursor: pointer;
+}
+.tree .node > .line .name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.tree .node > .line .count {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: var(--vscode-descriptionForeground);
+}
+.tree .node > .line .codicon {
+    font-size: 14px;
+}
+.tree .node > .line .share {
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(128, 128, 128, 0.18);
+    overflow: hidden;
+}
+.tree .node > .line .share > span {
+    display: block;
+    height: 100%;
+    background: var(--vscode-enigma-obfuscatedBorder, var(--vscode-charts-red));
+}
+.tree .children {
+    margin-left: 16px;
+    border-left: 1px solid var(--vscode-tree-indentGuidesStroke, rgba(128, 128, 128, 0.3));
+    padding-left: 4px;
+}
+.tree .node.collapsed > .children {
+    display: none;
+}
+.tree .leaf .name button.link {
+    color: var(--vscode-foreground);
+}
+.tree .leaf .name button.link:hover {
+    color: var(--vscode-textLink-activeForeground);
+}
 
-.spinner { display: inline-block; animation: spin 1s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+.spinner {
+    display: inline-block;
+    animation: spin 1s linear infinite;
+}
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

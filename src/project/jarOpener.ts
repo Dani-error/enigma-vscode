@@ -17,7 +17,7 @@ const sameFile = (a: string | null | undefined, b: string) => {
         }
     };
     return real(a) === real(b);
-}
+};
 
 /**
  * Puts Enigma among the ways the editor offers to open a jar ("Open With..."), and opens the jar in Enigma when it
@@ -29,7 +29,9 @@ export class JarOpener implements vscode.CustomReadonlyEditorProvider, vscode.Di
     private readonly registration: vscode.Disposable;
 
     constructor(private readonly project: Project) {
-        this.registration = vscode.window.registerCustomEditorProvider(JarOpener.viewType, this, { supportsMultipleEditorsPerDocument: true });
+        this.registration = vscode.window.registerCustomEditorProvider(JarOpener.viewType, this, {
+            supportsMultipleEditorsPerDocument: true,
+        });
     }
 
     openCustomDocument(uri: vscode.Uri): vscode.CustomDocument {
@@ -39,7 +41,9 @@ export class JarOpener implements vscode.CustomReadonlyEditorProvider, vscode.Di
 
     resolveCustomEditor(document: vscode.CustomDocument, panel: vscode.WebviewPanel): void {
         // once the editor is done bringing the tab up; closed any earlier, it leaves an empty tab behind
-        setTimeout(() => panel.dispose(), 0);
+        setTimeout(() => {
+            panel.dispose();
+        }, 0);
         void this.open(document.uri);
     }
 

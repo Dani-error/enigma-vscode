@@ -12,7 +12,15 @@ import type { ClassTreeNode } from '../../../../src/views/classTree';
 // c = SubclassA, d = SubclassB (overrides doBaseThings), e = SubsubclassAA (overrides both, calls super.getName() and
 // this.getName()).
 
-export interface PaneEntry { key: string; displayName: string; name: string; renamable: boolean; javadoc: string; state: string; kindLabel: string }
+export interface PaneEntry {
+    key: string;
+    displayName: string;
+    name: string;
+    renamable: boolean;
+    javadoc: string;
+    state: string;
+    kindLabel: string;
+}
 
 /** What the extension exposes to these tests. */
 export type Api = EnigmaApi;
@@ -27,17 +35,33 @@ export const METHOD_DO_BASE_THINGS: EntryRef = { kind: 'method', owner: 'a', nam
 export const METHOD_GET_NAME: EntryRef = { kind: 'method', owner: 'a', name: 'a', desc: '()Ljava/lang/String;' };
 
 /** Error and warning notifications the extension showed. They are invisible to a test otherwise. */
+declare global {
+    /** What the extension logged at debug level, for the runner to print when a test fails (see index.ts). */
+    var enigmaTestTrace: string[] | undefined;
+}
+
+/** An item of a quick pick the extension offers, with what the extension puts next to the editor's own fields. */
+export interface Offered extends vscode.QuickPickItem {
+    id?: string;
+    home?: string;
+    format?: { id: string; directory?: boolean };
+}
+
 export const reported: string[] = [];
 /** What the extension logged at debug level; printed when a test times out. */
 export const trace: string[] = [];
-(globalThis as any).enigmaTestTrace = trace;
+globalThis.enigmaTestTrace = trace;
 
 /** The class a node of a class tree stands for, if it is one. */
-export const classOf = (node: ClassTreeNode | undefined) => node?.type === 'class' ? node.item.obf : undefined;
+export const classOf = (node: ClassTreeNode | undefined) => (node?.type === 'class' ? node.item.obf : undefined);
 
 export const pause = (milliseconds: number) => new Promise(resolve => setTimeout(resolve, milliseconds));
 
-export async function waitFor<T>(what: string, condition: () => T | undefined | false | Promise<T | undefined | false>, timeout = 30000): Promise<T> {
+export async function waitFor<T>(
+    what: string,
+    condition: () => T | undefined | false | Promise<T | undefined | false>,
+    timeout = 30000,
+): Promise<T> {
     const deadline = Date.now() + timeout;
     for (;;) {
         const value = await condition();
@@ -47,10 +71,14 @@ export async function waitFor<T>(what: string, condition: () => T | undefined | 
 
         if (Date.now() > deadline) {
             const active = vscode.window.activeTextEditor;
-            throw new Error(`Timed out waiting for ${what}`
-                + (reported.length > 0 ? `. Errors shown to the user: ${reported.join(' | ')}` : '')
-                + (active ? `\n--- ${active.document.uri.path} (dirty: ${active.document.isDirty}) ---\n${active.document.getText()}` : '')
-                + `\n--- log (window focused: ${vscode.window.state.focused}) ---\n${trace.slice(-40).join('\n')}`);
+            throw new Error(
+                `Timed out waiting for ${what}` +
+                    (reported.length > 0 ? `. Errors shown to the user: ${reported.join(' | ')}` : '') +
+                    (active
+                        ? `\n--- ${active.document.uri.path} (dirty: ${active.document.isDirty}) ---\n${active.document.getText()}`
+                        : '') +
+                    `\n--- log (window focused: ${vscode.window.state.focused}) ---\n${trace.slice(-40).join('\n')}`,
+            );
         }
 
         await pause(40);
@@ -67,13 +95,20 @@ export function execute<T = unknown>(command: string, ...args: unknown[]): Promi
 }
 
 /** Replaces a function of the vscode API for the duration of an action: dialogs cannot be answered in tests. */
-export async function withStub<T>(target: any, name: string, replacement: (...args: any[]) => unknown, action: () => Promise<T>): Promise<T> {
-    const original = target[name];
-    target[name] = replacement;
+export async function withStub<T>(
+    target: object,
+    name: string,
+    replacement: (...args: never[]) => unknown,
+    action: () => Promise<T>,
+): Promise<T> {
+    // the API is a plain object of functions, and the stand-in takes the place of one of them
+    const holder = target as Record<string, unknown>;
+    const original = holder[name];
+    holder[name] = replacement;
     try {
         return await action();
     } finally {
-        target[name] = original;
+        holder[name] = original;
     }
 }
 
@@ -87,7 +122,9 @@ export async function openClass(api: Api, obf: string): Promise<vscode.TextEdito
     await execute('enigma.openClass', obf);
     const editor = await waitFor(`editor of ${obf}`, () => {
         const active = vscode.window.activeTextEditor;
-        return active && active.document.uri.scheme === 'enigma' && active.document.uri.query === `class=${obf}&view=source` ? active : undefined;
+        return active && active.document.uri.scheme === 'enigma' && active.document.uri.query === `class=${obf}&view=source`
+            ? active
+            : undefined;
     });
     await waitFor(`source of ${obf}`, () => api.documents.source(editor.document.uri) && editor.document.getText().includes('class '));
     // Classes open as preview tabs, which the next class opened would replace. The tests look at several at once.
@@ -100,13 +137,16 @@ export async function openClass(api: Api, obf: string): Promise<vscode.TextEdito
  * address in memory for a while; that one is no longer shown and must not be picked.
  */
 export function classDocument(obf: string, view = 'source'): vscode.TextDocument {
-    const open = vscode.window.tabGroups.all.flatMap(group => group.tabs)
-        .map(tab => tab.input instanceof vscode.TabInputText ? tab.input.uri : undefined)
+    const open = vscode.window.tabGroups.all
+        .flatMap(group => group.tabs)
+        .map(tab => (tab.input instanceof vscode.TabInputText ? tab.input.uri : undefined))
         .filter((uri): uri is vscode.Uri => uri?.scheme === 'enigma' && uri.query === `class=${obf}&view=${view}`)
         .map(uri => uri.toString());
     const found = vscode.workspace.textDocuments.find(document => open.includes(document.uri.toString()));
     if (!found) {
-        const tabs = vscode.window.tabGroups.all.flatMap(group => group.tabs).map(tab => `${tab.label}[${(tab.input as any)?.uri?.toString(true)}]`);
+        const tabs = vscode.window.tabGroups.all
+            .flatMap(group => group.tabs)
+            .map(tab => `${tab.label}[${tab.input instanceof vscode.TabInputText ? tab.input.uri.toString(true) : '?'}]`);
         throw new Error(`No open document for class ${obf} (${view}). Tabs: ${tabs.join(', ') || 'none'}`);
     }
 
@@ -141,7 +181,9 @@ async function press(editor: vscode.TextEditor, character: string): Promise<void
         }
 
         keyboard = false;
-        trace.push('[test] keys do not reach the editor: its window does not have the keyboard focus. Typing through the API from here on.');
+        trace.push(
+            '[test] keys do not reach the editor: its window does not have the keyboard focus. Typing through the API from here on.',
+        );
     }
 
     for (let attempt = 0; ; attempt++) {
@@ -227,7 +269,7 @@ export function activate(): Promise<Api> {
         assert.ok(extension, 'the extension is installed');
         const api = await extension.activate();
 
-        const output = (api.backend as any).output;
+        const output = api.backend.output;
         const debug = output.debug.bind(output);
         output.debug = (message: string, ...rest: unknown[]) => {
             trace.push(`${new Date().toISOString().substring(17, 23)} ${message}`);
@@ -235,9 +277,10 @@ export function activate(): Promise<Api> {
         };
 
         const showError = vscode.window.showErrorMessage;
-        (vscode.window as any).showErrorMessage = (message: string, ...rest: any[]) => {
+        (vscode.window as unknown as Record<string, unknown>).showErrorMessage = (message: string, ...rest: unknown[]) => {
             reported.push(message);
-            return (showError as any)(message, ...rest);
+            // the original, with whatever the extension passed: messages, options and buttons
+            return Reflect.apply(showError, vscode.window, [message, ...rest]) as Thenable<unknown>;
         };
 
         return api;

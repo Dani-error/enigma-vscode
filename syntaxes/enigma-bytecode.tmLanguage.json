@@ -1,17 +1,31 @@
 {
-	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-	"name": "Java Bytecode (Enigma)",
-	"scopeName": "source.enigma.bytecode",
-	"patterns": [
-		{ "name": "comment.line.double-slash.enigma-bytecode", "match": "//.*$" },
-		{ "name": "string.quoted.double.enigma-bytecode", "begin": "\"", "end": "\"", "patterns": [{ "name": "constant.character.escape.enigma-bytecode", "match": "\\\\." }] },
-		{ "name": "entity.name.label.enigma-bytecode", "match": "^\\s*L\\d+\\b" },
-		{ "name": "keyword.control.enigma-bytecode", "match": "\\b(LINENUMBER|LOCALVARIABLE|MAXSTACK|MAXLOCALS|FRAME|TRYCATCHBLOCK|INNERCLASS|OUTERCLASS|NESTHOST|NESTMEMBER|PERMITTEDSUBCLASS|RECORDCOMPONENT|BOOTSTRAP)\\b" },
-		{ "name": "storage.modifier.enigma-bytecode", "match": "\\b(public|private|protected|static|final|abstract|synchronized|native|transient|volatile|strictfp|synthetic|bridge|varargs|enum|interface|class|record|extends|implements|throws|default|sealed|non-sealed)\\b" },
-		{ "name": "keyword.other.opcode.enigma-bytecode", "match": "\\b(?:[A-Z][A-Z0-9_]{2,})\\b" },
-		{ "name": "constant.numeric.enigma-bytecode", "match": "(?<![\\w$])-?(?:0[xX][0-9a-fA-F]+|\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)[LlFfDd]?\\b" },
-		{ "name": "constant.language.enigma-bytecode", "match": "\\b(true|false|null)\\b" },
-		{ "name": "entity.name.type.enigma-bytecode", "match": "\\b[a-zA-Z_$][\\w$]*(?:/[a-zA-Z_$<][\\w$>]*)+\\b" },
-		{ "name": "entity.name.function.enigma-bytecode", "match": "<(?:init|clinit)>" }
-	]
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "Java Bytecode (Enigma)",
+    "scopeName": "source.enigma.bytecode",
+    "patterns": [
+        { "name": "comment.line.double-slash.enigma-bytecode", "match": "//.*$" },
+        {
+            "name": "string.quoted.double.enigma-bytecode",
+            "begin": "\"",
+            "end": "\"",
+            "patterns": [{ "name": "constant.character.escape.enigma-bytecode", "match": "\\\\." }]
+        },
+        { "name": "entity.name.label.enigma-bytecode", "match": "^\\s*L\\d+\\b" },
+        {
+            "name": "keyword.control.enigma-bytecode",
+            "match": "\\b(LINENUMBER|LOCALVARIABLE|MAXSTACK|MAXLOCALS|FRAME|TRYCATCHBLOCK|INNERCLASS|OUTERCLASS|NESTHOST|NESTMEMBER|PERMITTEDSUBCLASS|RECORDCOMPONENT|BOOTSTRAP)\\b"
+        },
+        {
+            "name": "storage.modifier.enigma-bytecode",
+            "match": "\\b(public|private|protected|static|final|abstract|synchronized|native|transient|volatile|strictfp|synthetic|bridge|varargs|enum|interface|class|record|extends|implements|throws|default|sealed|non-sealed)\\b"
+        },
+        { "name": "keyword.other.opcode.enigma-bytecode", "match": "\\b(?:[A-Z][A-Z0-9_]{2,})\\b" },
+        {
+            "name": "constant.numeric.enigma-bytecode",
+            "match": "(?<![\\w$])-?(?:0[xX][0-9a-fA-F]+|\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)[LlFfDd]?\\b"
+        },
+        { "name": "constant.language.enigma-bytecode", "match": "\\b(true|false|null)\\b" },
+        { "name": "entity.name.type.enigma-bytecode", "match": "\\b[a-zA-Z_$][\\w$]*(?:/[a-zA-Z_$<][\\w$>]*)+\\b" },
+        { "name": "entity.name.function.enigma-bytecode", "match": "<(?:init|clinit)>" }
+    ]
 }

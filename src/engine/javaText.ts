@@ -7,19 +7,26 @@ import { JavaOrigin, JavaProblem, JavaSearch } from './java';
 /** Where a runtime was found. */
 export const describeOrigin = (origin: JavaOrigin): string => {
     switch (origin.kind) {
-        case 'setting': return t('java.fromSetting');
-        case 'javaHome': return 'JAVA_HOME';
-        case 'path': return t('java.fromPath');
-        case 'installed': return t('java.installedIn', origin.directory);
+        case 'setting':
+            return t('java.fromSetting');
+        case 'javaHome':
+            return 'JAVA_HOME';
+        case 'path':
+            return t('java.fromPath');
+        case 'installed':
+            return t('java.installedIn', origin.directory);
     }
 };
 
 /** Why a runtime was passed over. */
 export const describeProblem = (problem: JavaProblem): string => {
     switch (problem.kind) {
-        case 'noExecutable': return t('java.noExecutable', problem.file);
-        case 'tooOld': return t('java.isJava', problem.version);
-        case 'notStartable': return problem.error ?? t('java.couldNotStart');
+        case 'noExecutable':
+            return t('java.noExecutable', problem.file);
+        case 'tooOld':
+            return t('java.isJava', problem.version);
+        case 'notStartable':
+            return problem.error ?? t('java.couldNotStart');
     }
 };
 

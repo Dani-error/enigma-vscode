@@ -16,19 +16,35 @@ const MAX_IMPLEMENTATIONS = 80;
  * Getting around from a name in the code: its declaration, its references, its implementations, its other
  * occurrences in the class, and what the engine knows about it.
  */
-export class NavigationProvider implements
-    vscode.DefinitionProvider, vscode.ReferenceProvider, vscode.DocumentHighlightProvider, vscode.HoverProvider, vscode.ImplementationProvider {
-    constructor(private readonly backend: Backend, private readonly index: ClassIndex, private readonly documents: EnigmaDocuments) {
-    }
+export class NavigationProvider
+    implements
+        vscode.DefinitionProvider,
+        vscode.ReferenceProvider,
+        vscode.DocumentHighlightProvider,
+        vscode.HoverProvider,
+        vscode.ImplementationProvider
+{
+    constructor(
+        private readonly backend: Backend,
+        private readonly index: ClassIndex,
+        private readonly documents: EnigmaDocuments,
+    ) {}
 
     async provideDefinition(document: vscode.TextDocument, position: vscode.Position): Promise<vscode.Location | undefined> {
         const location = await this.documents.atPosition(document, position, 'nav/definition');
         return location ? this.index.location(location) : undefined;
     }
 
-    async provideReferences(document: vscode.TextDocument, position: vscode.Position, context: vscode.ReferenceContext): Promise<vscode.Location[]> {
+    async provideReferences(
+        document: vscode.TextDocument,
+        position: vscode.Position,
+        context: vscode.ReferenceContext,
+    ): Promise<vscode.Location[]> {
         const limit = settings.maxReferenceClasses;
-        const result = await this.documents.atPosition(document, position, 'nav/references', { includeDeclaration: context.includeDeclaration, limit });
+        const result = await this.documents.atPosition(document, position, 'nav/references', {
+            includeDeclaration: context.includeDeclaration,
+            limit,
+        });
         if (!result) {
             return [];
         }

@@ -24,14 +24,15 @@ const TABS_KEY = 'enigma.tabs';
  * tabs that were set aside for it. Only remembers; what to do with it is decided by the project.
  */
 export class ProjectMemory {
-    constructor(private readonly context: vscode.ExtensionContext) {
-    }
+    constructor(private readonly context: vscode.ExtensionContext) {}
 
     /** Notes what is open: in this window, and as the most recent project. */
     remember(descriptor: ProjectDescriptor): void {
         void this.context.workspaceState.update(WORKSPACE_KEY, descriptor);
 
-        const recent = this.recent().filter(project => project.jar !== descriptor.jar || (project.mappings ?? '') !== (descriptor.mappings ?? ''));
+        const recent = this.recent().filter(
+            project => project.jar !== descriptor.jar || (project.mappings ?? '') !== (descriptor.mappings ?? ''),
+        );
         // a project without mappings is replaced by the same jar with mappings, not listed twice
         const withoutBare = descriptor.mappings ? recent.filter(project => project.jar !== descriptor.jar || project.mappings) : recent;
         void this.context.globalState.update(RECENT_KEY, [descriptor, ...withoutBare].slice(0, settings.maxRecentProjects));

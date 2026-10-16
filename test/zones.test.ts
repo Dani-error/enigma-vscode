@@ -3,20 +3,31 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { ParsedText, RefTuple, ZoneGroup, ZoneModel, changesBetween, difference, insertedText, judge, newNameOf } from '../src/editor/zones';
+import {
+    ParsedText,
+    RefTuple,
+    ZoneGroup,
+    ZoneModel,
+    changesBetween,
+    difference,
+    insertedText,
+    judge,
+    newNameOf,
+} from '../src/editor/zones';
 
 const SOURCE = [
-    'public class Base extends a {',          // 0: Base (class, deobfuscated), a (class, obfuscated)
-    '    private final String a;',            // 1: String (library), a (field)
+    'public class Base extends a {', // 0: Base (class, deobfuscated), a (class, obfuscated)
+    '    private final String a;', // 1: String (library), a (field)
     '',
-    '    public String a() {',                // 3: String, a (method)
-    '        return this.a + super.a();',     // 4: a (field), a (method)
+    '    public String a() {', // 3: String, a (method)
+    '        return this.a + super.a();', // 4: a (field), a (method)
     '    }',
     '}',
     '',
 ].join('\n');
 
-const DECL = 1, RENAMABLE = 2;
+const DECL = 1,
+    RENAMABLE = 2;
 const GROUPS: [ZoneGroup, ZoneGroup, ZoneGroup, ZoneGroup, ZoneGroup] = [
     { entry: { kind: 'class', name: 'c' }, kind: 'class', name: 'com/example/Base' },
     { entry: { kind: 'class', name: 'a' }, kind: 'class', name: 'a' },
@@ -59,8 +70,14 @@ function edit(m: ZoneModel, replacements: Record<number, string>): string {
 describe('zones', () => {
     it('reads the names of a source', () => {
         const m = model();
-        assert.deepEqual(m.zones.map(zone => zone.text), ['Base', 'a', 'String', 'a', 'String', 'a', 'a', 'a']);
-        assert.deepEqual(m.zones.map(zone => zone.inline), [true, true, false, true, false, true, true, true]);
+        assert.deepEqual(
+            m.zones.map(zone => zone.text),
+            ['Base', 'a', 'String', 'a', 'String', 'a', 'a', 'a'],
+        );
+        assert.deepEqual(
+            m.zones.map(zone => zone.inline),
+            [true, true, false, true, false, true, true, true],
+        );
         assert.equal(m.editable, true);
         assert.deepEqual(judge(m, m.parse(SOURCE)), { kind: 'unchanged' });
         assert.deepEqual(m.original.starts, parsed(m, SOURCE).starts);
@@ -102,17 +119,18 @@ describe('zones', () => {
 
     it('refuses everything that is not an editable name', () => {
         const m = model();
-        const invalid = (text: string) => assert.deepEqual(judge(m, m.parse(text)), { kind: 'invalid' }, text.split('\n').slice(0, 5).join(' / '));
-        invalid(SOURCE.replace('public class', 'publicx class'));        // a keyword
-        invalid(SOURCE.replace('private final', 'private  final'));      // whitespace
-        invalid(SOURCE.replace('String a;', 'Strin a;'));                // a library class
-        invalid(SOURCE.replace('String a;', 'String a;\n'));             // a new line
-        invalid(SOURCE.replace('String a;', 'String a b;'));             // a space inside a name
-        invalid(SOURCE.replace('String a;', 'String a.b;'));             // punctuation inside a name
-        invalid(SOURCE.replace('    }\n', ''));                          // deleted code
-        invalid(SOURCE + ' ');                                           // trailing text
+        const invalid = (text: string) =>
+            assert.deepEqual(judge(m, m.parse(text)), { kind: 'invalid' }, text.split('\n').slice(0, 5).join(' / '));
+        invalid(SOURCE.replace('public class', 'publicx class')); // a keyword
+        invalid(SOURCE.replace('private final', 'private  final')); // whitespace
+        invalid(SOURCE.replace('String a;', 'Strin a;')); // a library class
+        invalid(SOURCE.replace('String a;', 'String a;\n')); // a new line
+        invalid(SOURCE.replace('String a;', 'String a b;')); // a space inside a name
+        invalid(SOURCE.replace('String a;', 'String a.b;')); // punctuation inside a name
+        invalid(SOURCE.replace('    }\n', '')); // deleted code
+        invalid(SOURCE + ' '); // trailing text
         invalid('');
-        invalid(SOURCE.replace('String a;', 'String a;x'));             // right after the delimiter of a name
+        invalid(SOURCE.replace('String a;', 'String a;x')); // right after the delimiter of a name
     });
 
     it('edits only the visible part of a class name, keeping its package', () => {
@@ -124,23 +142,53 @@ describe('zones', () => {
 
     it('leaves names that cannot be edited safely to the rename command', () => {
         // shown differently than it is stored
-        const renamed = new ZoneModel(SOURCE, REFS, GROUPS.map((group, i) => i === 0 ? { ...group, name: 'com/example/Other' } : group));
+        const renamed = new ZoneModel(
+            SOURCE,
+            REFS,
+            GROUPS.map((group, i) => (i === 0 ? { ...group, name: 'com/example/Other' } : group)),
+        );
         assert.equal(renamed.zones[0]?.inline, false);
         assert.equal(renamed.zones[0]?.renamable, true);
         assert.deepEqual(judge(renamed, renamed.parse(edit(renamed, { 0: 'Base2' }))), { kind: 'invalid' });
 
         // two names without anything between them could not be told apart after an edit
-        const adjacent = new ZoneModel('ab = 1;', [[0, 0, 1, 0, RENAMABLE, 1], [0, 1, 1, 1, RENAMABLE, 1]], [GROUPS[3], GROUPS[4]]);
-        assert.deepEqual(adjacent.zones.map(zone => zone.inline), [false, false]);
+        const adjacent = new ZoneModel(
+            'ab = 1;',
+            [
+                [0, 0, 1, 0, RENAMABLE, 1],
+                [0, 1, 1, 1, RENAMABLE, 1],
+            ],
+            [GROUPS[3], GROUPS[4]],
+        );
+        assert.deepEqual(
+            adjacent.zones.map(zone => zone.inline),
+            [false, false],
+        );
         assert.equal(adjacent.editable, false);
         assert.deepEqual(judge(adjacent, adjacent.parse('ab = 1;')), { kind: 'unchanged' });
 
         // tokens that are not identifiers, out of order, overlapping or out of range are ignored rather than trusted
-        const odd = new ZoneModel('a b', [[0, 2, 1, 3, RENAMABLE, 1], [0, 0, 1, 3, RENAMABLE, 1], [5, 0, 1, 3, RENAMABLE, 1], [0, 2, 9, 3, RENAMABLE, 1]], GROUPS);
-        assert.deepEqual(odd.zones.map(zone => zone.text), ['b']);
+        const odd = new ZoneModel(
+            'a b',
+            [
+                [0, 2, 1, 3, RENAMABLE, 1],
+                [0, 0, 1, 3, RENAMABLE, 1],
+                [5, 0, 1, 3, RENAMABLE, 1],
+                [0, 2, 9, 3, RENAMABLE, 1],
+            ],
+            GROUPS,
+        );
+        assert.deepEqual(
+            odd.zones.map(zone => zone.text),
+            ['b'],
+        );
 
         // bytecode and sources without renamable names are not editable at all
-        const fixed = new ZoneModel(SOURCE, REFS.map((ref): RefTuple => [ref[0], ref[1], ref[2], ref[3], ref[4] & ~RENAMABLE, ref[5]]), GROUPS);
+        const fixed = new ZoneModel(
+            SOURCE,
+            REFS.map((ref): RefTuple => [ref[0], ref[1], ref[2], ref[3], ref[4] & ~RENAMABLE, ref[5]]),
+            GROUPS,
+        );
         assert.equal(fixed.editable, false);
         assert.deepEqual(judge(fixed, fixed.parse(edit(fixed, { 3: 'x' }))), { kind: 'invalid' });
     });
@@ -150,9 +198,9 @@ describe('zones', () => {
         const text = edit(m, { 3: 'name', 6: 'name' });
         const read = parsed(m, text);
         const offset = text.indexOf('String name;') + 'String '.length;
-        assert.equal(m.zoneAt(read, offset), 3);          // at its start
-        assert.equal(m.zoneAt(read, offset + 2), 3);      // inside
-        assert.equal(m.zoneAt(read, offset + 4), 3);      // at its end: typing there extends it
+        assert.equal(m.zoneAt(read, offset), 3); // at its start
+        assert.equal(m.zoneAt(read, offset + 2), 3); // inside
+        assert.equal(m.zoneAt(read, offset + 4), 3); // at its end: typing there extends it
         assert.equal(m.zoneAt(read, offset + 5), -1);
         assert.equal(m.zoneAt(read, 0), -1);
         assert.equal(m.zoneAt(read, text.indexOf('super.a()') + 6), 7);
@@ -190,7 +238,11 @@ describe('zones', () => {
         const text = lines.join('\n');
         const large = new ZoneModel(text, refs, [{ ...GROUPS[3], name: '' }]);
         // names differ per line here, so none is "inline"; give each its own exact name instead
-        const exact = new ZoneModel(text, refs.map((ref, i): RefTuple => [ref[0], ref[1], ref[2], i, ref[4], ref[5]]), refs.map((_, i) => ({ ...GROUPS[3], name: `field_${i}` })));
+        const exact = new ZoneModel(
+            text,
+            refs.map((ref, i): RefTuple => [ref[0], ref[1], ref[2], i, ref[4], ref[5]]),
+            refs.map((_, i) => ({ ...GROUPS[3], name: `field_${i}` })),
+        );
         assert.equal(exact.editable, true);
         assert.equal(large.editable, false);
 
@@ -204,19 +256,27 @@ describe('zones', () => {
         }
 
         assert.ok(milliseconds < 25, `parsing ${text.length} characters with 20000 names took ${milliseconds.toFixed(2)} ms`);
-        console.log(`    parsing a ${Math.round(text.length / 1024)} KB class with 20000 names: ${milliseconds.toFixed(2)} ms per keystroke`);
+        console.log(
+            `    parsing a ${Math.round(text.length / 1024)} KB class with 20000 names: ${milliseconds.toFixed(2)} ms per keystroke`,
+        );
     });
 });
 
 describe('bringing a text in line with another', () => {
-    const apply = (text: string, changes: { start: number; end: number; text: string }[]) => [...changes].sort((a, b) => b.start - a.start).reduce((result, change) => result.substring(0, change.start) + change.text + result.substring(change.end), text);
+    const apply = (text: string, changes: { start: number; end: number; text: string }[]) =>
+        [...changes]
+            .sort((a, b) => b.start - a.start)
+            .reduce((result, change) => result.substring(0, change.start) + change.text + result.substring(change.end), text);
 
     it('replaces each name on its own where only names differ', () => {
         const m = model();
         // the method is being typed: its declaration and its call show another name
         const typed = edit(m, { 5: 'getName', 7: 'getName' });
         const changes = changesBetween(m, typed, SOURCE);
-        assert.deepEqual(changes.map(change => change.text), ['a', 'a']);
+        assert.deepEqual(
+            changes.map(change => change.text),
+            ['a', 'a'],
+        );
         assert.ok(changes.every(change => typed.substring(change.start, change.end) === 'getName'));
         assert.equal(apply(typed, changes), SOURCE);
     });

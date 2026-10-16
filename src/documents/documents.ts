@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { Backend, BackendError } from '../engine/backend';
-import { ErrorCode, ParamsOf, PositionMethod, PositionOptions, ResultOf, SourceResult, TokenInfo, View } from '../engine/protocol';
+import { ErrorCode, PositionMethod, PositionOptions, ResultOf, SourceResult, TokenInfo, View } from '../engine/protocol';
 import { settings } from '../config';
 import { SCHEME, parseClassUri } from './classUri';
 import { t } from '../l10n';
@@ -44,7 +44,7 @@ export class EnigmaDocuments implements vscode.FileSystemProvider, vscode.Dispos
     /** Set by the editor controller: whether a name of this document is being typed, which shifts its positions. */
     isEditing: (uri: vscode.Uri) => boolean = () => false;
     /** Set by the editor controller: makes a document identical to what the engine says and marks it saved. */
-    settle: (document: vscode.TextDocument) => Promise<void> = async () => undefined;
+    settle: (document: vscode.TextDocument) => Promise<void> = () => Promise.resolve();
 
     constructor(
         private readonly backend: Backend,
@@ -121,7 +121,7 @@ export class EnigmaDocuments implements vscode.FileSystemProvider, vscode.Dispos
     }
 
     private readOnly(view: View): boolean {
-        return view === 'bytecode' || !(settings.inlineRename);
+        return view === 'bytecode' || !settings.inlineRename;
     }
 
     private fetch(uri: vscode.Uri): Promise<LoadedFile> {
@@ -141,10 +141,24 @@ export class EnigmaDocuments implements vscode.FileSystemProvider, vscode.Dispos
             throw vscode.FileSystemError.FileNotFound(uri);
         }
 
-        if (!await this.ready()) {
+        if (!(await this.ready())) {
             if (this.aside.has(`${parsed.view}:${parsed.class}`)) {
                 // not kept: this is no text of the class
-                return { source: { ...parsed, deobfName: parsed.class, revision: 0, serial: 0, text: '', error: null, tokens: {} as SourceResult['tokens'], refs: [], groups: [] }, bytes: new Uint8Array(), mtime: 0 };
+                return {
+                    source: {
+                        ...parsed,
+                        deobfName: parsed.class,
+                        revision: 0,
+                        serial: 0,
+                        text: '',
+                        error: null,
+                        tokens: {} as SourceResult['tokens'],
+                        refs: [],
+                        groups: [],
+                    },
+                    bytes: new Uint8Array(),
+                    mtime: 0,
+                };
             }
 
             throw vscode.FileSystemError.Unavailable(t('documents.noEnigmaProjectIsOpenOpen'));
@@ -211,7 +225,7 @@ export class EnigmaDocuments implements vscode.FileSystemProvider, vscode.Dispos
         try {
             await this.fetch(uri);
         } catch (error) {
-            this.backend.output.warn(`Could not reload ${uri.path}: ${error instanceof Error ? error.message : error}`);
+            this.backend.output.warn(`Could not reload ${uri.path}: ${error instanceof Error ? error.message : String(error)}`);
             return;
         }
 
@@ -259,14 +273,14 @@ export class EnigmaDocuments implements vscode.FileSystemProvider, vscode.Dispos
 
         const diagnostic = new vscode.Diagnostic(
             new vscode.Range(0, 0, 0, 0),
-            source.error.message ? t('documents.enigmaCouldNotShowThisClass', source.error.type, source.error.message) : t('documents.enigmaCouldNotShowThisClassNoReason', source.error.type),
+            source.error.message
+                ? t('documents.enigmaCouldNotShowThisClass', source.error.type, source.error.message)
+                : t('documents.enigmaCouldNotShowThisClassNoReason', source.error.type),
             vscode.DiagnosticSeverity.Error,
         );
         diagnostic.source = 'Enigma';
         this.diagnostics.set(uri, [diagnostic]);
     }
-
-
 
     watch(): vscode.Disposable {
         return new vscode.Disposable(() => undefined);
@@ -313,8 +327,6 @@ export class EnigmaDocuments implements vscode.FileSystemProvider, vscode.Dispos
     rename(uri: vscode.Uri): void {
         throw vscode.FileSystemError.NoPermissions(uri);
     }
-
-
 
     /** The source currently displayed for a document, if it has been loaded. */
     source(uri: vscode.Uri): SourceResult | undefined {
@@ -380,7 +392,10 @@ export class EnigmaDocuments implements vscode.FileSystemProvider, vscode.Dispos
      * @returns undefined if the document does not show a text of the engine, also after waiting for it
      */
     async atPosition<M extends PositionMethod>(
-        document: vscode.TextDocument, position: vscode.Position, method: M, options?: PositionOptions<M>,
+        document: vscode.TextDocument,
+        position: vscode.Position,
+        method: M,
+        options?: PositionOptions<M>,
     ): Promise<NonNullable<ResultOf<M>> | undefined> {
         const parsed = parseClassUri(document.uri);
         if (!parsed) {
@@ -395,9 +410,8 @@ export class EnigmaDocuments implements vscode.FileSystemProvider, vscode.Dispos
 
             try {
                 const place = { ...parsed, ...options, serial: file.source.serial, line: position.line, character: position.character };
-                // every such request takes a place and its own options, which is more than the compiler can tell of "M"
-                const result = await this.backend.request<PositionMethod>(method, place as ParamsOf<PositionMethod>);
-                return (result ?? undefined) as NonNullable<ResultOf<M>> | undefined;
+                const result = await this.backend.request<PositionMethod>(method, place);
+                return result ?? undefined;
             } catch (error) {
                 if (!(error instanceof BackendError) || error.code !== ErrorCode.Stale) {
                     throw error;
@@ -443,7 +457,9 @@ export class EnigmaDocuments implements vscode.FileSystemProvider, vscode.Dispos
     }
 
     dispose(): void {
-        this.disposables.forEach(disposable => disposable.dispose());
+        for (const disposable of this.disposables) {
+            disposable.dispose();
+        }
         this.diagnostics.dispose();
         this.changeEmitter.dispose();
         this.sourceEmitter.dispose();

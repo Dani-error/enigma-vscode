@@ -7,12 +7,13 @@ import { EntryRef, TreeNodeResult, TreeRoot } from '../engine/protocol';
 export type AnalysisMode = 'inheritance' | 'implementations' | 'calls' | 'callsSpecific';
 
 /** What the view says it shows, and what is said when there is nothing to show. */
-const describe = (mode: AnalysisMode, name: string): { title: string; nothing: string } => ({
-    inheritance: { title: t('analysis.inheritanceOf', name), nothing: t('analysis.inheritanceOfNothingInheritsFromIt', name) },
-    implementations: { title: t('analysis.implementationsOf', name), nothing: t('analysis.implementationsOfNothingInTheJar', name) },
-    calls: { title: t('analysis.callsOf', name), nothing: t('analysis.callsOfNothingInTheJar', name) },
-    callsSpecific: { title: t('analysis.callsOfThisMethodOnlyOf', name), nothing: t('analysis.callsOfNothingInTheJar', name) },
-})[mode];
+const describe = (mode: AnalysisMode, name: string): { title: string; nothing: string } =>
+    ({
+        inheritance: { title: t('analysis.inheritanceOf', name), nothing: t('analysis.inheritanceOfNothingInheritsFromIt', name) },
+        implementations: { title: t('analysis.implementationsOf', name), nothing: t('analysis.implementationsOfNothingInTheJar', name) },
+        calls: { title: t('analysis.callsOf', name), nothing: t('analysis.callsOfNothingInTheJar', name) },
+        callsSpecific: { title: t('analysis.callsOfThisMethodOnlyOf', name), nothing: t('analysis.callsOfNothingInTheJar', name) },
+    })[mode];
 
 /**
  * Shows the result of "Show Inheritance", "Show Implementations" and "Show Calls", like the matching Enigma dockers.
@@ -27,17 +28,25 @@ export class AnalysisProvider implements vscode.TreeDataProvider<TreeNodeResult>
     readonly onDidChangeTreeData = this.emitter.event;
 
     get title(): string {
-        return this.subject ? { inheritance: t('common.inheritance'), implementations: t('common.implementations'), calls: t('common.calls'), callsSpecific: t('analysis.callsOfThisMethodOnly') }[this.subject.mode] : '';
+        return this.subject
+            ? {
+                  inheritance: t('common.inheritance'),
+                  implementations: t('common.implementations'),
+                  calls: t('common.calls'),
+                  callsSpecific: t('analysis.callsOfThisMethodOnly'),
+              }[this.subject.mode]
+            : '';
     }
 
     show(subject: { entry: EntryRef; name: string; mode: AnalysisMode } | undefined, root: TreeNodeResult | undefined): void {
         this.subject = subject;
         this.root = root;
         this.parents.clear();
-        const link = (node: TreeNodeResult) => node.children.forEach(child => {
-            this.parents.set(child, node);
-            link(child);
-        });
+        const link = (node: TreeNodeResult) =>
+            node.children.forEach(child => {
+                this.parents.set(child, node);
+                link(child);
+            });
         if (root) {
             link(root);
         }
@@ -52,7 +61,7 @@ export class AnalysisProvider implements vscode.TreeDataProvider<TreeNodeResult>
 
     /** The node of the entry the tree was requested for. */
     get selected(): TreeNodeResult | undefined {
-        const find = (node: TreeNodeResult): TreeNodeResult | undefined => node.selected ? node : node.children.map(find).find(Boolean);
+        const find = (node: TreeNodeResult): TreeNodeResult | undefined => (node.selected ? node : node.children.map(find).find(Boolean));
         return this.root ? find(this.root) : undefined;
     }
 
@@ -65,7 +74,10 @@ export class AnalysisProvider implements vscode.TreeDataProvider<TreeNodeResult>
     }
 
     getTreeItem(element: TreeNodeResult): vscode.TreeItem {
-        const item = new vscode.TreeItem(element.label.replace(/\//g, '.'), element.children.length > 0 ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.None);
+        const item = new vscode.TreeItem(
+            element.label.replace(/\//g, '.'),
+            element.children.length > 0 ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.None,
+        );
         item.iconPath = treeIcon(element.kind);
         const notes: string[] = [];
         if (element.implemented === false) {
@@ -78,7 +90,11 @@ export class AnalysisProvider implements vscode.TreeDataProvider<TreeNodeResult>
 
         item.description = notes.join(' · ') || undefined;
         if (element.entry && element.navigable !== false) {
-            item.command = { command: 'enigma.navigateTo', title: t('collabPage.goToThisEntry'), arguments: [element.entry, element.context ?? undefined] };
+            item.command = {
+                command: 'enigma.navigateTo',
+                title: t('collabPage.goToThisEntry'),
+                arguments: [element.entry, element.context ?? undefined],
+            };
         }
 
         return item;
@@ -90,7 +106,10 @@ export class AnalysisProvider implements vscode.TreeDataProvider<TreeNodeResult>
 }
 
 /** What the engine is asked for each way of looking at an entry. */
-const REQUESTS: Record<AnalysisMode, { method: 'hierarchy/inheritance' | 'hierarchy/implementations' | 'calls'; params: { recursive?: boolean } }> = {
+const REQUESTS: Record<
+    AnalysisMode,
+    { method: 'hierarchy/inheritance' | 'hierarchy/implementations' | 'calls'; params: { recursive?: boolean } }
+> = {
     inheritance: { method: 'hierarchy/inheritance', params: {} },
     implementations: { method: 'hierarchy/implementations', params: {} },
     calls: { method: 'calls', params: { recursive: true } },
@@ -178,6 +197,8 @@ export class AnalysisView implements vscode.Disposable {
     }
 
     dispose(): void {
-        this.disposables.forEach(disposable => disposable.dispose());
+        for (const disposable of this.disposables) {
+            disposable.dispose();
+        }
     }
 }

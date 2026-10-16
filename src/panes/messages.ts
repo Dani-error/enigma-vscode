@@ -59,7 +59,6 @@ export type FromEntryPage =
     | { type: 'toggle'; key: string }
     | { type: 'action'; key: string; id: EntryAction };
 
-
 export interface LoggedMessage extends CollabMessage {
     time: string;
     /** The text of a chat message without the name of its author. */
@@ -79,9 +78,7 @@ export interface CollabPageState {
     defaults: { username?: string; address?: string; port?: number };
 }
 
-export type ToCollabPage =
-    | { type: 'state'; state: CollabPageState }
-    | { type: 'failed'; message: string };
+export type ToCollabPage = { type: 'state'; state: CollabPageState } | { type: 'failed'; message: string };
 
 export type FromCollabPage =
     | { type: 'ready' }
@@ -90,7 +87,6 @@ export type FromCollabPage =
     | { type: 'disconnect' }
     | { type: 'chat'; text: string }
     | { type: 'navigate'; entry: EntryRef };
-
 
 export interface StatsOptions {
     types: StatType[];
@@ -105,7 +101,4 @@ export type ToStatsPage =
     | { type: 'result'; stats?: StatsResult; error?: string }
     | { type: 'stale' };
 
-export type FromStatsPage =
-    | { type: 'ready' }
-    | { type: 'generate'; options: StatsOptions }
-    | { type: 'open'; name: string };
+export type FromStatsPage = { type: 'ready' } | { type: 'generate'; options: StatsOptions } | { type: 'open'; name: string };

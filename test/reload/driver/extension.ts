@@ -40,7 +40,10 @@ export function activate(): vscode.Disposable | undefined {
 
         busy = true;
         try {
-            for (const file of fs.readdirSync(directory).filter(name => name.endsWith(REQUEST_SUFFIX)).sort()) {
+            for (const file of fs
+                .readdirSync(directory)
+                .filter(name => name.endsWith(REQUEST_SUFFIX))
+                .sort()) {
                 const name = file.substring(0, file.length - REQUEST_SUFFIX.length);
                 const source = fs.readFileSync(path.join(directory, file), 'utf8');
                 fs.rmSync(path.join(directory, file));
@@ -48,7 +51,7 @@ export function activate(): vscode.Disposable | undefined {
                 try {
                     answer = { ok: true, value: await new AsyncFunction('vscode', 'enigma', source)(vscode, enigma) };
                 } catch (error) {
-                    answer = { ok: false, error: error instanceof Error ? error.stack ?? error.message : String(error) };
+                    answer = { ok: false, error: error instanceof Error ? (error.stack ?? error.message) : String(error) };
                 }
 
                 fs.writeFileSync(path.join(directory, `${name}.tmp`), JSON.stringify(answer));

@@ -1,24 +1,18 @@
 {
-  "compilerOptions": {
-    "module": "commonjs",
-    "target": "ES2022",
-    "lib": [
-      "ES2022"
-    ],
-    "strict": true,
-    "noImplicitOverride": true,
-    "noUnusedLocals": true,
-    "noFallthroughCasesInSwitch": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "sourceMap": true,
-    "resolveJsonModule": true,
-    "noEmit": true
-  },
-  "include": [
-    "src"
-  ],
-  "exclude": [
-    "src/pages"
-  ]
+    "compilerOptions": {
+        "module": "commonjs",
+        "target": "ES2022",
+        "lib": ["ES2022"],
+        "strict": true,
+        "noImplicitOverride": true,
+        "noUnusedLocals": true,
+        "noFallthroughCasesInSwitch": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "sourceMap": true,
+        "resolveJsonModule": true,
+        "noEmit": true
+    },
+    "include": ["src"],
+    "exclude": ["src/pages"]
 }

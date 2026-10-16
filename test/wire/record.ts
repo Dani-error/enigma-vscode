@@ -42,8 +42,14 @@ const engine = new Engine(temp);
 const log: Recorded[] = [];
 
 /** Takes out what differs from run to run: where the files are, the time, the lines of a stack trace. */
-const scrub = <T>(value: T): T => JSON.parse(JSON.stringify(value ?? null).split(temp).join('<TEMP>')
-    .replace(/"(time|javaVersion|javaHome|pid)":("[^"]*"|\d+)/g, '"$1":"<x>"').replace(/at [\w.$<>]+\([\w.]+:\d+\)\\n\\t?/g, '')) as T;
+const scrub = <T>(value: T): T =>
+    JSON.parse(
+        JSON.stringify(value ?? null)
+            .split(temp)
+            .join('<TEMP>')
+            .replace(/"(time|javaVersion|javaHome|pid)":("[^"]*"|\d+)/g, '"$1":"<x>"')
+            .replace(/at [\w.$<>]+\([\w.]+:\d+\)\\n\\t?/g, ''),
+    ) as T;
 
 function sortKeys(value: unknown): unknown {
     if (Array.isArray(value)) {
@@ -51,7 +57,11 @@ function sortKeys(value: unknown): unknown {
     }
 
     return value && typeof value === 'object'
-        ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([key, inner]) => [key, sortKeys(inner)]))
+        ? Object.fromEntries(
+              Object.entries(value)
+                  .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+                  .map(([key, inner]) => [key, sortKeys(inner)]),
+          )
         : value;
 }
 
@@ -60,7 +70,7 @@ async function ask<T = unknown>(method: string, params: object = {}): Promise<T 
     const recorded: Recorded = { method, params: scrub(params) };
     let result: T | undefined;
     try {
-        result = await engine.send(method, params) as T;
+        result = (await engine.send(method, params)) as T;
         recorded.result = scrub(result);
     } catch (error) {
         if (!(error instanceof ResponseError)) {
@@ -68,7 +78,11 @@ async function ask<T = unknown>(method: string, params: object = {}): Promise<T 
         }
 
         const data = error.data as Record<string, unknown> | undefined;
-        recorded.error = scrub({ code: error.code, message: error.message, data: data ? { ...data, stackTrace: data.stackTrace ? '<trace>' : undefined } : undefined });
+        recorded.error = scrub({
+            code: error.code,
+            message: error.message,
+            data: data ? { ...data, stackTrace: data.stackTrace ? '<trace>' : undefined } : undefined,
+        });
     }
 
     log.push(recorded);
@@ -84,14 +98,31 @@ const getName = methodEntry('a', 'a', '()Ljava/lang/String;');
 const field = fieldEntry('a', 'a', 'Ljava/lang/String;');
 
 await ask('initialize', { language: 'en_us' });
-await ask('configure', { language: 'en_us', editable: null, autoSave: false, decompiler: 'enigma:vineflower', vineflower: {}, profile: null });
+await ask('configure', {
+    language: 'en_us',
+    editable: null,
+    autoSave: false,
+    decompiler: 'enigma:vineflower',
+    vineflower: {},
+    profile: null,
+});
 await ask('project/state');
-await ask('classes/list');                       // no project
+await ask('classes/list'); // no project
 await ask('project/openJar', { jar, libraries: [] });
 await ask('project/openJar', { jar: path.join(temp, 'missing.jar'), libraries: [] });
 await ask('project/state');
 await ask('classes/list');
-for (const entry of [A, D, doBase, getName, field, cls('java/lang/String'), { kind: 'method', owner: 'a', name: '<init>', desc: '(Ljava/lang/String;)V' }]) { await ask('entry/info', { entry }); }
+for (const entry of [
+    A,
+    D,
+    doBase,
+    getName,
+    field,
+    cls('java/lang/String'),
+    { kind: 'method', owner: 'a', name: '<init>', desc: '(Ljava/lang/String;)V' },
+]) {
+    await ask('entry/info', { entry });
+}
 const source = await ask<SourceResult>('class/source', { class: 'a', view: 'source' });
 await ask('class/source', { class: 'd', view: 'source' });
 await ask('class/source', { class: 'a', view: 'bytecode' });
@@ -101,24 +132,53 @@ for (const ref of (source?.refs ?? []).slice(0, 14)) {
     await ask('nav/definition', { class: 'a', view: 'source', serial: source?.serial, line: ref[0], character: ref[1] });
 }
 const some = (source?.refs ?? [])[3];
-if (some) { await ask('nav/references', { class: 'a', view: 'source', serial: source?.serial, line: some[0], character: some[1], includeDeclaration: true, limit: 20 }); }
+if (some) {
+    await ask('nav/references', {
+        class: 'a',
+        view: 'source',
+        serial: source?.serial,
+        line: some[0],
+        character: some[1],
+        includeDeclaration: true,
+        limit: 20,
+    });
+}
 await ask('class/entryAt', { class: 'a', view: 'source', serial: 999999, line: 0, character: 0 });
 await ask('class/entryAt', { class: 'a', view: 'source', line: 0, character: 0 });
 await ask('class/symbols', { class: 'a', view: 'source' });
-for (const sorting of ['default', 'a_z']) { await ask('structure', { class: 'a', obfuscation: 'all', documentation: 'all', sorting }); }
+for (const sorting of ['default', 'a_z']) {
+    await ask('structure', { class: 'a', obfuscation: 'all', documentation: 'all', sorting });
+}
 await ask('structure', { class: 'd', obfuscation: 'obfuscated', documentation: 'non_documented', sorting: 'z_a' });
 for (const entry of [A, D, doBase, getName, field]) {
-    await ask('hierarchy/inheritance', { entry }); await ask('hierarchy/implementations', { entry });
-    await ask('calls', { entry, recursive: true }); await ask('calls', { entry, recursive: false });
-    await ask('calls/incoming', { entry }); await ask('calls/outgoing', { entry });
+    await ask('hierarchy/inheritance', { entry });
+    await ask('hierarchy/implementations', { entry });
+    await ask('calls', { entry, recursive: true });
+    await ask('calls', { entry, recursive: false });
+    await ask('calls/incoming', { entry });
+    await ask('calls/outgoing', { entry });
     await ask('nav/declaration', { entry, view: 'source' });
 }
-await ask('nav/reference', { entry: getName, context: { kind: 'method', owner: 'e', name: 'a', desc: '()Ljava/lang/String;' }, view: 'source' });
-for (const name of ['a', 'd', 'e']) { await ask('hierarchy/supertypes', { class: name }); await ask('hierarchy/subtypes', { class: name }); }
+await ask('nav/reference', {
+    entry: getName,
+    context: { kind: 'method', owner: 'e', name: 'a', desc: '()Ljava/lang/String;' },
+    view: 'source',
+});
+for (const name of ['a', 'd', 'e']) {
+    await ask('hierarchy/supertypes', { class: name });
+    await ask('hierarchy/subtypes', { class: name });
+}
 const hits = await ask<SearchResult[]>('search', { query: 'a', types: [], limit: 20 });
 await ask('search', { query: 'Keep', types: ['class'], limit: 5 });
-if (hits?.[0]) { await ask('search/hit', { id: hits[0].id }); }
-await ask('stats/generate', { types: ['classes', 'methods', 'fields', 'parameters'], package: '', includeSynthetic: false, countFallback: false });
+if (hits?.[0]) {
+    await ask('search/hit', { id: hits[0].id });
+}
+await ask('stats/generate', {
+    types: ['classes', 'methods', 'fields', 'parameters'],
+    package: '',
+    includeSynthetic: false,
+    countFallback: false,
+});
 await ask('stats/classes', { includeSynthetic: false, countFallback: false });
 await ask('stats/classes', { includeSynthetic: false, countFallback: false, classes: ['a', 'd'] });
 
@@ -131,12 +191,16 @@ await ask('entry/rename', { entry: A, newName: 'pkg/BaseClass', confirmWarnings:
 await ask('entry/rename', { entry: cls('java/lang/String'), newName: 'Text' });
 await ask('entry/setJavadoc', { entry: getName, javadoc: 'The name.' });
 await ask('entry/setJavadoc', { entry: getName, javadoc: 'bad */ comment' });
-await ask('entry/toggleMapping', { entry: D }); await ask('entry/toggleMapping', { entry: D });
+await ask('entry/toggleMapping', { entry: D });
+await ask('entry/toggleMapping', { entry: D });
 await settle();
-await ask('entry/info', { entry: getName }); await ask('entry/info', { entry: A });
+await ask('entry/info', { entry: getName });
+await ask('entry/info', { entry: A });
 await ask('class/source', { class: 'a', view: 'source' });
 await ask('classes/list');
-await ask('edit/undo'); await ask('edit/redo'); await ask('edit/redo');
+await ask('edit/undo');
+await ask('edit/redo');
+await ask('edit/redo');
 await ask('package/rename', { from: 'pkg', to: 'lib/core', mode: 'refactor' });
 await ask('package/rename', { from: 'pkg', to: 'lib/core', mode: 'refactor', apply: true });
 await ask('package/rename', { from: 'lib/core', to: 'moved', mode: 'move' });
@@ -179,10 +243,17 @@ await settle();
 // progress is told as often as there is time for: only that it began and ended is the same every time
 const told = engine.told
     .filter(one => one.name !== 'progress' || one.params.phase !== 'report')
-    .map(one => one.name === 'progress' ? { name: one.name, params: { ...one.params, id: 0, done: 0, total: 0, title: null, message: null } } : one);
-const recording: Recording = { log: sortKeys(log) as Recorded[], notifications: told.map(one => JSON.stringify(sortKeys(scrub(one)))).sort() };
+    .map(one =>
+        one.name === 'progress' ? { name: one.name, params: { ...one.params, id: 0, done: 0, total: 0, title: null, message: null } } : one,
+    );
+const recording: Recording = {
+    log: sortKeys(log) as Recorded[],
+    notifications: told.map(one => JSON.stringify(sortKeys(scrub(one)))).sort(),
+};
 fs.writeFileSync(out, JSON.stringify(recording, undefined, 1));
-console.log(`${log.length} requests (${log.filter(entry => entry.error).length} answered with an error), ${recording.notifications.length} notifications -> ${out}`);
+console.log(
+    `${log.length} requests (${log.filter(entry => entry.error).length} answered with an error), ${recording.notifications.length} notifications -> ${out}`,
+);
 await engine.close();
 fs.rmSync(temp, { recursive: true, force: true });
 process.exit(0);

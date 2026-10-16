@@ -18,8 +18,7 @@ export class SymbolProvider implements vscode.DocumentSymbolProvider, vscode.Wor
         private readonly index: ClassIndex,
         private readonly documents: EnigmaDocuments,
         private readonly isOpen: () => boolean,
-    ) {
-    }
+    ) {}
 
     async provideDocumentSymbols(document: vscode.TextDocument): Promise<vscode.DocumentSymbol[]> {
         const parsed = parseClassUri(document.uri);
@@ -32,7 +31,7 @@ export class SymbolProvider implements vscode.DocumentSymbolProvider, vscode.Wor
             return [];
         }
 
-        const symbols = await this.backend.request('class/symbols', parsed) ?? [];
+        const symbols = (await this.backend.request('class/symbols', parsed)) ?? [];
         const lastLine = Math.max(0, document.lineCount - 1);
         const created: vscode.DocumentSymbol[] = [];
         const roots: vscode.DocumentSymbol[] = [];
@@ -49,10 +48,18 @@ export class SymbolProvider implements vscode.DocumentSymbolProvider, vscode.Wor
             items.sort((a, b) => a.selectionRange.start.compareTo(b.selectionRange.start));
             items.forEach((item, i) => {
                 const next = items[i + 1];
-                const itemEnd = next ? new vscode.Position(Math.max(item.selectionRange.end.line, next.selectionRange.start.line - 1), Number.MAX_SAFE_INTEGER) : end;
+                const itemEnd = next
+                    ? new vscode.Position(
+                          Math.max(item.selectionRange.end.line, next.selectionRange.start.line - 1),
+                          Number.MAX_SAFE_INTEGER,
+                      )
+                    : end;
                 const clamped = itemEnd.isBefore(item.selectionRange.end) ? item.selectionRange.end : itemEnd;
                 item.range = new vscode.Range(item.selectionRange.start, clamped);
-                extend(item.children.filter(child => item.range.contains(child.selectionRange)), clamped);
+                extend(
+                    item.children.filter(child => item.range.contains(child.selectionRange)),
+                    clamped,
+                );
             });
         };
         extend(roots, new vscode.Position(lastLine, Number.MAX_SAFE_INTEGER));
@@ -68,8 +75,11 @@ export class SymbolProvider implements vscode.DocumentSymbolProvider, vscode.Wor
         return results.map(result => {
             const uri = this.index.uri(topLevelClassOf(result.entry));
             const symbol = new vscode.SymbolInformation(
-                result.name + (result.kind === 'method' ? result.detail ?? '' : ''), symbolKind(result.kind),
-                (result.container ?? '').replace(/\//g, '.'), new vscode.Location(uri, new vscode.Position(0, 0)));
+                result.name + (result.kind === 'method' ? (result.detail ?? '') : ''),
+                symbolKind(result.kind),
+                (result.container ?? '').replace(/\//g, '.'),
+                new vscode.Location(uri, new vscode.Position(0, 0)),
+            );
             this.searchResults.set(symbol, result);
             return symbol;
         });

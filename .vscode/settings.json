@@ -1,0 +1,13 @@
+{
+    // format on save the way "bun run format" does, and show what "bun run lint" finds while typing
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit"
+    },
+    "[java]": {
+        // the backend is formatted by IntelliJ's rules, see .editorconfig
+        "editor.formatOnSave": false
+    },
+    "typescript.tsdk": "node_modules/typescript/lib"
+}

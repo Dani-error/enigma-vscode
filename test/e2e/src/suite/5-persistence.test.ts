@@ -3,7 +3,19 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import {
-    Api, activate, classDocument, execute, freePort, mappings, openClass, positionOf, typeAt, waitFor, withStub, workspace,
+    Api,
+    Offered,
+    activate,
+    classDocument,
+    execute,
+    freePort,
+    mappings,
+    openClass,
+    positionOf,
+    typeAt,
+    waitFor,
+    withStub,
+    workspace,
 } from './harness';
 
 describe('Enigma in VS Code: saving, restarting and working together', () => {
@@ -15,8 +27,18 @@ describe('Enigma in VS Code: saving, restarting and working together', () => {
 
     it('saves mappings, applying a name that is still being typed, and asks before discarding changes', async () => {
         // first save: format and location are asked for
-        await withStub(vscode.window, 'showQuickPick', async (items: any[]) => items.find(item => item.format?.id === 'enigma:enigma_file'), () =>
-            withStub(vscode.window, 'showSaveDialog', async () => vscode.Uri.file(mappings), () => execute('enigma.saveMappings')));
+        await withStub(
+            vscode.window,
+            'showQuickPick',
+            async (items: Offered[]) => items.find(item => item.format?.id === 'enigma:enigma_file'),
+            () =>
+                withStub(
+                    vscode.window,
+                    'showSaveDialog',
+                    async () => vscode.Uri.file(mappings),
+                    () => execute('enigma.saveMappings'),
+                ),
+        );
         await waitFor('the mappings to be saved', () => api.project.state?.dirty === false && fs.existsSync(mappings));
 
         const saved = fs.readFileSync(mappings, 'utf8');
@@ -33,7 +55,10 @@ describe('Enigma in VS Code: saving, restarting and working together', () => {
         await waitFor('the edit', () => document.getText().includes('getFullName23'));
         await execute('enigma.saveMappings');
         await waitFor('the save', () => api.project.state?.dirty === false && fs.readFileSync(mappings, 'utf8').includes('getFullName23'));
-        await waitFor('the editor to settle', () => !api.editor.renaming && !document.isDirty && document.getText().includes('String getFullName23()'));
+        await waitFor(
+            'the editor to settle',
+            () => !api.editor.renaming && !document.isDirty && document.getText().includes('String getFullName23()'),
+        );
     });
 
     it('choosing a Java runtime with "Select Java..." keeps the project and its editors open', async function () {
@@ -47,25 +72,61 @@ describe('Enigma in VS Code: saving, restarting and working together', () => {
         const textBefore = editor.document.getText();
 
         let offered: string[] = [];
-        await withStub(vscode.window, 'showQuickPick', async (items: any[]) => {
-            offered = items.map(item => item.label);
-            return items.find(item => item.home === installed.home);
-        }, () => execute('enigma.selectJava'));
-        assert.ok(offered.some(label => label.startsWith('Java ')), `installed runtimes are offered: ${offered}`);
+        await withStub(
+            vscode.window,
+            'showQuickPick',
+            async (items: Offered[]) => {
+                offered = items.map(item => item.label);
+                return items.find(item => item.home === installed.home);
+            },
+            () => execute('enigma.selectJava'),
+        );
+        assert.ok(
+            offered.some(label => label.startsWith('Java ')),
+            `installed runtimes are offered: ${offered.join(', ')}`,
+        );
 
         // the engine restarts on the chosen runtime, and nothing the user had open is gone
-        await waitFor('the engine to restart on the chosen Java', () =>
-            api.backend.running && api.backend.runtime?.home === installed.home && api.project.isOpen && api.index.get('a')?.deobf === 'BaseClass');
-        assert.deepEqual(vscode.window.tabGroups.all.flatMap(group => group.tabs).map(tab => tab.label), tabsBefore);
-        await waitFor('the open classes to be shown again', () =>
-            classDocument('d').getText() === textBefore && ['a', 'd', 'e'].every(name => api.documents.source(classDocument(name).uri)));
+        await waitFor(
+            'the engine to restart on the chosen Java',
+            () =>
+                api.backend.running &&
+                api.backend.runtime?.home === installed.home &&
+                api.project.isOpen &&
+                api.index.get('a')?.deobf === 'BaseClass',
+        );
+        assert.deepEqual(
+            vscode.window.tabGroups.all.flatMap(group => group.tabs).map(tab => tab.label),
+            tabsBefore,
+        );
+        await waitFor(
+            'the open classes to be shown again',
+            () =>
+                classDocument('d').getText() === textBefore && ['a', 'd', 'e'].every(name => api.documents.source(classDocument(name).uri)),
+        );
 
         // back to automatic detection for the rest of the tests
-        await withStub(vscode.window, 'showQuickPick', async (items: any[]) => items.find(item => item.label.includes('Detect automatically')), () => execute('enigma.selectJava'));
-        await waitFor('the engine to restart on a detected Java', () =>
-            api.backend.running && api.project.isOpen && api.index.get('a')?.deobf === 'BaseClass' && api.backend.runtime?.source !== 'the enigma.java.home setting');
-        await waitFor('the open classes to be shown again', () =>
-            classDocument('d').getText() === textBefore && !classDocument('d').isDirty && ['a', 'd', 'e'].every(name => api.documents.source(classDocument(name).uri)));
+        await withStub(
+            vscode.window,
+            'showQuickPick',
+            async (items: Offered[]) => items.find(item => item.label.includes('Detect automatically')),
+            () => execute('enigma.selectJava'),
+        );
+        await waitFor(
+            'the engine to restart on a detected Java',
+            () =>
+                api.backend.running &&
+                api.project.isOpen &&
+                api.index.get('a')?.deobf === 'BaseClass' &&
+                api.backend.runtime?.source !== 'the enigma.java.home setting',
+        );
+        await waitFor(
+            'the open classes to be shown again',
+            () =>
+                classDocument('d').getText() === textBefore &&
+                !classDocument('d').isDirty &&
+                ['a', 'd', 'e'].every(name => api.documents.source(classDocument(name).uri)),
+        );
     });
 
     it('hosts a collaboration session from its pane', async () => {
@@ -86,25 +147,43 @@ describe('Enigma in VS Code: saving, restarting and working together', () => {
 
     it('brings back the project and unsaved changes after the engine is restarted', async () => {
         const document = classDocument('a');
-        await execute('vscode.executeDocumentRenameProvider', document.uri, positionOf(document, 'String getFullName23()', 'String '.length), 'fetchName');
-        await waitFor('the unsaved rename to be shown', () => api.project.state?.dirty === true && document.getText().includes('String fetchName()'));
+        await execute(
+            'vscode.executeDocumentRenameProvider',
+            document.uri,
+            positionOf(document, 'String getFullName23()', 'String '.length),
+            'fetchName',
+        );
+        await waitFor(
+            'the unsaved rename to be shown',
+            () => api.project.state?.dirty === true && document.getText().includes('String fetchName()'),
+        );
 
         // closing mappings with unsaved changes asks first; cancelling keeps everything
         let asked = 0;
-        await withStub(vscode.window, 'showWarningMessage', async () => {
-            asked++;
-            return undefined;
-        }, () => execute('enigma.closeMappings'));
+        await withStub(
+            vscode.window,
+            'showWarningMessage',
+            async () => {
+                asked++;
+                return undefined;
+            },
+            () => execute('enigma.closeMappings'),
+        );
         assert.equal(asked, 1);
         assert.equal(api.project.state?.mappingsPath, mappings);
         assert.equal(api.project.state?.dirty, true);
 
         // "fetchName" is not saved. A restart is what happens after a crash, or when the window is reloaded.
         let prompt = '';
-        await withStub(vscode.window, 'showWarningMessage', async (message: string) => {
-            prompt = message;
-            return 'Restore';
-        }, () => execute('enigma.restartBackend'));
+        await withStub(
+            vscode.window,
+            'showWarningMessage',
+            async (message: string) => {
+                prompt = message;
+                return 'Restore';
+            },
+            () => execute('enigma.restartBackend'),
+        );
 
         await waitFor('the project to be reopened', () => api.project.isOpen && api.index.get('a')?.deobf === 'BaseClass');
         assert.match(prompt, /unsaved mapping changes/);
@@ -122,11 +201,21 @@ describe('Enigma in VS Code: saving, restarting and working together', () => {
         fs.writeFileSync(broken, 'CLASS a Base\n\tMETHOD\n');
 
         let message = '';
-        await withStub(vscode.window, 'showWarningMessage', async () => 'Don\'t Save', () =>
-            withStub(vscode.window, 'showErrorMessage', async (text: string) => {
-                message = text;
-                return undefined;
-            }, () => execute('enigma.openMappings', broken)));
+        await withStub(
+            vscode.window,
+            'showWarningMessage',
+            async () => "Don't Save",
+            () =>
+                withStub(
+                    vscode.window,
+                    'showErrorMessage',
+                    async (text: string) => {
+                        message = text;
+                        return undefined;
+                    },
+                    () => execute('enigma.openMappings', broken),
+                ),
+        );
 
         assert.match(message, /could not read the mappings/);
         const diagnostics = await waitFor('a diagnostic on the mappings file', () => {
@@ -140,10 +229,17 @@ describe('Enigma in VS Code: saving, restarting and working together', () => {
     });
 
     it('closes the jar and its editors', async () => {
-        await withStub(vscode.window, 'showWarningMessage', async () => 'Don\'t Save', () => execute('enigma.closeJar'));
+        await withStub(
+            vscode.window,
+            'showWarningMessage',
+            async () => "Don't Save",
+            () => execute('enigma.closeJar'),
+        );
         await waitFor('the jar to be closed', () => !api.project.isOpen);
 
-        const open = vscode.window.tabGroups.all.flatMap(group => group.tabs).filter(tab => tab.input instanceof vscode.TabInputText && tab.input.uri.scheme === 'enigma');
+        const open = vscode.window.tabGroups.all
+            .flatMap(group => group.tabs)
+            .filter(tab => tab.input instanceof vscode.TabInputText && tab.input.uri.scheme === 'enigma');
         assert.equal(open.length, 0);
         assert.equal(api.index.size, 0);
     });

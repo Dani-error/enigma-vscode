@@ -24,5 +24,7 @@ export function text(key: TextKey): string {
 
 /** Says something to the user in the language of the editor, in English if there is no translation. */
 export function t(key: TextKey, ...values: unknown[]): string {
-    return text(key).replace(/\{(\d+)}/g, (match, index: string) => Number(index) < values.length ? String(values[Number(index)]) : match);
+    return text(key).replace(/\{(\d+)}/g, (match, index: string) =>
+        Number(index) < values.length ? String(values[Number(index)]) : match,
+    );
 }

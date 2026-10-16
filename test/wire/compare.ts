@@ -9,9 +9,14 @@ const OPTIONAL = new Set(['outerClass', 'superClass', 'context', 'type', 'range'
 /** How many differences are shown in full. */
 const MAX_SHOWN = 6;
 
-const sorted = (value: unknown): string => JSON.stringify(value, (_, inner: unknown) =>
-    inner && typeof inner === 'object' && !Array.isArray(inner) ? Object.fromEntries(Object.entries(inner).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)) : inner);
-const isStatsNodes = (value: unknown): value is object[] => Array.isArray(value) && typeof value[0] === 'object' && value[0] !== null && 'value' in value[0];
+const sorted = (value: unknown): string =>
+    JSON.stringify(value, (_, inner: unknown) =>
+        inner && typeof inner === 'object' && !Array.isArray(inner)
+            ? Object.fromEntries(Object.entries(inner).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))
+            : inner,
+    );
+const isStatsNodes = (value: unknown): value is object[] =>
+    Array.isArray(value) && typeof value[0] === 'object' && value[0] !== null && 'value' in value[0];
 
 /** Brings what may differ without meaning anything into one form: absent fields, and lists whose order is not kept. */
 function canonical(value: unknown): unknown {
@@ -23,16 +28,23 @@ function canonical(value: unknown): unknown {
         return value;
     }
 
-    return Object.fromEntries(Object.entries(value)
-        .filter(([key, inner]) => !(inner === null && OPTIONAL.has(key)))
-        .map(([key, inner]) => {
-            if (key === 'editable' && Array.isArray(inner)) {
-                return [key, [...inner].sort()];
-            }
+    return Object.fromEntries(
+        Object.entries(value)
+            .filter(([key, inner]) => !(inner === null && OPTIONAL.has(key)))
+            .map(([key, inner]) => {
+                if (key === 'editable' && Array.isArray(inner)) {
+                    return [key, [...inner].sort()];
+                }
 
-            // the packages of the statistics come in the order of a hash map
-            return [key, key === 'children' && isStatsNodes(inner) ? inner.map(canonical).sort((a, b) => sorted(a).localeCompare(sorted(b))) : canonical(inner)];
-        }));
+                // the packages of the statistics come in the order of a hash map
+                return [
+                    key,
+                    key === 'children' && isStatsNodes(inner)
+                        ? inner.map(canonical).sort((a, b) => sorted(a).localeCompare(sorted(b)))
+                        : canonical(inner),
+                ];
+            }),
+    );
 }
 
 function read(file: string): Recording {
@@ -69,6 +81,8 @@ before.log.forEach((asked, index) => {
 
 const onlyBefore = before.notifications.filter(one => !after.notifications.includes(one));
 const onlyAfter = after.notifications.filter(one => !before.notifications.includes(one));
-console.log(`${before.log.length} requests, ${different} answered differently; kinds of notification only before: ${new Set(onlyBefore).size}, only after: ${new Set(onlyAfter).size}`);
+console.log(
+    `${before.log.length} requests, ${different} answered differently; kinds of notification only before: ${new Set(onlyBefore).size}, only after: ${new Set(onlyAfter).size}`,
+);
 [...onlyBefore.slice(0, 3), ...onlyAfter.slice(0, 3)].forEach(one => console.log('   ', one.substring(0, 260)));
 process.exit(different > 0 ? 1 : 0);

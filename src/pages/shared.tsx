@@ -20,7 +20,7 @@ declare global {
 /** Says something in the language of the editor, by the key of the text (see l10n/). */
 export const t = (key: TextKey, ...values: unknown[]): string => {
     const text = window.L10N?.[key] ?? key;
-    return text.replace(/\{(\d+)\}/g, (match, index: string) => Number(index) < values.length ? String(values[Number(index)]) : match);
+    return text.replace(/\{(\d+)\}/g, (match, index: string) => (Number(index) < values.length ? String(values[Number(index)]) : match));
 };
 
 const vscode = acquireVsCodeApi();
@@ -47,12 +47,16 @@ export function channel<To, From>() {
 }
 
 /** An icon of the editor, by its name in the codicon font. */
-export const Icon = ({ name, spin }: { name: string; spin?: boolean }) =>
-    <span class={`codicon codicon-${name}${spin ? ' spinner' : ''}`} aria-hidden="true" />;
+export const Icon = ({ name, spin }: { name: string; spin?: boolean }) => (
+    <span class={`codicon codicon-${name}${spin ? ' spinner' : ''}`} aria-hidden="true" />
+);
 
 /** What is wrong, or that all went well, under a field. Hidden while there is nothing to say. */
-export const ProblemLine = ({ problem, alert }: { problem: Problem | null | undefined; alert?: boolean }) =>
-    <div class={problem ? `message ${problem.severity}` : 'message hidden'} role={alert ? 'alert' : 'status'}>{problem?.message ?? ''}</div>;
+export const ProblemLine = ({ problem, alert }: { problem: Problem | null | undefined; alert?: boolean }) => (
+    <div class={problem ? `message ${problem.severity}` : 'message hidden'} role={alert ? 'alert' : 'status'}>
+        {problem?.message ?? ''}
+    </div>
+);
 
 /** What a pane shows while it has nothing to show. */
 export const Empty = ({ icon, title, detail }: { icon: string; title: string; detail: string }) => (
@@ -68,7 +72,10 @@ export const Empty = ({ icon, title, detail }: { icon: string; title: string; de
 /** A form field with its label, and a hint next to the label. */
 export const Field = ({ label, hint, children }: { label: string; hint?: string; children: ComponentChildren }) => (
     <>
-        <label>{label}{hint ? <span class="muted"> {hint}</span> : null}</label>
+        <label>
+            {label}
+            {hint ? <span class="muted"> {hint}</span> : null}
+        </label>
         {children}
     </>
 );

@@ -76,7 +76,15 @@ if (!executable) {
 }
 
 // the driver is an extension, and the editor loads those as JavaScript
-buildSync({ entryPoints: [path.join(driver, 'extension.ts')], outfile: path.join(driver, 'extension.js'), bundle: true, platform: 'node', format: 'cjs', external: ['vscode'], logLevel: 'warning' });
+buildSync({
+    entryPoints: [path.join(driver, 'extension.ts')],
+    outfile: path.join(driver, 'extension.js'),
+    bundle: true,
+    platform: 'node',
+    format: 'cjs',
+    external: ['vscode'],
+    logLevel: 'warning',
+});
 
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'enigma-vscode-reload-'));
 const workspace = path.join(temp, 'workspace');
@@ -91,14 +99,21 @@ for (const directory of [workspace, requests, path.join(userData, 'User'), ...(s
 }
 
 fs.copyFileSync(fixture, jar);
-fs.writeFileSync(path.join(userData, 'User', 'settings.json'), JSON.stringify({
-    'workbench.startupEditor': 'none',
-    'telemetry.telemetryLevel': 'off',
-    'update.mode': 'none',
-    'extensions.autoCheckUpdates': false,
-    'window.restoreWindows': 'all',
-    ...JSON.parse(process.env.ENIGMA_RELOAD_SETTINGS ?? '{}'),
-}, undefined, '\t'));
+fs.writeFileSync(
+    path.join(userData, 'User', 'settings.json'),
+    JSON.stringify(
+        {
+            'workbench.startupEditor': 'none',
+            'telemetry.telemetryLevel': 'off',
+            'update.mode': 'none',
+            'extensions.autoCheckUpdates': false,
+            'window.restoreWindows': 'all',
+            ...JSON.parse(process.env.ENIGMA_RELOAD_SETTINGS ?? '{}'),
+        },
+        undefined,
+        '\t',
+    ),
+);
 
 const pause = (milliseconds: number) => new Promise<void>(resolve => setTimeout(resolve, milliseconds));
 
@@ -131,17 +146,23 @@ let editorExited: Promise<void> = Promise.resolve();
 function start(executable: string): void {
     const env: NodeJS.ProcessEnv = { ...process.env, ENIGMA_DRIVER_DIR: requests };
     delete env.ELECTRON_RUN_AS_NODE;
-    const started = editor = spawn(executable, [
-        workspace,
-        `--extensionDevelopmentPath=${layout(root).extension}`,
-        `--extensionDevelopmentPath=${driver}`,
-        '--user-data-dir', userData,
-        '--extensions-dir', path.join(temp, 'extensions'),
-        '--disable-workspace-trust',
-        '--skip-welcome',
-        '--skip-release-notes',
-        `--remote-debugging-port=${port}`,
-    ], { env, stdio: 'ignore' });
+    const started = (editor = spawn(
+        executable,
+        [
+            workspace,
+            `--extensionDevelopmentPath=${layout(root).extension}`,
+            `--extensionDevelopmentPath=${driver}`,
+            '--user-data-dir',
+            userData,
+            '--extensions-dir',
+            path.join(temp, 'extensions'),
+            '--disable-workspace-trust',
+            '--skip-welcome',
+            '--skip-release-notes',
+            `--remote-debugging-port=${port}`,
+        ],
+        { env, stdio: 'ignore' },
+    ));
     editorExited = new Promise(resolve => started.once('exit', () => resolve()));
 }
 
@@ -201,9 +222,12 @@ async function ask<T>(socketUrl: string, method: string, params: object): Promis
     }
 }
 
-const targets = async () => await (await fetch(`http://127.0.0.1:${port}/json/list`)).json() as Target[];
+const targets = async () => (await (await fetch(`http://127.0.0.1:${port}/json/list`)).json()) as Target[];
 /** The pages of Enigma's panes: each web view of the extension is a page of its own. */
-const paneTargets = async () => (await targets()).filter(target => target.url.startsWith('vscode-webview://') && target.url.includes('extensionId=danibcastro.enigma-vscode'));
+const paneTargets = async () =>
+    (await targets()).filter(
+        target => target.url.startsWith('vscode-webview://') && target.url.includes('extensionId=danibcastro.enigma-vscode'),
+    );
 
 async function workbench(): Promise<string> {
     const page = (await targets()).find(target => target.type === 'page' && target.url.includes('workbench'));
@@ -227,13 +251,17 @@ async function shot(name: string): Promise<void> {
 }
 
 /** What the window tells the user. */
-const notifications = async () => await inWindow<Toast[]>(`[...document.querySelectorAll('.notifications-toasts .notification-list-item, .notifications-center .notification-list-item')].map(item => ({
+const notifications = async () =>
+    (await inWindow<
+        Toast[]
+    >(`[...document.querySelectorAll('.notifications-toasts .notification-list-item, .notifications-center .notification-list-item')].map(item => ({
 	text: item.querySelector('.notification-list-item-message')?.innerText ?? '',
 	error: !!item.querySelector('.notification-list-item-icon.codicon-error'),
 	buttons: [...item.querySelectorAll('.monaco-button')].map(button => button.innerText.trim()),
-}))`) ?? [];
+}))`)) ?? [];
 
-const answerNotification = (label: string) => inWindow<boolean>(`(() => {
+const answerNotification = (label: string) =>
+    inWindow<boolean>(`(() => {
 	const button = [...document.querySelectorAll('.notifications-toasts .monaco-button, .notifications-center .monaco-button')].find(candidate => candidate.innerText.trim() === ${JSON.stringify(label)});
 	button?.click();
 	return !!button;
@@ -249,7 +277,10 @@ async function panes(): Promise<Pane[]> {
 				const page = document.getElementById('active-frame')?.contentDocument;
 				return page ? { title: page.title, text: (page.body?.innerText ?? '').replace(/\\s+/g, ' ').trim().slice(0, 300) } : { title: null, text: null };
 			})()`,
-        }).then(result => result.result?.value, (error: Error) => ({ title: null, text: `not readable: ${error.message}` }));
+        }).then(
+            result => result.result?.value,
+            (error: Error) => ({ title: null, text: `not readable: ${error.message}` }),
+        );
         pages.push(answer ?? { title: null, text: null });
     }
 
@@ -259,9 +290,12 @@ async function panes(): Promise<Pane[]> {
 /** Runs something in the page of the Identifier pane, as if the user did it there. */
 async function inIdentifier<T = void>(expression: string): Promise<T> {
     for (const target of await paneTargets()) {
-        const answer = await ask<Evaluated<{ other?: boolean; error?: string; value?: T }>>(target.webSocketDebuggerUrl, 'Runtime.evaluate', {
-            returnByValue: true,
-            expression: `(() => {
+        const answer = await ask<Evaluated<{ other?: boolean; error?: string; value?: T }>>(
+            target.webSocketDebuggerUrl,
+            'Runtime.evaluate',
+            {
+                returnByValue: true,
+                expression: `(() => {
 				const page = document.getElementById('active-frame')?.contentDocument;
 				if (page?.title !== 'Identifier') {
 					return { other: true };
@@ -273,7 +307,8 @@ async function inIdentifier<T = void>(expression: string): Promise<T> {
 					return { error: String(error) };
 				}
 			})()`,
-        });
+            },
+        );
         const result = answer.result?.value;
         if (result?.error) {
             throw new Error(result.error);
@@ -288,16 +323,27 @@ async function inIdentifier<T = void>(expression: string): Promise<T> {
 }
 
 /** Enigma as the extension sees itself, without waking it up if it is not running. */
-const state = () => inside(async (vscode): Promise<WindowState> => {
-    const extension = vscode.extensions.getExtension<EnigmaApi>('danibcastro.enigma-vscode');
-    const api = extension?.isActive ? extension.exports : undefined;
-    return {
-        active: extension?.isActive ?? false,
-        jarOpen: api?.project.isOpen ?? false,
-        pane: api ? { visible: api.entryPane.visible, loaded: api.entryPane.loaded, entry: api.entryPane.entry?.displayName ?? null, kind: api.entryPane.entry?.kindLabel ?? null } : null,
-        classTabs: vscode.window.tabGroups.all.flatMap(group => group.tabs).filter(tab => tab.input instanceof vscode.TabInputText && tab.input.uri.scheme === 'enigma').map(tab => tab.label),
-    };
-});
+const state = () =>
+    inside(async (vscode): Promise<WindowState> => {
+        const extension = vscode.extensions.getExtension<EnigmaApi>('danibcastro.enigma-vscode');
+        const api = extension?.isActive ? extension.exports : undefined;
+        return {
+            active: extension?.isActive ?? false,
+            jarOpen: api?.project.isOpen ?? false,
+            pane: api
+                ? {
+                      visible: api.entryPane.visible,
+                      loaded: api.entryPane.loaded,
+                      entry: api.entryPane.entry?.displayName ?? null,
+                      kind: api.entryPane.entry?.kindLabel ?? null,
+                  }
+                : null,
+            classTabs: vscode.window.tabGroups.all
+                .flatMap(group => group.tabs)
+                .filter(tab => tab.input instanceof vscode.TabInputText && tab.input.uri.scheme === 'enigma')
+                .map(tab => tab.label),
+        };
+    });
 
 /** What the editor wrote down as errors, in the logs of its window and of its extensions. */
 function loggedErrors(): string[] {
@@ -360,7 +406,7 @@ async function watch(step: string, milliseconds: number): Promise<Step> {
 }
 
 const identifier = (entry: Step) => entry.panes.find(pane => pane.title === 'Identifier');
-const messageOf = (error: unknown) => error instanceof Error ? error.message : String(error);
+const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 async function openClassesAndPointAtMethod() {
     await inside(async (vscode, enigma) => {
@@ -377,16 +423,18 @@ async function openClassesAndPointAtMethod() {
 }
 
 async function pointAtMethod() {
-    await until('the class to be on display', () => inside(async vscode => {
-        const active = vscode.window.activeTextEditor;
-        if (active?.document.uri.scheme !== 'enigma' || !active.document.getText().includes('String a()')) {
-            return false;
-        }
+    await until('the class to be on display', () =>
+        inside(async vscode => {
+            const active = vscode.window.activeTextEditor;
+            if (active?.document.uri.scheme !== 'enigma' || !active.document.getText().includes('String a()')) {
+                return false;
+            }
 
-        const position = active.document.positionAt(active.document.getText().indexOf('String a()') + 'String '.length);
-        active.selection = new vscode.Selection(position, position);
-        return true;
-    }));
+            const position = active.document.positionAt(active.document.getText().indexOf('String a()') + 'String '.length);
+            active.selection = new vscode.Selection(position, position);
+            return true;
+        }),
+    );
     await until('the Identifier pane to show the method', async () => (await state()).pane?.kind === 'Method', 20000);
 }
 
@@ -404,7 +452,7 @@ async function comesBack(how: string): Promise<void> {
     }
 
     if (!back.state.jarOpen) {
-        if (!await answerNotification('Reopen')) {
+        if (!(await answerNotification('Reopen'))) {
             problem(`${how}: there is no question whether to reopen the jar`);
             await inside(async (vscode, _enigma, jarPath: string) => {
                 await vscode.commands.executeCommand('enigma.openJar', jarPath);
@@ -413,7 +461,9 @@ async function comesBack(how: string): Promise<void> {
     }
 
     await until('the jar to be open again', async () => (await state()).jarOpen);
-    await until('the classes to be back in their tabs', async () => (await state()).classTabs.length === 2, 30000).catch((error: unknown) => problem(`${how}: ${messageOf(error)}`));
+    await until('the classes to be back in their tabs', async () => (await state()).classTabs.length === 2, 30000).catch((error: unknown) =>
+        problem(`${how}: ${messageOf(error)}`),
+    );
     await pointAtMethod().catch((error: unknown) => problem(`${how}: ${messageOf(error)}`));
     const open = await watch(`${how}: the jar is open again`, 3000);
     await shot(`${how}-2-open-again`);
@@ -439,8 +489,11 @@ async function paneWorks() {
 		name.dispatchEvent(new Event('input', { bubbles: true }));
 		name.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
 	}`);
-    await until('the method to be renamed from the pane', async () => (await state()).pane?.entry === 'describe' && (await text()).includes('String describe()'), 20000)
-        .catch((error: unknown) => problem(`${step}: ${messageOf(error)}`));
+    await until(
+        'the method to be renamed from the pane',
+        async () => (await state()).pane?.entry === 'describe' && (await text()).includes('String describe()'),
+        20000,
+    ).catch((error: unknown) => problem(`${step}: ${messageOf(error)}`));
 
     // its javadoc
     await inIdentifier(`page => {
@@ -452,12 +505,18 @@ async function paneWorks() {
     // as a person would, a moment later: the page enables the button once it has caught up with the typing
     await pause(100);
     await inIdentifier(`page => [...page.querySelectorAll('button')].find(button => button.textContent === 'Save Javadoc').click()`);
-    await until('the javadoc to be in the code', async () => (await text()).includes('Says what this is.'), 20000).catch((error: unknown) => problem(`${step}: ${messageOf(error)}`));
+    await until('the javadoc to be in the code', async () => (await text()).includes('Says what this is.'), 20000).catch((error: unknown) =>
+        problem(`${step}: ${messageOf(error)}`),
+    );
 
     // where to go from the entry: each of the buttons next to its kind
-    const buttons = await inIdentifier<string[]>(`page => [...page.querySelectorAll('.toolbar button')].map(button => button.getAttribute('aria-label'))`);
+    const buttons = await inIdentifier<string[]>(
+        `page => [...page.querySelectorAll('.toolbar button')].map(button => button.getAttribute('aria-label'))`,
+    );
     for (const label of buttons) {
-        await inIdentifier(`page => [...page.querySelectorAll('.toolbar button')].find(button => button.getAttribute('aria-label') === ${JSON.stringify(label)}).click()`);
+        await inIdentifier(
+            `page => [...page.querySelectorAll('.toolbar button')].find(button => button.getAttribute('aria-label') === ${JSON.stringify(label)}).click()`,
+        );
         await pause(1200);
     }
 
@@ -527,5 +586,7 @@ try {
     fs.rmSync(temp, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
 }
 
-console.log(`\n=== Enigma, reloading the window ===\n${report.problems.length === 0 && !failed ? 'PASSED' : `FAILED: ${report.problems.length} problem(s)\n${report.problems.map(text => `  - ${text}`).join('\n')}`}`);
+console.log(
+    `\n=== Enigma, reloading the window ===\n${report.problems.length === 0 && !failed ? 'PASSED' : `FAILED: ${report.problems.length} problem(s)\n${report.problems.map(text => `  - ${text}`).join('\n')}`}`,
+);
 process.exit(report.problems.length === 0 && !failed ? 0 : 1);

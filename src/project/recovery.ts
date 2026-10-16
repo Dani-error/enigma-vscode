@@ -29,8 +29,7 @@ export class Recovery implements vscode.Disposable {
         private readonly backend: Backend,
         private readonly reporter: ErrorReporter,
         private readonly state: () => OpenState | undefined,
-    ) {
-    }
+    ) {}
 
     private get directory(): string {
         return path.join(this.context.globalStorageUri.fsPath, 'recovery');
@@ -42,10 +41,12 @@ export class Recovery implements vscode.Disposable {
 
     private remove(checksum: string): void {
         const paths = this.paths(checksum);
-        this.writing = this.writing.then(() => {
-            fs.rmSync(paths.mappings, { force: true });
-            fs.rmSync(paths.info, { force: true });
-        }).catch(() => undefined);
+        this.writing = this.writing
+            .then(() => {
+                fs.rmSync(paths.mappings, { force: true });
+                fs.rmSync(paths.info, { force: true });
+            })
+            .catch(() => undefined);
     }
 
     /** Follows the state of the project: a change is written down soon, and what was saved needs no recovering. */
@@ -75,18 +76,20 @@ export class Recovery implements vscode.Disposable {
         const checksum = state.jarChecksum;
         const paths = this.paths(checksum);
         const info: SnapshotInfo = { jar: state.jarPath, mappings: state.mappingsPath, time: Date.now() };
-        this.writing = this.writing.then(async () => {
-            if (this.undecided === checksum && fs.existsSync(paths.mappings)) {
-                // The user has not decided what to do with an older snapshot yet. Do not overwrite it with new work.
-                const kept = path.join(this.directory, `${checksum}.previous.mapping`);
-                fs.renameSync(paths.mappings, kept);
-                this.undecided = undefined;
-                this.backend.output.warn(`Unsaved changes from an earlier session were not restored; they are kept in ${kept}`);
-            }
+        this.writing = this.writing
+            .then(async () => {
+                if (this.undecided === checksum && fs.existsSync(paths.mappings)) {
+                    // The user has not decided what to do with an older snapshot yet. Do not overwrite it with new work.
+                    const kept = path.join(this.directory, `${checksum}.previous.mapping`);
+                    fs.renameSync(paths.mappings, kept);
+                    this.undecided = undefined;
+                    this.backend.output.warn(`Unsaved changes from an earlier session were not restored; they are kept in ${kept}`);
+                }
 
-            await this.backend.request('mappings/snapshot', { path: paths.mappings });
-            fs.writeFileSync(paths.info, JSON.stringify(info));
-        }).catch(error => this.backend.output.warn(`Failed to write recovery snapshot: ${error}`));
+                await this.backend.request('mappings/snapshot', { path: paths.mappings });
+                fs.writeFileSync(paths.info, JSON.stringify(info));
+            })
+            .catch(error => this.backend.output.warn(`Failed to write recovery snapshot: ${error}`));
         return this.writing;
     }
 
@@ -104,7 +107,7 @@ export class Recovery implements vscode.Disposable {
 
         let info: SnapshotInfo;
         try {
-            info = JSON.parse(fs.readFileSync(paths.info, 'utf8'));
+            info = JSON.parse(fs.readFileSync(paths.info, 'utf8')) as SnapshotInfo;
         } catch {
             return;
         }
@@ -118,7 +121,8 @@ export class Recovery implements vscode.Disposable {
         const choice = await vscode.window.showWarningMessage(
             t('recovery.enigmaFoundUnsavedMappingChangesFor', path.basename(state.jarPath), when),
             { modal: true, detail: t('recovery.restoringBringsTheChangesBackAs') },
-            t('recovery.restore'), t('recovery.discard'),
+            t('recovery.restore'),
+            t('recovery.discard'),
         );
 
         if (choice === t('recovery.restore')) {

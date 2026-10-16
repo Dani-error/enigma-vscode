@@ -34,7 +34,10 @@ export class StructureProvider implements vscode.TreeDataProvider<TreeNodeResult
     /** The view this is shown in. */
     readonly view: vscode.TreeView<TreeNodeResult>;
 
-    constructor(private readonly backend: Backend, private readonly isOpen: () => boolean) {
+    constructor(
+        private readonly backend: Backend,
+        private readonly isOpen: () => boolean,
+    ) {
         this.view = vscode.window.createTreeView('enigma.structure', { treeDataProvider: this, showCollapseAll: true });
         this.disposables.push(
             this.view,
@@ -103,14 +106,15 @@ export class StructureProvider implements vscode.TreeDataProvider<TreeNodeResult
                 this.root = root;
                 this.current = parsed.class;
                 this.parents.clear();
-                const remember = (node: TreeNodeResult) => node.children.forEach(child => {
-                    // the class itself is not shown: its members are the top of the tree
-                    if (node !== root) {
-                        this.parents.set(child, node);
-                    }
+                const remember = (node: TreeNodeResult) =>
+                    node.children.forEach(child => {
+                        // the class itself is not shown: its members are the top of the tree
+                        if (node !== root) {
+                            this.parents.set(child, node);
+                        }
 
-                    remember(child);
-                });
+                        remember(child);
+                    });
                 remember(root);
                 this.emitter.fire(undefined);
             }
@@ -124,7 +128,7 @@ export class StructureProvider implements vscode.TreeDataProvider<TreeNodeResult
     }
 
     getChildren(element?: TreeNodeResult): TreeNodeResult[] {
-        return element ? element.children : this.root?.children ?? [];
+        return element ? element.children : (this.root?.children ?? []);
     }
 
     /** Needed to reveal a member, which is how the view is brought up without taking the keyboard. */
@@ -133,7 +137,10 @@ export class StructureProvider implements vscode.TreeDataProvider<TreeNodeResult
     }
 
     getTreeItem(element: TreeNodeResult): vscode.TreeItem {
-        const item = new vscode.TreeItem(element.label, element.children.length > 0 ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.None);
+        const item = new vscode.TreeItem(
+            element.label,
+            element.children.length > 0 ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.None,
+        );
         item.description = element.modifiers || undefined;
         // Enigma's icons have colours of their own: whether a member is mapped is in its tooltip, and in the code
         item.iconPath = treeIcon(element.kind);
@@ -146,7 +153,9 @@ export class StructureProvider implements vscode.TreeDataProvider<TreeNodeResult
     }
 
     dispose(): void {
-        this.disposables.forEach(disposable => disposable.dispose());
+        for (const disposable of this.disposables) {
+            disposable.dispose();
+        }
         this.emitter.dispose();
     }
 }

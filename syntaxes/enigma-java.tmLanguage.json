@@ -1,8 +1,6 @@
 {
-	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-	"name": "Java (Enigma)",
-	"scopeName": "source.enigma.java",
-	"patterns": [
-		{ "include": "source.java" }
-	]
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "Java (Enigma)",
+    "scopeName": "source.enigma.java",
+    "patterns": [{ "include": "source.java" }]
 }

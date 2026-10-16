@@ -9,22 +9,23 @@ import { t } from '../l10n';
 export class ErrorReporter implements vscode.Disposable {
     private readonly mappingDiagnostics = vscode.languages.createDiagnosticCollection('enigma-mappings');
 
-    constructor(private readonly output: vscode.LogOutputChannel) {
-    }
+    constructor(private readonly output: vscode.LogOutputChannel) {}
 
     /** Shows an error to the user. Mapping parse errors are also reported as problems on the mappings file. */
     report(error: unknown): void {
         if (error instanceof JavaNotFoundError) {
             this.output.error(error.message);
-            void vscode.window.showErrorMessage(describeJavaFailure(error.search), t('errors.selectJava'), t('errors.openSettings'), t('common.showLog')).then(choice => {
-                if (choice === t('errors.selectJava')) {
-                    void vscode.commands.executeCommand('enigma.selectJava');
-                } else if (choice === t('errors.openSettings')) {
-                    void vscode.commands.executeCommand('workbench.action.openSettings', 'enigma.java.home');
-                } else if (choice === t('common.showLog')) {
-                    this.output.show();
-                }
-            });
+            void vscode.window
+                .showErrorMessage(describeJavaFailure(error.search), t('errors.selectJava'), t('errors.openSettings'), t('common.showLog'))
+                .then(choice => {
+                    if (choice === t('errors.selectJava')) {
+                        void vscode.commands.executeCommand('enigma.selectJava');
+                    } else if (choice === t('errors.openSettings')) {
+                        void vscode.commands.executeCommand('workbench.action.openSettings', 'enigma.java.home');
+                    } else if (choice === t('common.showLog')) {
+                        this.output.show();
+                    }
+                });
             return;
         }
 
@@ -32,7 +33,11 @@ export class ErrorReporter implements vscode.Disposable {
         if (error instanceof BackendError && where?.file) {
             const file = vscode.Uri.file(where.file);
             const line = Math.max(0, (where.line ?? 1) - 1);
-            const diagnostic = new vscode.Diagnostic(new vscode.Range(line, 0, line, Number.MAX_SAFE_INTEGER), where.reason ?? error.message, vscode.DiagnosticSeverity.Error);
+            const diagnostic = new vscode.Diagnostic(
+                new vscode.Range(line, 0, line, Number.MAX_SAFE_INTEGER),
+                where.reason ?? error.message,
+                vscode.DiagnosticSeverity.Error,
+            );
             diagnostic.source = 'Enigma';
             this.mappingDiagnostics.set(file, [diagnostic]);
             void vscode.window.showErrorMessage(t('errors.enigmaCouldNotReadTheMappings', error.message), t('errors.show')).then(choice => {

@@ -55,8 +55,16 @@ interface State {
 }
 
 const fresh = (entry: PaneEntry): Shown => ({
-    entry, name: entry.name, nameDirty: false, nameProblem: null, nameLook: '', renaming: false,
-    javadoc: entry.javadoc, javadocDirty: false, javadocProblem: null, savingJavadoc: false,
+    entry,
+    name: entry.name,
+    nameDirty: false,
+    nameProblem: null,
+    nameLook: '',
+    renaming: false,
+    javadoc: entry.javadoc,
+    javadocDirty: false,
+    javadocProblem: null,
+    savingJavadoc: false,
 });
 
 const isDirty = (shown: Shown | undefined) => !!shown && (shown.nameDirty || shown.javadocDirty);
@@ -92,20 +100,33 @@ function show(state: State, next: PaneEntry | null): State {
 }
 
 /** Shows what waited for unsaved edits, once there are none. */
-const showPending = (state: State): State => state.pending !== undefined && !isDirty(state.shown) ? show({ ...state, pending: undefined }, state.pending) : state;
+const showPending = (state: State): State =>
+    state.pending !== undefined && !isDirty(state.shown) ? show({ ...state, pending: undefined }, state.pending) : state;
 
 /** A name or descriptor that, where it has to be broken into lines, breaks after its separators rather than anywhere. */
-const Breakable = ({ text }: { text: string }) =>
-    <>{text.split(/(?<=[/.$;,(])/).map((part, index) => index === 0 ? part : <Fragment key={index}><wbr />{part}</Fragment>)}</>;
+const Breakable = ({ text }: { text: string }) => (
+    <>
+        {text.split(/(?<=[/.$;,(])/).map((part, index) =>
+            index === 0 ? (
+                part
+            ) : (
+                <Fragment key={index}>
+                    <wbr />
+                    {part}
+                </Fragment>
+            ),
+        )}
+    </>
+);
 
 /** What the entry view does when the user acts, and where its fields are. */
 interface Actions {
-    onNameInput(name: string): void;
-    resetName(): void;
-    submitName(): void;
-    onJavadocInput(javadoc: string): void;
-    saveJavadoc(): void;
-    revertJavadoc(): void;
+    onNameInput: (name: string) => void;
+    resetName: () => void;
+    submitName: () => void;
+    onJavadocInput: (javadoc: string) => void;
+    saveJavadoc: () => void;
+    revertJavadoc: () => void;
     nameField: RefObject<HTMLInputElement | null>;
     javadocField: RefObject<HTMLTextAreaElement | null>;
 }
@@ -122,8 +143,14 @@ function EntryView({ shown, pending, actions }: { shown: Shown; pending: boolean
 
         const { selectionStart: start, selectionEnd: end } = area;
         const selected = area.value.substring(start, end);
-        const text = 'html' in tag ? (selected ? `<${tag.html}>${selected}</${tag.html}>` : `<${tag.html}>`)
-            : tag.inline ? `{${tag.tag} ${selected}}` : `${tag.tag} ${selected}`;
+        const text =
+            'html' in tag
+                ? selected
+                    ? `<${tag.html}>${selected}</${tag.html}>`
+                    : `<${tag.html}>`
+                : tag.inline
+                  ? `{${tag.tag} ${selected}}`
+                  : `${tag.tag} ${selected}`;
         // inline tags leave the cursor inside the braces, ready for what goes there
         const caret = start + text.length - ('html' in tag || !tag.inline ? 0 : 1);
         area.focus();
@@ -138,7 +165,12 @@ function EntryView({ shown, pending, actions }: { shown: Shown; pending: boolean
     return (
         <div class="pane entry">
             <div class={pending ? 'banner' : 'banner hidden'}>
-                {pending ? <><Icon name="pinned" /><span>{t('entryPage.unsavedChangesToSaveOrRevert', entry.displayName)}</span></> : null}
+                {pending ? (
+                    <>
+                        <Icon name="pinned" />
+                        <span>{t('entryPage.unsavedChangesToSaveOrRevert', entry.displayName)}</span>
+                    </>
+                ) : null}
             </div>
             <section class="identity">
                 <div class="kind">
@@ -146,7 +178,13 @@ function EntryView({ shown, pending, actions }: { shown: Shown; pending: boolean
                     <span class="label">{entry.kindLabel}</span>
                     <span class="toolbar">
                         {entry.actions.map(action => (
-                            <button key={action.id} class="icon" title={action.title || action.label} aria-label={action.label} onClick={act(action.id)}>
+                            <button
+                                key={action.id}
+                                class="icon"
+                                title={action.title || action.label}
+                                aria-label={action.label}
+                                onClick={act(action.id)}
+                            >
                                 <Icon name={action.icon} />
                             </button>
                         ))}
@@ -154,8 +192,15 @@ function EntryView({ shown, pending, actions }: { shown: Shown; pending: boolean
                     <span class="spacer" />
                     <span class={`state ${entry.state}`}>{entry.stateLabel}</span>
                 </div>
-                <input ref={actions.nameField} type="text" class={`mono ${shown.nameLook}`.trim()} spellcheck={false} autocomplete="off"
-                    value={shown.name} disabled={!entry.renamable || shown.renaming} aria-label={t('entryPage.name')}
+                <input
+                    ref={actions.nameField}
+                    type="text"
+                    class={`mono ${shown.nameLook}`.trim()}
+                    spellcheck={false}
+                    autocomplete="off"
+                    value={shown.name}
+                    disabled={!entry.renamable || shown.renaming}
+                    aria-label={t('entryPage.name')}
                     title={entry.renamable ? entry.nameHint : entry.lockedReason}
                     onInput={event => actions.onNameInput(event.currentTarget.value)}
                     onKeyDown={event => {
@@ -166,35 +211,56 @@ function EntryView({ shown, pending, actions }: { shown: Shown; pending: boolean
                             actions.resetName();
                             event.currentTarget.blur();
                         }
-                    }} />
+                    }}
+                />
                 <ProblemLine problem={shown.nameProblem} />
-                {entry.renamable
-                    ? <div class="message info hint">{entry.nameHint}</div>
-                    : <div class="message info">{entry.lockedReason}</div>}
+                {entry.renamable ? (
+                    <div class="message info hint">{entry.nameHint}</div>
+                ) : (
+                    <div class="message info">{entry.lockedReason}</div>
+                )}
             </section>
             <section class="details">
                 <dl class="facts">
-                    {entry.facts.map(fact => <Fragment key={fact.label}>
-                        <dt>{fact.label}</dt>
-                        <dd class={fact.mono ? 'mono' : undefined} title={fact.value}><Breakable text={fact.value} /></dd>
-                        <dd class="action">
-                            {fact.copy
-                                ? <button class="icon" title={t('entryPage.copy', fact.label)} aria-label={t('entryPage.copy', fact.label)}
-                                    onClick={() => post({ type: 'copy', text: fact.value })}><Icon name="copy" /></button>
-                                : null}
-                        </dd>
-                    </Fragment>)}
+                    {entry.facts.map(fact => (
+                        <Fragment key={fact.label}>
+                            <dt>{fact.label}</dt>
+                            <dd class={fact.mono ? 'mono' : undefined} title={fact.value}>
+                                <Breakable text={fact.value} />
+                            </dd>
+                            <dd class="action">
+                                {fact.copy ? (
+                                    <button
+                                        class="icon"
+                                        title={t('entryPage.copy', fact.label)}
+                                        aria-label={t('entryPage.copy', fact.label)}
+                                        onClick={() => post({ type: 'copy', text: fact.value })}
+                                    >
+                                        <Icon name="copy" />
+                                    </button>
+                                ) : null}
+                            </dd>
+                        </Fragment>
+                    ))}
                 </dl>
-                {entry.toggle
-                    ? <div class="buttons">
-                        <button class="secondary" title={entry.toggle.title} onClick={() => post({ type: 'toggle', key: entry.key })}>{entry.toggle.label}</button>
+                {entry.toggle ? (
+                    <div class="buttons">
+                        <button class="secondary" title={entry.toggle.title} onClick={() => post({ type: 'toggle', key: entry.key })}>
+                            {entry.toggle.label}
+                        </button>
                     </div>
-                    : null}
+                ) : null}
             </section>
             <hr />
             <section class="javadoc">
                 <h2>{t('entryPage.javadoc')}</h2>
-                <textarea ref={actions.javadocField} class="mono" spellcheck rows={5} disabled={!entry.documentable} value={shown.javadoc}
+                <textarea
+                    ref={actions.javadocField}
+                    class="mono"
+                    spellcheck
+                    rows={5}
+                    disabled={!entry.documentable}
+                    value={shown.javadoc}
                     placeholder={entry.documentable ? t('entryPage.describeWhatThisDoes') : t('entryPage.thisEntryCannotBeDocumented')}
                     aria-label={t('entryPage.javadoc')}
                     onInput={event => actions.onJavadocInput(event.currentTarget.value)}
@@ -205,37 +271,53 @@ function EntryView({ shown, pending, actions }: { shown: Shown; pending: boolean
                         } else if (event.key === 'Escape' && shown.javadocDirty) {
                             actions.revertJavadoc();
                         }
-                    }} />
-                {entry.documentable
-                    ? <div class="chips" aria-label={t('entryPage.insertTag')}>
-                        {TAGS.map(tag => <button key={tag.label} title={t('entryPage.insert', tag.label)} onClick={() => insertTag(tag)}>{tag.label}</button>)}
+                    }}
+                />
+                {entry.documentable ? (
+                    <div class="chips" aria-label={t('entryPage.insertTag')}>
+                        {TAGS.map(tag => (
+                            <button key={tag.label} title={t('entryPage.insert', tag.label)} onClick={() => insertTag(tag)}>
+                                {tag.label}
+                            </button>
+                        ))}
                     </div>
-                    : null}
+                ) : null}
                 <ProblemLine problem={shown.javadocProblem} />
-                {entry.documentable
-                    ? <div class="buttons">
-                        <button disabled={!shown.javadocDirty || shown.savingJavadoc} onClick={actions.saveJavadoc}>{t('entryPage.saveJavadoc')}</button>
-                        <button class="secondary" disabled={!shown.javadocDirty} onClick={actions.revertJavadoc}>{t('entryPage.revert')}</button>
-                        <span class="muted"><kbd>{isMac ? '⌘↵' : t('entryPage.saveShortcut')}</kbd> {t('entryPage.toSave')}</span>
+                {entry.documentable ? (
+                    <div class="buttons">
+                        <button disabled={!shown.javadocDirty || shown.savingJavadoc} onClick={actions.saveJavadoc}>
+                            {t('entryPage.saveJavadoc')}
+                        </button>
+                        <button class="secondary" disabled={!shown.javadocDirty} onClick={actions.revertJavadoc}>
+                            {t('entryPage.revert')}
+                        </button>
+                        <span class="muted">
+                            <kbd>{isMac ? '⌘↵' : t('entryPage.saveShortcut')}</kbd> {t('entryPage.toSave')}
+                        </span>
                     </div>
-                    : null}
+                ) : null}
             </section>
             {entry.actions.length > 0 ? <hr class="actions" /> : null}
-            {entry.actions.length > 0
-                ? <section class="actions">
+            {entry.actions.length > 0 ? (
+                <section class="actions">
                     <div class="buttons">
                         {entry.actions.map(action => (
-                            <button key={action.id} class="secondary" title={action.title} onClick={act(action.id)}><Icon name={action.icon} />{action.label}</button>
+                            <button key={action.id} class="secondary" title={action.title} onClick={act(action.id)}>
+                                <Icon name={action.icon} />
+                                {action.label}
+                            </button>
                         ))}
                     </div>
                 </section>
-                : null}
+            ) : null}
         </div>
     );
 }
 
 function EntryPage() {
-    const [state, setState] = useState<State>({ empty: { title: t('common.noNameSelected'), detail: t('common.placeTheCursorOnAHighlighted') } });
+    const [state, setState] = useState<State>({
+        empty: { title: t('common.noNameSelected'), detail: t('common.placeTheCursorOnAHighlighted') },
+    });
     const nameField = useRef<HTMLInputElement>(null);
     const javadocField = useRef<HTMLTextAreaElement>(null);
     // only the answer to the latest check of the name counts
@@ -246,7 +328,7 @@ function EntryPage() {
 
     /** Changes what is on display, if an entry is. */
     const update = (change: (shown: Shown) => Partial<Shown>, then: (state: State) => State = next => next) =>
-        setState(current => current.shown ? then({ ...current, shown: { ...current.shown, ...change(current.shown) } }) : current);
+        setState(current => (current.shown ? then({ ...current, shown: { ...current.shown, ...change(current.shown) } }) : current));
 
     const validate = (key: string, name: string) => {
         const request = ++validation.current;
@@ -268,9 +350,19 @@ function EntryPage() {
                 return;
             case 'validation':
                 if (message.request === validation.current) {
-                    update(current => current.nameDirty && current.entry.key === message.key
-                        ? { nameProblem: message.problem, nameLook: message.problem?.severity === 'error' ? 'invalid' : message.problem?.severity === 'warning' ? 'warning' : '' }
-                        : {});
+                    update(current =>
+                        current.nameDirty && current.entry.key === message.key
+                            ? {
+                                  nameProblem: message.problem,
+                                  nameLook:
+                                      message.problem?.severity === 'error'
+                                          ? 'invalid'
+                                          : message.problem?.severity === 'warning'
+                                            ? 'warning'
+                                            : '',
+                              }
+                            : {},
+                    );
                 }
 
                 return;
@@ -293,12 +385,18 @@ function EntryPage() {
                     return;
                 }
 
-                update(current => message.problem
-                    ? { savingJavadoc: false, javadocProblem: message.problem }
-                    : {
-                        savingJavadoc: false, javadocDirty: false, entry: { ...current.entry, javadoc: current.javadoc },
-                        javadocProblem: { severity: 'info', message: t('entryPage.savedToTheMappings') },
-                    }, message.problem ? undefined : showPending);
+                update(
+                    current =>
+                        message.problem
+                            ? { savingJavadoc: false, javadocProblem: message.problem }
+                            : {
+                                  savingJavadoc: false,
+                                  javadocDirty: false,
+                                  entry: { ...current.entry, javadoc: current.javadoc },
+                                  javadocProblem: { severity: 'info', message: t('entryPage.savedToTheMappings') },
+                              },
+                    message.problem ? undefined : showPending,
+                );
                 return;
             case 'focus': {
                 const field = message.field === 'name' ? nameField.current : javadocField.current;
@@ -325,7 +423,7 @@ function EntryPage() {
         javadocField,
         onNameInput: name => {
             const nameDirty = name !== shown.entry.name;
-            update(() => nameDirty ? { name, nameDirty } : { name, nameDirty, nameProblem: null, nameLook: '' });
+            update(() => (nameDirty ? { name, nameDirty } : { name, nameDirty, nameProblem: null, nameLook: '' }));
             if (nameDirty) {
                 validate(shown.entry.key, name);
             } else {
@@ -356,7 +454,8 @@ function EntryPage() {
                 post({ type: 'saveJavadoc', key: shown.entry.key, text });
             }
         },
-        revertJavadoc: () => update(current => ({ javadoc: current.entry.javadoc, javadocDirty: false, javadocProblem: null }), showPending),
+        revertJavadoc: () =>
+            update(current => ({ javadoc: current.entry.javadoc, javadocDirty: false, javadocProblem: null }), showPending),
     };
 
     // another entry gets a new form; the same one keeps its fields, with what is being typed in them

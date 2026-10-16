@@ -62,22 +62,29 @@ export class StatsPanel implements vscode.Disposable {
         }
 
         const panel = vscode.window.createWebviewPanel('enigma.stats', t('common.mappingStatistics'), vscode.ViewColumn.Active, {
-            ...webviewOptions(this.context.extensionUri), retainContextWhenHidden: true,
+            ...webviewOptions(this.context.extensionUri),
+            retainContextWhenHidden: true,
         });
         this.panel = panel;
         panel.iconPath = new vscode.ThemeIcon('graph');
         panel.webview.html = page(panel.webview, this.context.extensionUri, 'stats', t('common.mappingStatistics'));
         panel.webview.onDidReceiveMessage((message: FromStatsPage) => void this.onMessage(message), undefined, this.disposables);
-        panel.onDidDispose(() => {
-            this.panel = undefined;
-        }, undefined, this.disposables);
+        panel.onDidDispose(
+            () => {
+                this.panel = undefined;
+            },
+            undefined,
+            this.disposables,
+        );
     }
 
     /** Counts with the given options. Public so that tests can act as the web view. */
     async generate(options: StatsOptions): Promise<StatsResult> {
         return this.backend.request('stats/generate', {
-            types: options.types, topLevelPackage: options.package.replace(/\./g, '/'),
-            includeSynthetic: options.includeSynthetic, countFallback: options.countFallback,
+            types: options.types,
+            topLevelPackage: options.package.replace(/\./g, '/'),
+            includeSynthetic: options.includeSynthetic,
+            countFallback: options.countFallback,
         });
     }
 
@@ -124,6 +131,8 @@ export class StatsPanel implements vscode.Disposable {
     dispose(): void {
         clearTimeout(this.staleTimer);
         this.panel?.dispose();
-        this.disposables.forEach(disposable => disposable.dispose());
+        for (const disposable of this.disposables) {
+            disposable.dispose();
+        }
     }
 }

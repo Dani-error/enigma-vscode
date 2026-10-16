@@ -28,7 +28,18 @@ export type ConnectionState = 'not_connected' | 'connected' | 'hosting';
 export type EntryKind = EntryRef['kind'];
 /** What an entry is to someone reading the code, which is finer than what it is to Enigma. */
 export type SymbolKind =
-    | 'class' | 'interface' | 'annotation' | 'enum' | 'record' | 'enumConstant' | 'field' | 'method' | 'constructor' | 'parameter' | 'local' | 'unknown';
+    | 'class'
+    | 'interface'
+    | 'annotation'
+    | 'enum'
+    | 'record'
+    | 'enumConstant'
+    | 'field'
+    | 'method'
+    | 'constructor'
+    | 'parameter'
+    | 'local'
+    | 'unknown';
 export type ClassKind = Extract<SymbolKind, 'class' | 'interface' | 'annotation' | 'enum' | 'record'>;
 export type Severity = 'info' | 'warning' | 'error';
 export type SearchType = 'class' | 'method' | 'field';
@@ -38,14 +49,39 @@ export type PackageMode = 'refactor' | 'move';
 export type Editable = 'class' | 'method' | 'field' | 'parameter' | 'local' | 'javadoc';
 
 export type Problem =
-    | 'no-jar' | 'profile-not-found' | 'unknown-decompiler' | 'jar-not-found' | 'library-not-found' | 'already-connected' | 'not-connected'
-    | 'connect-failed' | 'server-start-failed' | 'unknown-mapping-format' | 'mappings-not-found' | 'no-mappings-file-to-save' | 'no-mappings-file'
-    | 'save-while-connected' | 'save-failed' | 'auto-save-failed' | 'snapshot-failed' | 'class-not-found' | 'export-source-failed'
-    | 'editing-disabled' | 'not-renamable' | 'nothing-to-undo' | 'nothing-to-redo';
+    | 'no-jar'
+    | 'profile-not-found'
+    | 'unknown-decompiler'
+    | 'jar-not-found'
+    | 'library-not-found'
+    | 'already-connected'
+    | 'not-connected'
+    | 'connect-failed'
+    | 'server-start-failed'
+    | 'unknown-mapping-format'
+    | 'mappings-not-found'
+    | 'no-mappings-file-to-save'
+    | 'no-mappings-file'
+    | 'save-while-connected'
+    | 'save-failed'
+    | 'auto-save-failed'
+    | 'snapshot-failed'
+    | 'class-not-found'
+    | 'export-source-failed'
+    | 'editing-disabled'
+    | 'not-renamable'
+    | 'nothing-to-undo'
+    | 'nothing-to-redo';
 
 /** What the engine reports progress on. */
 export type Task =
-    | 'opening-jar' | 'opening-mappings' | 'saving-mappings' | 'dropping-mappings' | 'exporting-source' | 'exporting-jar' | 'generating-statistics';
+    | 'opening-jar'
+    | 'opening-mappings'
+    | 'saving-mappings'
+    | 'dropping-mappings'
+    | 'exporting-source'
+    | 'exporting-jar'
+    | 'generating-statistics';
 
 export interface BackendState {
     jarPath: string | null;
@@ -301,7 +337,6 @@ export type ErrorData =
     /** The engine itself failed; for the log. */
     | { stackTrace: string };
 
-
 interface ClassParams {
     class: string;
     view?: View;
@@ -437,12 +472,16 @@ export interface Notifications {
 }
 
 /** Error codes of the backend, next to the standard JSON-RPC ones. */
-export const enum ErrorCode {
-    NoProject = 1,
-    UserError = 2,
+export const ErrorCode = {
+    NoProject: 1,
+    UserError: 2,
     /** A position was sent for a text that is not the one the engine handed out last. */
-    Stale = 3,
-}
+    Stale: 3,
+} as const;
+export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
+
+/** Whether an error code is one of those above, which the extension knows what to do with. */
+export const isErrorCode = (code: number): code is ErrorCode => (Object.values(ErrorCode) as number[]).includes(code);
 
 export function topLevelClassOf(entry: EntryRef): string {
     const name = entry.kind === 'class' ? entry.name : entry.owner;

@@ -1,0 +1,8 @@
+# what the build makes, and what is not ours
+build/
+vendor/
+node_modules/
+bun.lock
+test/reload/driver/extension.js
+# the backend is Java and Gradle, which Prettier does not format (see .editorconfig)
+backend/

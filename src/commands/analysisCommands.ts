@@ -21,7 +21,7 @@ export const registerAnalysisCommands = (register: Register, targets: Targets, {
     // the buttons of the view: look at the same entry in another way, or at what is under the cursor if it is empty
     for (const mode of ['inheritance', 'implementations', 'calls'] as const) {
         register(`enigma.analysis.${mode}`, async () => {
-            if (!await analysis.switchTo(mode)) {
+            if (!(await analysis.switchTo(mode))) {
                 await analyse(mode)();
             }
         });
@@ -37,9 +37,9 @@ export const registerAnalysisCommands = (register: Register, targets: Targets, {
     // Each option of the structure view is a pair of menu entries, one of which is shown checked.
     for (const key of Object.keys(STRUCTURE_OPTIONS) as (keyof StructureOptions)[]) {
         for (const value of STRUCTURE_OPTIONS[key]) {
-            const apply = () => structure.setOption(key, value as never);
+            const apply = () => structure.setOption(key, value);
             register(`enigma.structure.${key}.${value}`, apply);
             register(`enigma.structure.${key}.${value}.checked`, apply);
         }
     }
-}
+};
