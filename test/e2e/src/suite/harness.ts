@@ -18,6 +18,8 @@ export interface PaneEntry { key: string; displayName: string; name: string; ren
 export type Api = EnigmaApi;
 
 export const workspace = process.env.ENIGMA_E2E_WORKSPACE!;
+/** The jars Enigma's own build obfuscates for its tests. */
+export const fixtures = process.env.ENIGMA_E2E_FIXTURES!;
 export const jar = path.join(workspace, 'inheritance_tree.jar');
 export const mappings = path.join(workspace, 'test.mapping');
 

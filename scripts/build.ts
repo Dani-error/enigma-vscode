@@ -1,13 +1,16 @@
-// Builds what the editor loads: the extension, the pages of its panes, and what those pages are styled with.
+// Builds what the editor loads into build/extension: the extension, the pages of its panes, what those pages are
+// styled with, and the files of the repository that ship as they are (see layout.ts).
 //
 // Usage: bun scripts/build.ts [--watch]
-//        bun scripts/build.ts --tests    the end-to-end tests instead, which the editor loads as JavaScript too
+//        bun scripts/build.ts --tests    the end-to-end tests instead, into build/extension/test (see tests())
 import * as esbuild from 'esbuild';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { DEVELOPMENT_ONLY, SHIPPED, layout } from './layout';
 
 const root = path.resolve(import.meta.dirname, '..');
-const dist = path.join(root, 'dist');
+const paths = layout(root);
+const dist = paths.dist;
 const watch = process.argv.includes('--watch');
 
 /** The extension itself, which runs in the editor's extension host. */
@@ -35,6 +38,31 @@ const pages: esbuild.BuildOptions = {
     logLevel: 'info',
 };
 
+/**
+ * Puts what ships as it is into build/extension, after clearing what an earlier build left there. The engine is kept:
+ * Gradle builds it, and it takes a while.
+ */
+function stage(): void {
+    fs.mkdirSync(paths.extension, { recursive: true });
+    for (const entry of fs.readdirSync(paths.extension)) {
+        if (entry !== 'server') {
+            fs.rmSync(path.join(paths.extension, entry), { recursive: true, force: true });
+        }
+    }
+
+    const manifest = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')) as Record<string, unknown>;
+    DEVELOPMENT_ONLY.forEach(key => delete manifest[key]);
+    fs.writeFileSync(path.join(paths.extension, 'package.json'), `${JSON.stringify(manifest, undefined, 2)}\n`);
+
+    const texts = fs.readdirSync(root).filter(file => /^package\.nls(\.[\w-]+)?\.json$/.test(file));
+    for (const file of [...SHIPPED, ...texts].filter(file => fs.existsSync(path.join(root, file)))) {
+        fs.cpSync(path.join(root, file), path.join(paths.extension, file), { recursive: true });
+    }
+
+    // everything in build/extension ships, except the source maps and the tests that help while developing
+    fs.writeFileSync(path.join(paths.extension, '.vscodeignore'), '**/*.map\ntest/**\n');
+}
+
 /** What is shipped as it is: the style sheet of the pages, and the icon font of the editor from its own package. */
 function copyAssets(): void {
     const codicons = path.join(root, 'node_modules', '@vscode', 'codicons', 'dist');
@@ -46,10 +74,14 @@ function copyAssets(): void {
     }
 }
 
-/** The end-to-end tests: file by file, as their runner picks them up by name. */
+/**
+ * The end-to-end tests: file by file, as their runner picks them up by name. They go inside the extension, because
+ * the editor tells extensions apart by where their files are: only there is the "vscode" they get the extension's own,
+ * whose messages they answer in its place. They are left out of the package.
+ */
 function tests(): esbuild.BuildOptions {
     const source = path.join(root, 'test', 'e2e', 'src');
-    const out = path.join(root, 'test', 'e2e', 'out');
+    const out = path.join(paths.extension, 'test', 'e2e');
     fs.rmSync(out, { recursive: true, force: true });
     return {
         entryPoints: fs.readdirSync(source, { recursive: true, encoding: 'utf8' }).filter(file => file.endsWith('.ts')).map(file => path.join(source, file)),
@@ -68,6 +100,7 @@ if (process.argv.includes('--tests')) {
     process.exit(0);
 }
 
+stage();
 copyAssets();
 if (watch) {
     const contexts = await Promise.all([extension, pages].map(options => esbuild.context(options)));

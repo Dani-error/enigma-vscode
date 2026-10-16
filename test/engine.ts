@@ -5,10 +5,11 @@ import { ChildProcessWithoutNullStreams, spawn } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as rpc from 'vscode-jsonrpc/node';
+import { layout } from '../scripts/layout';
 import type { ArgumentsOf, EntryRef, Method, Notifications, ResultOf } from '../src/engine/protocol';
 
 export const root = path.resolve(import.meta.dirname, '..');
-export const backendJar = path.join(root, 'server', 'enigma-backend.jar');
+export const backendJar = layout(root).serverJar;
 /** The jars Enigma's own build obfuscates for its tests. */
 export const fixtures = path.join(root, 'vendor', 'enigma', 'enigma', 'build', 'test-obf');
 

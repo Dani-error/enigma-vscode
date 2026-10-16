@@ -89,7 +89,8 @@ val shadowJar = tasks.named<ShadowJar>("shadowJar") {
 val installJar = tasks.register("installJar") {
 	dependsOn(shadowJar)
 	val built = shadowJar.flatMap { it.archiveFile }
-	val target = file("../server/enigma-backend.jar")
+	// where the extension expects it, inside the extension as it ships (see scripts/layout.ts)
+	val target = file("../build/extension/server/enigma-backend.jar")
 	inputs.file(built)
 	outputs.file(target)
 	doLast {

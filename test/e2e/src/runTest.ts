@@ -64,13 +64,16 @@ function serveScreenshots(directory: string, port: number): NodeJS.Timeout {
 }
 
 async function main(): Promise<void> {
-    const root = path.resolve(__dirname, '../../..');
+    // this runs from build/extension/test/e2e (see tests() in scripts/build.ts)
+    const root = path.resolve(__dirname, '../../../..');
+    // the extension as it ships, which is what is tested (see scripts/layout.ts; this file is not bundled, so it cannot import it)
+    const extension = path.join(root, 'build', 'extension');
     const fixtures = path.join(root, 'vendor', 'enigma', 'enigma', 'build', 'test-obf');
     if (!fs.existsSync(path.join(fixtures, 'inheritance_tree.jar'))) {
         throw new Error('Enigma test fixtures are missing. Run "bun run test:backend" once to build them.');
     }
 
-    if (!fs.existsSync(path.join(root, 'server', 'enigma-backend.jar'))) {
+    if (!fs.existsSync(path.join(extension, 'server', 'enigma-backend.jar'))) {
         throw new Error('The backend jar is missing. Run "bun run build:backend".');
     }
 
@@ -84,7 +87,7 @@ async function main(): Promise<void> {
     // Many machines have JAVA_HOME pointing at an old Java for other tools. The extension must cope with that, so
     // the tests always run that way: this is a stand-in for a Java 8 installation.
     const oldJava = path.join(temp, 'java8');
-    const testEnv: Record<string, string> = { ENIGMA_E2E_WORKSPACE: workspace, ENIGMA_E2E_RESULTS: results };
+    const testEnv: Record<string, string> = { ENIGMA_E2E_WORKSPACE: workspace, ENIGMA_E2E_RESULTS: results, ENIGMA_E2E_FIXTURES: fixtures };
     if (process.platform !== 'win32') {
         fs.mkdirSync(path.join(oldJava, 'bin'), { recursive: true });
         fs.writeFileSync(path.join(oldJava, 'release'), 'JAVA_VERSION="1.8.0_332"\n');
@@ -114,7 +117,7 @@ async function main(): Promise<void> {
     try {
         await runTests({
             vscodeExecutablePath: installed,
-            extensionDevelopmentPath: root,
+            extensionDevelopmentPath: extension,
             extensionTestsPath: path.resolve(__dirname, './suite/index'),
             extensionTestsEnv: testEnv,
             launchArgs: [

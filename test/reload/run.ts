@@ -13,6 +13,7 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import type * as Vscode from 'vscode';
+import { layout } from '../../scripts/layout';
 import type { EnigmaApi } from '../../src/extension';
 
 /** What a function that runs inside the window is given: the API of the editor, and a way to Enigma's own. */
@@ -132,7 +133,7 @@ function start(executable: string): void {
     delete env.ELECTRON_RUN_AS_NODE;
     const started = editor = spawn(executable, [
         workspace,
-        `--extensionDevelopmentPath=${root}`,
+        `--extensionDevelopmentPath=${layout(root).extension}`,
         `--extensionDevelopmentPath=${driver}`,
         '--user-data-dir', userData,
         '--extensions-dir', path.join(temp, 'extensions'),

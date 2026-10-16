@@ -1,16 +1,14 @@
 node_modules/
-dist/
 out/
-server/
-*.vsix
 .vscode-test/
-test/e2e/out/
 test/out/
 test/reload/driver/extension.js
 
+# what the build makes: the extension as it ships, and its package (see scripts/layout.ts)
+/build/
+
 # Gradle
 .gradle/
-build/
 backend/.gradle/
 backend/build/
 vendor/enigma/.gradle/

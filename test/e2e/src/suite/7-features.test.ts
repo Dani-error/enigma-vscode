@@ -4,7 +4,7 @@ import * as path from 'node:path';
 import * as vscode from 'vscode';
 import type { EntryRef } from '../../../../src/engine/protocol';
 import {
-    Api, activate, entryInfo, execute, jar, pause, waitFor, workspace,
+    Api, activate, entryInfo, execute, fixtures, jar, pause, waitFor, workspace,
 } from './harness';
 
 // The commands around the mappings and the jar that the other suites do not get to: what the menus of the class
@@ -61,7 +61,6 @@ describe('Enigma in VS Code: the commands around mappings, classes and the engin
 
     before(async () => {
         api = await activate();
-        const fixtures = path.join(vscode.extensions.getExtension('danibcastro.enigma-vscode')!.extensionPath, 'vendor', 'enigma', 'enigma', 'build', 'test-obf');
         fs.copyFileSync(path.join(fixtures, 'packages.jar'), packagesJar);
     });
 
