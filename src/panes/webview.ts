@@ -1,19 +1,15 @@
 import * as crypto from 'node:crypto';
 import * as vscode from 'vscode';
-import { TextKey, text } from '../l10n';
-import pageKeys from '../l10n/pageKeys.json';
+import { text } from '../l10n';
+import { pageKeys } from '../l10n/pageKeys';
 import { Problem } from './messages';
 
 /** The pages there are, by the name of their script. */
 export type PageName = 'entry' | 'collab' | 'stats';
 
-/**
- * The texts of the pages in the language of the editor, by their keys. The pages run in a browser and cannot ask
- * the editor: pageKeys.json lists the keys they use ("bun run l10n" writes it), and each page is handed the texts
- * for them when it is made.
- */
+/** The texts of the pages in the language of the editor, by their keys (see pageKeys.ts). */
 function pageTexts(): Record<string, string> {
-    return Object.fromEntries((pageKeys as TextKey[]).map(key => [key, text(key)]));
+    return Object.fromEntries(pageKeys.map(key => [key, text(key)]));
 }
 
 export function page(webview: vscode.Webview, extensionUri: vscode.Uri, name: PageName, title: string): string {

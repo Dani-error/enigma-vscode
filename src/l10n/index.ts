@@ -1,14 +1,14 @@
 import * as vscode from 'vscode';
 import type { TextKey } from './keys';
-import de from './de.json';
-import en from './en.json';
-import fr from './fr.json';
-import ja from './ja.json';
-import zhCn from './zh-cn.json';
+import de from '../../l10n/de.json';
+import en from '../../l10n/en.json';
+import fr from '../../l10n/fr.json';
+import ja from '../../l10n/ja.json';
+import zhCn from '../../l10n/zh-cn.json';
 
 export type { TextKey };
 
-/** The languages Enigma itself has, by the language code of the editor. */
+/** The translations there are (see l10n/), by the language code of the editor. */
 const TRANSLATIONS: Record<string, Partial<Record<TextKey, string>>> = { de, fr, ja, 'zh-cn': zhCn };
 
 /** The texts of the language of the editor, if it is one of those there are translations for. */

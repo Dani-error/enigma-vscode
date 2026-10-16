@@ -7,6 +7,7 @@ import * as esbuild from 'esbuild';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { DEVELOPMENT_ONLY, SHIPPED, layout } from './layout';
+import { SOURCE_LANGUAGE, codeKeys, languages, manifestKeys, manifestTexts, readTexts } from './texts';
 
 const root = path.resolve(import.meta.dirname, '..');
 const paths = layout(root);
@@ -24,6 +25,9 @@ const extension: esbuild.BuildOptions = {
     external: ['vscode'],
     sourcemap: true,
     logLevel: 'info',
+    // the texts each page is handed when it is made: those its code asks for (see src/l10n/pageKeys.ts)
+    // (as a string: esbuild puts that in place as it is, where an array would become a module of its own)
+    define: { ENIGMA_PAGE_KEYS: JSON.stringify(JSON.stringify(codeKeys(path.join(root, 'src', 'pages')).sort())) },
 };
 
 /** The pages of the panes, which run in web views: one script each, with what they share bundled into it. */
@@ -50,12 +54,19 @@ function stage(): void {
         }
     }
 
-    const manifest = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')) as Record<string, unknown>;
+    const source = fs.readFileSync(path.join(root, 'package.json'), 'utf8');
+    const manifest = JSON.parse(source) as Record<string, unknown>;
     DEVELOPMENT_ONLY.forEach(key => delete manifest[key]);
     fs.writeFileSync(path.join(paths.extension, 'package.json'), `${JSON.stringify(manifest, undefined, 2)}\n`);
 
-    const texts = fs.readdirSync(root).filter(file => /^package\.nls(\.[\w-]+)?\.json$/.test(file));
-    for (const file of [...SHIPPED, ...texts].filter(file => fs.existsSync(path.join(root, file)))) {
+    // the texts of the manifest, in every language, where the editor looks for them (see texts.ts)
+    const keys = manifestKeys(source);
+    for (const language of languages(root)) {
+        const file = language === SOURCE_LANGUAGE ? 'package.nls.json' : `package.nls.${language}.json`;
+        fs.writeFileSync(path.join(paths.extension, file), `${JSON.stringify(manifestTexts(readTexts(root, language), keys), undefined, 2)}\n`);
+    }
+
+    for (const file of SHIPPED.filter(file => fs.existsSync(path.join(root, file)))) {
         fs.cpSync(path.join(root, file), path.join(paths.extension, file), { recursive: true });
     }
 

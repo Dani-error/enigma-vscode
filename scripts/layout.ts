@@ -4,7 +4,8 @@ import * as path from 'node:path';
  * Where the build puts what it makes, under <root>/build:
  *
  *   build/extension/                the extension exactly as it ships, and what the editor loads while developing
- *     package.json, package.nls*.json, LICENSE, ...    copied from the repository (see SHIPPED)
+ *     package.json, LICENSE, ...    copied from the repository (see SHIPPED)
+ *     package.nls*.json             the texts of the manifest, from l10n/ (see texts.ts)
  *     dist/                         the bundled extension and the pages of its panes (scripts/build.ts)
  *     server/enigma-backend.jar     the engine (bun run build:backend)
  *   build/<name>-<version>.vsix     the packaged extension (bun run package)

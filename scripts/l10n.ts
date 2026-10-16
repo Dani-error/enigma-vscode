@@ -1,44 +1,31 @@
-// Checks what the extension says against its texts, and tells the pages which ones they use.
+// Checks the texts of the extension (see texts.ts): every key that is asked for exists, every text is used, and every
+// translation has all texts, with the same values in them.
 //
-// Texts have names: src/l10n/en.json has every one, the other files there translate them, and the code asks for them
-// by key, t('project.reopen'). This lists keys that are asked for but do not exist, texts nothing asks for, and what
-// each translation lacks; and it writes src/l10n/pageKeys.json, the keys the pages use (see src/panes/webview.ts).
-//
-// Usage: bun scripts/l10n.ts [--check]   (--check fails if anything is wrong, and writes nothing)
+// Usage: bun scripts/l10n.ts [--check]   (--check fails if anything is wrong, as the tests do)
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-
-type Texts = Record<string, string>;
+import { SOURCE_LANGUAGE, codeKeys, languages, manifestKeys, readTexts } from './texts';
 
 const root = path.resolve(import.meta.dirname, '..');
-const texts = path.join(root, 'src', 'l10n');
-const pages = path.join(root, 'src', 'pages');
-/** The file that lists the keys of the pages; a list, unlike the files next to it. */
-const PAGE_KEYS = 'pageKeys.json';
-const check = process.argv.includes('--check');
-
-const read = <T>(file: string): T => JSON.parse(fs.readFileSync(file, 'utf8')) as T;
-const sources = (directory: string): string[] => fs.readdirSync(directory, { withFileTypes: true, recursive: true })
-    .filter(entry => entry.isFile() && entry.name.endsWith('.ts')).map(entry => path.join(entry.parentPath, entry.name));
-const keysIn = (file: string): string[] => [...fs.readFileSync(file, 'utf8').matchAll(/(?<![\w.])t\('([\w.-]+)'/g)].flatMap(match => match[1] ?? []);
 /** The values a text mentions: a translation has to mention the same ones. */
 const values = (text: string): string => (text.match(/\{\d+\}/g) ?? []).sort().join();
 
-const english = read<Texts>(path.join(texts, 'en.json'));
-const used = new Set(sources(path.join(root, 'src')).flatMap(keysIn));
-const pageKeys = [...new Set(sources(pages).flatMap(keysIn))].sort();
+const english = readTexts(root, SOURCE_LANGUAGE);
+const inCode = codeKeys(path.join(root, 'src'));
+const inManifest = manifestKeys(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+const used = new Set([...inCode, ...inManifest]);
+const registry = fs.readFileSync(path.join(root, 'src', 'l10n', 'index.ts'), 'utf8');
 const problems: string[] = [];
 
-const written = `${JSON.stringify(pageKeys, undefined, '\t')}\n`;
-if (!check) {
-    fs.writeFileSync(path.join(texts, PAGE_KEYS), written);
-} else if (fs.readFileSync(path.join(texts, PAGE_KEYS), 'utf8') !== written) {
-    problems.push(`${PAGE_KEYS} does not list the texts the pages use: run "bun run l10n"`);
+for (const key of inCode) {
+    if (!(key in english)) {
+        problems.push(`the code asks for "${key}", which is no text`);
+    }
 }
 
-for (const key of used) {
+for (const key of inManifest) {
     if (!(key in english)) {
-        problems.push(`there is no text "${key}"`);
+        problems.push(`package.json names "%${key}%", which is no text`);
     }
 }
 
@@ -48,8 +35,13 @@ for (const key of Object.keys(english)) {
     }
 }
 
-for (const file of fs.readdirSync(texts).filter(name => name.endsWith('.json') && name !== 'en.json' && name !== PAGE_KEYS)) {
-    const translation = read<Texts>(path.join(texts, file));
+for (const language of languages(root).filter(language => language !== SOURCE_LANGUAGE)) {
+    const file = `l10n/${language}.json`;
+    const translation = readTexts(root, language);
+    if (!registry.includes(`/l10n/${language}.json'`)) {
+        problems.push(`${file} is not imported in src/l10n/index.ts, so the running extension does not know it`);
+    }
+
     for (const [key, text] of Object.entries(english)) {
         const translated = translation[key];
         if (translated === undefined) {
@@ -66,8 +58,8 @@ for (const file of fs.readdirSync(texts).filter(name => name.endsWith('.json') &
     }
 }
 
-console.log(`${Object.keys(english).length} texts, ${pageKeys.length} of them in the pages; ${problems.length} problem(s).`);
+console.log(`${Object.keys(english).length} texts (${inManifest.length} of the manifest) in ${languages(root).length} languages; ${problems.length} problem(s).`);
 problems.forEach(problem => console.log(`  ${problem}`));
-if (problems.length > 0 && check) {
+if (problems.length > 0 && process.argv.includes('--check')) {
     process.exit(1);
 }

@@ -5,8 +5,6 @@
     "lib": [
       "ES2022"
     ],
-    "outDir": "out",
-    "rootDir": "src",
     "strict": true,
     "noImplicitOverride": true,
     "noUnusedLocals": true,
@@ -14,7 +12,8 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "sourceMap": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "noEmit": true
   },
   "include": [
     "src"
