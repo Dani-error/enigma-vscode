@@ -54,6 +54,12 @@ not used.
 | --- | --- | --- |
 | [vscode-jsonrpc](https://github.com/microsoft/vscode-languageserver-node) | 8.2.1 | MIT |
 
+## Libraries bundled in `dist/pages/`
+
+| Library | Version | Licence |
+| --- | --- | --- |
+| [Preact](https://github.com/preactjs/preact), with its hooks | 11.0.1 | MIT |
+
 ## Files bundled in `dist/` and `resources/`
 
 | File | Origin | Licence |

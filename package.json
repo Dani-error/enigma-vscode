@@ -26,6 +26,7 @@
     "onFileSystem:enigma"
   ],
   "dependencies": {
+    "preact": "^11.0.1",
     "vscode-jsonrpc": "^8.2.1"
   },
   "devDependencies": {

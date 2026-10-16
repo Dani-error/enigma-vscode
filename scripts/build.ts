@@ -32,7 +32,10 @@ const extension: esbuild.BuildOptions = {
 
 /** The pages of the panes, which run in web views: one script each, with what they share bundled into it. */
 const pages: esbuild.BuildOptions = {
-    entryPoints: ['entry', 'collab', 'stats'].map(page => path.join(root, 'src', 'pages', `${page}.ts`)),
+    entryPoints: ['entry', 'collab', 'stats'].map(page => path.join(root, 'src', 'pages', `${page}.tsx`)),
+    // the pages are Preact components, written with JSX (see src/pages/shared.tsx)
+    jsx: 'automatic',
+    jsxImportSource: 'preact',
     outdir: path.join(dist, 'pages'),
     bundle: true,
     platform: 'browser',

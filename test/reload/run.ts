@@ -448,8 +448,10 @@ async function paneWorks() {
 		javadoc.focus();
 		javadoc.value = 'Says what this is.';
 		javadoc.dispatchEvent(new Event('input', { bubbles: true }));
-		[...page.querySelectorAll('button')].find(button => button.textContent === 'Save Javadoc').click();
 	}`);
+    // as a person would, a moment later: the page enables the button once it has caught up with the typing
+    await pause(100);
+    await inIdentifier(`page => [...page.querySelectorAll('button')].find(button => button.textContent === 'Save Javadoc').click()`);
     await until('the javadoc to be in the code', async () => (await text()).includes('Says what this is.'), 20000).catch((error: unknown) => problem(`${step}: ${messageOf(error)}`));
 
     // where to go from the entry: each of the buttons next to its kind

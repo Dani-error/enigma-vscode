@@ -9,8 +9,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Enigma pane preview</title>
-    <link rel="stylesheet" href="../../dist/codicons/codicon.css">
-    <link rel="stylesheet" href="../../dist/pages/panes.css">
+    <link rel="stylesheet" href="../../build/extension/dist/codicons/codicon.css">
+    <link rel="stylesheet" href="../../build/extension/dist/pages/panes.css">
     <style>
         html { background: #777; }
         body { margin: 0 auto; min-height: 100vh; }
@@ -220,10 +220,10 @@
     }
 
     // the page as it is built ("bun run watch" keeps it current), with the English texts
-    fetch('../../src/l10n/en.json').then(response => response.json()).then(texts => {
+    fetch('../../l10n/en.json').then(response => response.json()).then(texts => {
         window.L10N = texts;
         const script = document.createElement('script');
-        script.src = `../../dist/pages/${pane}.js?v=${Date.now()}`;
+        script.src = `../../build/extension/dist/pages/${pane}.js?v=${Date.now()}`;
         document.body.append(script);
     });
 </script>

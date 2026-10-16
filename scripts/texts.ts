@@ -32,10 +32,10 @@ export function manifestKeys(manifest: string): string[] {
     return [...new Set([...manifest.matchAll(/"%([\w.-]+)%"/g)].flatMap(match => match[1] ?? []))];
 }
 
-/** The keys of the texts the TypeScript files in a directory ask for with t('key'). */
+/** The keys of the texts the TypeScript files in a directory (.ts and .tsx) ask for with t('key'). */
 export function codeKeys(directory: string): string[] {
     const files = fs.readdirSync(directory, { withFileTypes: true, recursive: true })
-        .filter(entry => entry.isFile() && entry.name.endsWith('.ts')).map(entry => path.join(entry.parentPath, entry.name));
+        .filter(entry => entry.isFile() && /\.tsx?$/.test(entry.name)).map(entry => path.join(entry.parentPath, entry.name));
     return [...new Set(files.flatMap(file => [...fs.readFileSync(file, 'utf8').matchAll(/(?<![\w.])t\('([\w.-]+)'/g)].flatMap(match => match[1] ?? [])))];
 }
 
