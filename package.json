@@ -4,6 +4,7 @@
   "description": "%extension.description%",
   "version": "1.0.0",
   "publisher": "danibcastro",
+  "license": "LGPL-3.0-or-later",
   "engines": {
     "vscode": "^1.141.0"
   },

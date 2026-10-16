@@ -1,0 +1,17 @@
+**
+!package.json
+!package.nls*.json
+!README.md
+!LICENSE
+!THIRD_PARTY_NOTICES.md
+!dist/extension.js
+!dist/pages/**
+!dist/codicons/**
+!server/enigma-backend.jar
+!resources/*.svg
+!resources/icons/*.svg
+
+**/.DS_Store
+
+!syntaxes/**
+!language-configuration.json
