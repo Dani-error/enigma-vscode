@@ -221,7 +221,7 @@ function render(shown: PaneEntry): Elements {
     ]));
 
     const act = (action: PaneEntry['actions'][number]) => () => post({ type: 'action', key: shown.key, id: action.id });
-    const saveKey = isMac ? '⌘↵' : 'Ctrl+Enter';
+    const saveKey = isMac ? '⌘↵' : t('entryPage.saveShortcut');
 
     // Sections rather than one column: the pane is laid out by its width (see panes.css). Stacked in a side bar,
     // side by side in the panel at the bottom, where there is width to spare and little height. There, where to go

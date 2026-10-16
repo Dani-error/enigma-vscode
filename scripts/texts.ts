@@ -6,6 +6,9 @@ import * as path from 'node:path';
 // share those files: what the code says while running, asked for with t('key'), and what the editor reads from the
 // manifest before the extension runs (commands, views, settings), named in package.json as "%key%". The build
 // writes the second kind into the package.nls*.json files the editor expects next to package.json.
+//
+// l10n/enigma has what Enigma's own translations lack of the texts the extension shows, by Enigma's language codes
+// (de_de.json); the build of the engine adds them to Enigma's files in its jar (backend/build.gradle.kts).
 
 export type Texts = Record<string, string>;
 

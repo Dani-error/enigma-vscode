@@ -1,5 +1,7 @@
 package dev.danibcastro.enigmavscode.backend;
 
+import dev.danibcastro.enigmavscode.backend.protocol.edit.Change;
+
 import org.jspecify.annotations.Nullable;
 import org.quiltmc.enigma.api.translation.mapping.EntryMapping;
 import org.quiltmc.enigma.api.translation.representation.entry.Entry;
@@ -26,9 +28,9 @@ public final class EditHistory {
     /**
      * One thing the user did, which may have changed several entries.
      *
-     * @param label what the user did, for "Undo ..."
+     * @param change what the user did, for "Undo ..."
      */
-    public record Step(String label, List<Snap> snaps) { }
+    public record Step(Change change, List<Snap> snaps) { }
 
     private final Deque<Step> done = new ArrayDeque<>();
     private final Deque<Step> undone = new ArrayDeque<>();
@@ -80,15 +82,15 @@ public final class EditHistory {
     }
 
     @Nullable
-    public String undoLabel() {
+    public Change undoLabel() {
         Step step = this.done.peek();
-        return step == null ? null : step.label();
+        return step == null ? null : step.change();
     }
 
     @Nullable
-    public String redoLabel() {
+    public Change redoLabel() {
         Step step = this.undone.peek();
-        return step == null ? null : step.label();
+        return step == null ? null : step.change();
     }
 
 }

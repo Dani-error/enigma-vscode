@@ -72,7 +72,7 @@ export class CollabPane implements vscode.WebviewViewProvider, vscode.Disposable
         if (this.view) {
             const others = this.state.state === 'not_connected' ? 0 : this.state.users.length;
             this.view.badge = others > 0 ? { value: others, tooltip: t('collabPane.connected', others) } : undefined;
-            this.view.description = this.state.state === 'hosting' ? 'hosting' : this.state.state === 'connected' ? 'connected' : undefined;
+            this.view.description = this.state.state === 'hosting' ? t('collabPage.hosting') : this.state.state === 'connected' ? t('collabPage.connected') : undefined;
         }
     }
 

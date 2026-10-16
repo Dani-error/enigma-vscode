@@ -131,7 +131,7 @@ public final class EditService implements Service {
 
         String oldName = this.entries.editableName(entry, entry.getName());
         EntryChange<?> change = EntryChange.modify(entry).withDeobfName(newName);
-        return this.applyUserChange(List.of(change), "Rename " + oldName + " to " + newName,
+        return this.applyUserChange(List.of(change), Change.of(ChangeKind.RENAME, oldName, newName),
                 Objects.requireNonNullElse(params.confirmWarnings(), false), Objects.requireNonNullElse(params.validateOnly(), false));
     }
 
@@ -145,7 +145,7 @@ public final class EditService implements Service {
         EntryChange<?> change = javadoc == null || javadoc.isBlank()
                 ? EntryChange.modify(entry).clearJavadoc()
                 : EntryChange.modify(entry).withJavadoc(javadoc);
-        return this.applyUserChange(List.of(change), "Edit javadoc of " + this.entries.editableName(entry, entry.getName()),
+        return this.applyUserChange(List.of(change), Change.of(ChangeKind.EDIT_JAVADOC, this.entries.editableName(entry, entry.getName())),
                 Objects.requireNonNullElse(params.confirmWarnings(), false), false);
     }
 
@@ -169,11 +169,11 @@ public final class EditService implements Service {
         EntryMapping mapping = remapper.getMapping(resolvedEntry);
 
         EntryChange<?> change = EntryChange.modify(resolvedEntry);
-        String label;
+        Change label;
         if (mapping.targetName() != null) {
             if (mapping.tokenType().isProposed()) {
                 change = change.withTokenType(TokenType.DEOBFUSCATED).clearSourcePluginId();
-                label = "Mark " + mapping.targetName() + " as deobfuscated";
+                label = Change.of(ChangeKind.MARK_DEOBFUSCATED, mapping.targetName());
             } else {
                 EntryMapping proposedMapping = remapper.getProposedMappings().get(resolvedEntry);
                 if (proposedMapping != null) {
@@ -182,11 +182,11 @@ public final class EditService implements Service {
                     change = change.clearDeobfName();
                 }
 
-                label = "Reset " + mapping.targetName() + " to obfuscated";
+                label = Change.of(ChangeKind.RESET_OBFUSCATED, mapping.targetName());
             }
         } else {
             change = change.withDeobfName(obfEntry.getName());
-            label = "Mark " + obfEntry.getName() + " as deobfuscated";
+            label = Change.of(ChangeKind.MARK_DEOBFUSCATED, obfEntry.getName());
         }
 
         return this.applyUserChange(List.of(change), label, Objects.requireNonNullElse(params.confirmWarnings(), false), false);
@@ -202,7 +202,7 @@ public final class EditService implements Service {
      * <p>A single change is not applied if it has errors, or warnings the user did not confirm yet.
      * Batches (package renames) behave like upstream: every change is attempted on its own and failures are reported.
      */
-    private EditResult applyUserChange(List<? extends EntryChange<?>> changes, String label, boolean confirmWarnings, boolean validateOnly) {
+    private EditResult applyUserChange(List<? extends EntryChange<?>> changes, Change label, boolean confirmWarnings, boolean validateOnly) {
         EnigmaProject project = this.session.requireProject();
         EntryRemapper remapper = project.getRemapper();
         boolean single = changes.size() == 1;
@@ -395,7 +395,7 @@ public final class EditService implements Service {
         this.session.notifyMappingsChanged(this.entries.classItems(renamedClasses));
         this.mappings.autoSaveIfEnabled();
 
-        return new EditResult(!failed, false, notifier.toMessages(), null, step.label());
+        return new EditResult(!failed, false, notifier.toMessages(), null, step.change());
     }
 
     private PackageRename renamePackage(RenamePackageParams params) {
@@ -423,7 +423,7 @@ public final class EditService implements Service {
         List<EntryChange<?>> changes = new ArrayList<>();
         renames.forEach((obf, newName) -> changes.add(EntryChange.modify(obf).withDeobfName(newName)));
         // warnings are ignored, like upstream: the user should not be bothered with every individual package created
-        EditResult applied = this.applyUserChange(changes, (mode == PackageMode.MOVE ? "Move package " : "Rename package ") + from + " to " + to, true, false);
+        EditResult applied = this.applyUserChange(changes, Change.of(mode == PackageMode.MOVE ? ChangeKind.MOVE_PACKAGE : ChangeKind.RENAME_PACKAGE, from, to), true, false);
         return new PackageRename(plan, applied.applied(), applied.needsConfirmation(), applied.messages(), applied.appliedCount());
     }
 

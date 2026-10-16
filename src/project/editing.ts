@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { Backend } from '../engine/backend';
 import { EditResult, EntryRef, PackageMode, ValidationMessage } from '../engine/protocol';
+import { describeChange } from '../engine/messages';
 import { t } from '../l10n';
 
 const describe = (messages: ValidationMessage[]) => {
@@ -64,10 +65,12 @@ export class Editing {
 
     private reportHistory(result: EditResult, redo: boolean): void {
         if (result.applied) {
-            vscode.window.setStatusBarMessage(redo ? t('editing.enigmaRedid', result.label) : t('editing.enigmaUndid', result.label), 4000);
+            const label = describeChange(result.label);
+            vscode.window.setStatusBarMessage(redo ? t('editing.enigmaRedid', label) : t('editing.enigmaUndid', label), 4000);
         } else {
             const reason = describe(result.messages) || t('editing.theMappingsChangedInTheMeantime');
-            void vscode.window.showWarningMessage(redo ? t('editing.enigmaCouldNotRedo', result.label, reason) : t('editing.enigmaCouldNotUndo', result.label, reason));
+            const label = describeChange(result.label);
+            void vscode.window.showWarningMessage(redo ? t('editing.enigmaCouldNotRedo', label, reason) : t('editing.enigmaCouldNotUndo', label, reason));
         }
     }
 

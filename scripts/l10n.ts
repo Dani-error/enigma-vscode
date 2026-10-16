@@ -1,5 +1,6 @@
 // Checks the texts of the extension (see texts.ts): every key that is asked for exists, every text is used, and every
-// translation has all texts, with the same values in them.
+// translation has all texts, with the same values in them. The completions of Enigma's translations are checked
+// against Enigma's English texts.
 //
 // Usage: bun scripts/l10n.ts [--check]   (--check fails if anything is wrong, as the tests do)
 import * as fs from 'node:fs';
@@ -54,6 +55,29 @@ for (const language of languages(root).filter(language => language !== SOURCE_LA
     for (const key of Object.keys(translation)) {
         if (!(key in english)) {
             problems.push(`${file} has "${key}", which is no text anymore`);
+        }
+    }
+}
+
+// what is added to Enigma's translations: texts Enigma has, with the same placeholders of Java's String.format
+const enigmaLanguages = path.join(root, 'vendor', 'enigma', 'enigma', 'src', 'main', 'resources', 'lang');
+const completions = path.join(root, 'l10n', 'enigma');
+const readJson = (file: string) => JSON.parse(fs.readFileSync(file, 'utf8')) as Record<string, string>;
+// Enigma's English, and what is added to it: names it has no text for at all, like those of the decompilers
+const enigmaEnglish = { ...readJson(path.join(completions, 'en_us.json')), ...readJson(path.join(enigmaLanguages, 'en_us.json')) };
+const formats = (text: string): string => (text.match(/%(\d+\$)?[a-z]/g) ?? []).sort().join();
+for (const file of fs.readdirSync(completions).filter(name => name.endsWith('.json'))) {
+    if (!fs.existsSync(path.join(enigmaLanguages, file))) {
+        problems.push(`l10n/enigma/${file}: Enigma has no such language`);
+        continue;
+    }
+
+    for (const [key, text] of Object.entries(readJson(path.join(completions, file)))) {
+        const original = enigmaEnglish[key];
+        if (original === undefined) {
+            problems.push(`l10n/enigma/${file} has "${key}", which Enigma does not have`);
+        } else if (formats(original) !== formats(text)) {
+            problems.push(`l10n/enigma/${file}: "${key}" has other placeholders than Enigma's`);
         }
     }
 }

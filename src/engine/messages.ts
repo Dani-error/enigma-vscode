@@ -1,5 +1,5 @@
 import { t } from '../l10n';
-import { Editable, ErrorData, Problem, Task } from './protocol';
+import { Change, ChangeKind, Editable, ErrorData, Problem, Task } from './protocol';
 
 /** What the user may be kept from editing, in the words the panes already use for it. */
 const EDITABLE: Record<Editable, () => string> = {
@@ -64,4 +64,20 @@ export function describeSaid(text: string, said?: ErrorData | { key?: Problem; a
 export function describeTask(task: Task, args: string[] = []): string {
     const words = TASKS[task] as typeof TASKS[Task] | undefined;
     return words?.(...args) ?? [task, ...args].join(' ');
+}
+
+/** What the user did to the mappings, by the kind the engine names it with. */
+const CHANGES: Record<ChangeKind, (...args: string[]) => string> = {
+    'rename': (from, to) => t('changes.rename', from, to),
+    'edit-javadoc': name => t('changes.editJavadoc', name),
+    'mark-deobfuscated': name => t('changes.markDeobfuscated', name),
+    'reset-obfuscated': name => t('changes.resetObfuscated', name),
+    'rename-package': (from, to) => t('changes.renamePackage', from, to),
+    'move-package': (from, to) => t('changes.movePackage', from, to),
+};
+
+/** A change of the mappings, for "Undo ..." and "Redo ...", in the language of the editor. */
+export function describeChange(change: Change | null | undefined): string {
+    const words = change ? CHANGES[change.kind] as typeof CHANGES[ChangeKind] | undefined : undefined;
+    return change && words ? words(...change.args) : change ? [change.kind, ...change.args].join(' ') : '';
 }

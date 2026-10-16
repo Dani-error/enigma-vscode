@@ -78,7 +78,7 @@ export class AnalysisProvider implements vscode.TreeDataProvider<TreeNodeResult>
 
         item.description = notes.join(' · ') || undefined;
         if (element.entry && element.navigable !== false) {
-            item.command = { command: 'enigma.navigateTo', title: 'Go To', arguments: [element.entry, element.context ?? undefined] };
+            item.command = { command: 'enigma.navigateTo', title: t('collabPage.goToThisEntry'), arguments: [element.entry, element.context ?? undefined] };
         }
 
         return item;

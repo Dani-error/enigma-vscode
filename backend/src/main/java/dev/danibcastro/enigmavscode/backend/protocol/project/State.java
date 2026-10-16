@@ -1,5 +1,7 @@
 package dev.danibcastro.enigmavscode.backend.protocol.project;
 
+import dev.danibcastro.enigmavscode.backend.protocol.edit.Change;
+
 
 import dev.danibcastro.enigmavscode.backend.protocol.collab.ConnectionState;
 import org.jspecify.annotations.Nullable;
@@ -21,8 +23,8 @@ public record State(
         long revision,
         boolean canUndo,
         boolean canRedo,
-        @Nullable String undoLabel,
-        @Nullable String redoLabel,
+        @Nullable Change undoLabel,
+        @Nullable Change redoLabel,
         ConnectionState connection,
         Collection<Editable> editable
 ) { }

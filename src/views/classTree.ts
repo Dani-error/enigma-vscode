@@ -188,7 +188,7 @@ export class ClassTreeProvider implements vscode.TreeDataProvider<ClassTreeNode>
         const item = new vscode.TreeItem(simpleName(deobf), vscode.TreeItemCollapsibleState.None);
         item.id = `${this.mode}:class:${obf}`;
         item.contextValue = 'enigma.class';
-        item.command = { command: 'enigma.openClass', title: 'Open Class', arguments: [obf] };
+        item.command = { command: 'enigma.openClass', title: t('statsPage.open', simpleName(deobf)), arguments: [obf] };
 
         const stats = this.stats[obf];
         const details: string[] = [];

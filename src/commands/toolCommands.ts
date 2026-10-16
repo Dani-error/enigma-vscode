@@ -53,6 +53,6 @@ export const registerToolCommands = (register: Register, { backend, project }: E
             args.push(`--profile ${quote(profile)}`);
         }
 
-        await runInTerminal('Enigma Server', 'org.quiltmc.enigma.network.DedicatedEnigmaServer', args.join(' '));
+        await runInTerminal(t('toolCommands.terminalName'), 'org.quiltmc.enigma.network.DedicatedEnigmaServer', args.join(' '));
     });
 }

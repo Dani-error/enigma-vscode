@@ -15,6 +15,15 @@ export type TokenCategory = 'obfuscated' | 'deobfuscated' | 'proposed' | 'fallba
 export const TOKEN_CATEGORIES: TokenCategory[] = ['obfuscated', 'deobfuscated', 'proposed', 'fallback', 'debug'];
 /** How an entry got its name, as Enigma tells it. */
 export type TokenType = 'obfuscated' | 'deobfuscated' | 'jar_proposed' | 'dynamic_proposed' | 'debug';
+/** What the user did to the mappings, as offered for undo and redo: named by the engine, worded in messages.ts. */
+export type ChangeKind = 'rename' | 'edit-javadoc' | 'mark-deobfuscated' | 'reset-obfuscated' | 'rename-package' | 'move-package';
+
+export interface Change {
+    kind: ChangeKind;
+    /** What it was done to: see ChangeKind in backend/. */
+    args: string[];
+}
+
 export type ConnectionState = 'not_connected' | 'connected' | 'hosting';
 export type EntryKind = EntryRef['kind'];
 /** What an entry is to someone reading the code, which is finer than what it is to Enigma. */
@@ -48,8 +57,9 @@ export interface BackendState {
     revision: number;
     canUndo: boolean;
     canRedo: boolean;
-    undoLabel: string | null;
-    redoLabel: string | null;
+    /** What Undo would take back. */
+    undoLabel: Change | null;
+    redoLabel: Change | null;
     connection: ConnectionState;
     editable: Editable[];
 }
@@ -185,7 +195,7 @@ export interface EditResult {
     needsConfirmation: boolean;
     messages: ValidationMessage[];
     appliedCount?: number;
-    label?: string;
+    label?: Change;
 }
 
 export interface PackageRenameResult extends Omit<EditResult, 'needsConfirmation'> {

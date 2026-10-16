@@ -16,7 +16,8 @@ const describeMapping = (info: EntryInfo) => {
 export function hoverMarkdown(info: TokenInfo | EntryInfo): vscode.MarkdownString {
     const markdown = new vscode.MarkdownString();
     const modifiers = info.modifiers.length > 0 ? info.modifiers.join(' ') + ' ' : '';
-    const kind = info.kind === 'enumConstant' ? 'enum constant' : info.kind;
+    // Java as it is written: the hover shows a declaration
+    const kind = info.kind === 'annotation' ? '@interface' : info.kind;
 
     let signature: string;
     if (info.entry.kind === 'class') {

@@ -4,7 +4,8 @@ import * as path from 'node:path';
 import { Readable } from 'node:stream';
 import * as vscode from 'vscode';
 import * as rpc from 'vscode-jsonrpc/node';
-import { JavaRuntime, JavaSearch, describeFailure, environmentFor, findJava } from './java';
+import { JavaRuntime, JavaSearch, environmentFor, findJava } from './java';
+import { describeJavaFailure } from './javaText';
 import { ArgumentsOf, EnvironmentInfo, ErrorCode, ErrorData, Method, Notifications, ResultOf } from './protocol';
 import { settings } from '../config';
 import { t } from '../l10n';
@@ -21,7 +22,7 @@ export class BackendError extends Error {
 /** No usable Java runtime was found. */
 export class JavaNotFoundError extends Error {
     constructor(readonly search: JavaSearch) {
-        super(describeFailure(search));
+        super(describeJavaFailure(search));
     }
 }
 
@@ -135,7 +136,7 @@ export class Backend implements vscode.Disposable {
         this.listen(connection);
 
         const exited = new Promise<never>((_, reject) => {
-            child.on('error', error => reject(new Error(`Failed to start the Enigma backend: ${error.message}`)));
+            child.on('error', error => reject(new Error(t('backend.couldNotStart', error.message))));
             child.on('exit', (code, signal) => {
                 flushLog();
                 this.log(() => this.output.info(`Backend exited (${signal ?? code})`));

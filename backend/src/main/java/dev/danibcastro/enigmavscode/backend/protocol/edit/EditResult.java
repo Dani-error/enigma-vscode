@@ -25,5 +25,5 @@ public record EditResult(
         boolean needsConfirmation,
         List<ValidationMessage> messages,
         @OmitIfNull @Nullable Integer appliedCount,
-        @OmitIfNull @Nullable String label
+        @OmitIfNull @Nullable Change label
 ) { }

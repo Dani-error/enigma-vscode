@@ -1,4 +1,7 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import java.nio.file.FileSystems
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
@@ -84,6 +87,26 @@ val shadowJar = tasks.named<ShadowJar>("shadowJar") {
 	append("META-INF/NOTICE")
 	append("META-INF/NOTICE.txt")
 	manifest.attributes("Main-Class" to "dev.danibcastro.enigmavscode.backend.Main")
+
+	// Enigma's translations lack many of the texts the extension shows. ../l10n/enigma has them, by Enigma's language
+	// codes, and they are added to Enigma's own files in the jar; where Enigma has a translation, it is kept.
+	val completions = file("../l10n/enigma")
+	inputs.dir(completions)
+	doLast {
+		val jar = archiveFile.get().asFile.toPath()
+		FileSystems.newFileSystem(jar).use { zip ->
+			completions.listFiles { file -> file.extension == "json" }?.sortedBy { it.name }?.forEach { completion ->
+				val target = zip.getPath("lang", completion.name)
+				@Suppress("UNCHECKED_CAST")
+				val own = if (Files.exists(target)) JsonSlurper().parse(Files.newInputStream(target)) as Map<String, Any> else emptyMap()
+				@Suppress("UNCHECKED_CAST")
+				val added = JsonSlurper().parse(completion) as Map<String, Any>
+				val merged = LinkedHashMap(own)
+				added.forEach { (key, text) -> merged.putIfAbsent(key, text) }
+				Files.writeString(target, JsonOutput.prettyPrint(JsonOutput.toJson(merged)))
+			}
+		}
+	}
 }
 
 val installJar = tasks.register("installJar") {

@@ -1,5 +1,8 @@
 package dev.danibcastro.enigmavscode.backend;
 
+import dev.danibcastro.enigmavscode.backend.protocol.edit.Change;
+import dev.danibcastro.enigmavscode.backend.protocol.edit.ChangeKind;
+
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -15,8 +18,12 @@ import static org.hamcrest.Matchers.nullValue;
  */
 class EditHistoryTest {
 
-    private static EditHistory.Step step(String label) {
-        return new EditHistory.Step(label, List.of());
+    private static Change change(String name) {
+        return Change.of(ChangeKind.RENAME, name, name);
+    }
+
+    private static EditHistory.Step step(String name) {
+        return new EditHistory.Step(change(name), List.of());
     }
 
     @Test
@@ -27,15 +34,15 @@ class EditHistoryTest {
 
         history.record(step("first"));
         history.record(step("second"));
-        assertThat(history.undoLabel(), is("second"));
+        assertThat(history.undoLabel(), is(change("second")));
 
         EditHistory.Step taken = history.takeUndo();
         history.undone(taken);
-        assertThat(history.undoLabel(), is("first"));
-        assertThat(history.redoLabel(), is("second"));
+        assertThat(history.undoLabel(), is(change("first")));
+        assertThat(history.redoLabel(), is(change("second")));
 
         history.redone(history.takeRedo());
-        assertThat(history.undoLabel(), is("second"));
+        assertThat(history.undoLabel(), is(change("second")));
         assertThat(history.canRedo(), is(false));
     }
 
@@ -48,7 +55,7 @@ class EditHistoryTest {
 
         history.record(step("other"));
         assertThat(history.canRedo(), is(false));
-        assertThat(history.undoLabel(), is("other"));
+        assertThat(history.undoLabel(), is(change("other")));
     }
 
     @Test

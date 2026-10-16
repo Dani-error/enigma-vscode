@@ -68,8 +68,8 @@ export const registerSearchCommands = (register: Register, targets: Targets, { b
         quickPick.show();
     };
 
-    register('enigma.search', () => search([], 'Search Classes, Methods and Fields'));
-    register('enigma.searchClasses', () => search(['class'], 'Search Classes'));
-    register('enigma.searchMethods', () => search(['method'], 'Search Methods'));
-    register('enigma.searchFields', () => search(['field'], 'Search Fields'));
+    register('enigma.search', () => search([], t('searchCommands.searchAll')));
+    register('enigma.searchClasses', () => search(['class'], t('searchCommands.searchClasses')));
+    register('enigma.searchMethods', () => search(['method'], t('searchCommands.searchMethods')));
+    register('enigma.searchFields', () => search(['field'], t('searchCommands.searchFields')));
 }

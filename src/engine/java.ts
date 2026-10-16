@@ -7,21 +7,54 @@ import * as path from 'node:path';
 
 export const MINIMUM_JAVA = 17;
 
+/** Where a runtime was found. The extension words it for the user; source is the same in English, for logs. */
+export type JavaOrigin =
+    | { kind: 'setting' }
+    | { kind: 'javaHome' }
+    | { kind: 'path' }
+    | { kind: 'installed'; directory: string };
+
+/** Why a runtime was passed over. */
+export type JavaProblem =
+    | { kind: 'noExecutable'; file: string }
+    | { kind: 'notStartable'; error?: string }
+    | { kind: 'tooOld'; version: number };
+
 export interface JavaRuntime {
     executable: string;
     /** The installation directory, when known. */
     home?: string;
     /** Major version, e.g. 17 */
     version: number;
-    /** Where it was found, for messages and logs */
+    origin: JavaOrigin;
+    /** Where it was found, in English, for logs */
     source: string;
 }
 
 export interface RejectedJava {
     path: string;
+    origin: JavaOrigin;
+    problem: JavaProblem;
+    /** origin and problem in English, for logs */
     source: string;
     reason: string;
 }
+
+const SOURCES: Record<Exclude<JavaOrigin['kind'], 'installed'>, string> = {
+    setting: 'the enigma.java.home setting',
+    javaHome: 'JAVA_HOME',
+    path: 'the PATH',
+};
+
+/** Where a runtime was found, in English. */
+export const sourceOf = (origin: JavaOrigin) => origin.kind === 'installed' ? `installed in ${origin.directory}` : SOURCES[origin.kind];
+
+/** Why a runtime was passed over, in English. */
+export const reasonOf = (problem: JavaProblem) => problem.kind === 'noExecutable' ? `there is no ${problem.file} in it`
+    : problem.kind === 'tooOld' ? `it is Java ${problem.version}` : problem.error ?? 'it could not be started';
+
+const rejection = (javaPath: string, origin: JavaOrigin, problem: JavaProblem): RejectedJava =>
+    ({ path: javaPath, origin, problem, source: sourceOf(origin), reason: reasonOf(problem) });
 
 export interface JavaSearch {
     /** The runtime to use, if found. */
@@ -198,7 +231,8 @@ export const discoverInstallations = (options: JavaSearchOptions = {}) => {
                 }
 
                 if (!found.has(resolved)) {
-                    found.set(resolved, { executable: java, home, version, source: `installed in ${root}` });
+                    const origin: JavaOrigin = { kind: 'installed', directory: root };
+                    found.set(resolved, { executable: java, home, version, origin, source: sourceOf(origin) });
                 }
 
                 break;
@@ -232,36 +266,36 @@ export async function findJava(options: JavaSearchOptions = {}): Promise<JavaSea
     const executable = executableName(platform);
     const rejected: RejectedJava[] = [];
 
-    const tryHome = async (rawHome: string, source: string): Promise<JavaRuntime | undefined> => {
+    const tryHome = async (rawHome: string, origin: JavaOrigin): Promise<JavaRuntime | undefined> => {
         const home = normalizeJavaHome(rawHome, platform, homeDir);
         const java = path.join(home, 'bin', executable);
         if (!fs.existsSync(java)) {
-            rejected.push({ path: rawHome, source, reason: `there is no ${path.join('bin', executable)} in it` });
+            rejected.push(rejection(rawHome, origin, { kind: 'noExecutable', file: path.join('bin', executable) }));
             return undefined;
         }
 
         const probe = await probeJava(java, env);
         if (probe.version === undefined) {
-            rejected.push({ path: java, source, reason: probe.error ?? 'it could not be started' });
+            rejected.push(rejection(java, origin, { kind: 'notStartable', error: probe.error }));
             return undefined;
         }
 
         if (probe.version < minimum) {
-            rejected.push({ path: java, source, reason: `it is Java ${probe.version}` });
+            rejected.push(rejection(java, origin, { kind: 'tooOld', version: probe.version }));
             return undefined;
         }
 
-        return { executable: java, home, version: probe.version, source };
+        return { executable: java, home, version: probe.version, origin, source: sourceOf(origin) };
     };
 
     const configured = options.configuredHome?.trim();
     if (configured) {
-        const runtime = await tryHome(configured, 'the enigma.java.home setting');
+        const runtime = await tryHome(configured, { kind: 'setting' });
         return runtime ? { runtime, rejected } : { rejected, configuredInvalid: true };
     }
 
     if (env.JAVA_HOME) {
-        const runtime = await tryHome(env.JAVA_HOME, 'JAVA_HOME');
+        const runtime = await tryHome(env.JAVA_HOME, { kind: 'javaHome' });
         if (runtime) {
             return { runtime, rejected };
         }
@@ -271,10 +305,10 @@ export async function findJava(options: JavaSearchOptions = {}): Promise<JavaSea
     if (pathJava) {
         const probe = await probeJava(pathJava, env);
         if (probe.version !== undefined && probe.version >= minimum) {
-            return { runtime: { executable: pathJava, version: probe.version, source: 'the PATH' }, rejected };
+            return { runtime: { executable: pathJava, version: probe.version, origin: { kind: 'path' }, source: sourceOf({ kind: 'path' }) }, rejected };
         }
 
-        rejected.push({ path: pathJava, source: 'the PATH', reason: probe.version !== undefined ? `it is Java ${probe.version}` : probe.error ?? 'it could not be started' });
+        rejected.push(rejection(pathJava, { kind: 'path' }, probe.version !== undefined ? { kind: 'tooOld', version: probe.version } : { kind: 'notStartable', error: probe.error }));
     }
 
     for (const installation of discoverInstallations(options)) {
@@ -288,13 +322,13 @@ export async function findJava(options: JavaSearchOptions = {}): Promise<JavaSea
             return { runtime: { ...installation, version: probe.version }, rejected };
         }
 
-        rejected.push({ path: installation.executable, source: installation.source, reason: probe.error ?? `it is Java ${probe.version}` });
+        rejected.push(rejection(installation.executable, installation.origin, probe.version !== undefined ? { kind: 'tooOld', version: probe.version } : { kind: 'notStartable', error: probe.error }));
     }
 
     return { rejected };
 }
 
-/** Explains a failed search to the user. */
+/** Explains a failed search, in English: for logs and the build (the extension words it for the user, see javaText.ts). */
 export const describeFailure = (search: JavaSearch, minimum: number = MINIMUM_JAVA) => {
     const tried = search.rejected.map(entry => `${entry.path} (from ${entry.source}): ${entry.reason}`).join('; ');
     if (search.configuredInvalid) {

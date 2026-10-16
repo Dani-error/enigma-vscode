@@ -139,7 +139,7 @@ export class StructureProvider implements vscode.TreeDataProvider<TreeNodeResult
         item.iconPath = treeIcon(element.kind);
         item.tooltip = `${element.modifiers ? `${element.modifiers} ` : ''}${element.label}\n${element.tokenType === 'obfuscated' ? t('common.notMapped') : element.tokenType === 'deobfuscated' ? t('common.mapped') : t('common.proposed')}`;
         if (element.entry) {
-            item.command = { command: 'enigma.navigateTo', title: 'Go to Declaration', arguments: [element.entry] };
+            item.command = { command: 'enigma.navigateTo', title: t('entryDescription.goToTheDeclaration'), arguments: [element.entry] };
         }
 
         return item;

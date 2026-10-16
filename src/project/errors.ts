@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { BackendError, JavaNotFoundError } from '../engine/backend';
+import { describeJavaFailure } from '../engine/javaText';
 import { t } from '../l10n';
 
 /**
@@ -15,11 +16,7 @@ export class ErrorReporter implements vscode.Disposable {
     report(error: unknown): void {
         if (error instanceof JavaNotFoundError) {
             this.output.error(error.message);
-            const summary = error.search.configuredInvalid
-                ? t('errors.theJavaInstallationSetInEnigma')
-                : t('errors.enigmaNeedsJava17OrNewer');
-            const details = error.search.rejected.map(entry => `${entry.path}: ${entry.reason}`).join('; ');
-            void vscode.window.showErrorMessage(`${summary}${details ? ` (${details})` : ''}`, t('errors.selectJava'), t('errors.openSettings'), t('common.showLog')).then(choice => {
+            void vscode.window.showErrorMessage(describeJavaFailure(error.search), t('errors.selectJava'), t('errors.openSettings'), t('common.showLog')).then(choice => {
                 if (choice === t('errors.selectJava')) {
                     void vscode.commands.executeCommand('enigma.selectJava');
                 } else if (choice === t('errors.openSettings')) {

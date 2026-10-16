@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { Enigma } from '../enigma';
 import { MINIMUM_JAVA, discoverInstallations } from '../engine/java';
+import { describeOrigin } from '../engine/javaText';
 import { settings } from '../config';
 import { Register } from './registry';
 import { t } from '../l10n';
@@ -61,7 +62,7 @@ export const registerEngineCommands = (register: Register, { backend, project, o
                 modal: true,
                 detail: `${t('engineCommands.aToolForDeobfuscationOfJava')}\n\n`
                     + `Vineflower ${info.vineflowerVersion}\nCFR ${info.cfrVersion}\nProcyon ${info.procyonVersion}\n`
-                    + `Java ${info.javaVersion}${backend.runtime ? ` (${backend.runtime.executable}, from ${backend.runtime.source})` : ''}`,
+                    + `Java ${info.javaVersion}${backend.runtime ? ` (${t('engineCommands.runtimeFrom', backend.runtime.executable, describeOrigin(backend.runtime.origin))})` : ''}`,
             },
         );
     });
