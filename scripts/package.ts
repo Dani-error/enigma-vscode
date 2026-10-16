@@ -21,13 +21,9 @@ for (const [file, hint] of [
 
 const vsix = path.join(paths.build, `${manifest.name}-${manifest.version}.vsix`);
 const vsce = path.join(paths.root, 'node_modules', '.bin', process.platform === 'win32' ? 'vsce.cmd' : 'vsce');
-const result = spawnSync(
-    vsce,
-    ['package', '--no-dependencies', '--allow-missing-repository', '--no-rewrite-relative-links', '--out', vsix],
-    {
-        cwd: paths.extension,
-        stdio: 'inherit',
-        shell: process.platform === 'win32',
-    },
-);
+const result = spawnSync(vsce, ['package', '--no-dependencies', '--out', vsix], {
+    cwd: paths.extension,
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+});
 process.exit(result.status ?? 1);

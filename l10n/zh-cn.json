@@ -490,5 +490,7 @@
     "color.enigma.debugBorder": "为调试而高亮的标记的边框色。",
     "color.enigma.editingBackground": "正在输入的名称各处出现位置的背景色。",
     "color.enigma.editingBorder": "正在输入的名称各处出现位置的边框色。",
+    "capabilities.untrustedWorkspaces": "Enigma 会运行 Java 引擎及为其配置的插件，并打开工作区中的 Jar。请信任此工作区以使用它。",
+    "capabilities.virtualWorkspaces": "Enigma 需要磁盘上的 Jar 文件，以及同一台机器上的 Java 运行时。",
     "extension.description": "使用 Enigma 引擎反混淆 Java 字节码：反编译 Jar，重命名类、方法、字段和参数，并管理映射。"
 }

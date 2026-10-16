@@ -490,5 +490,7 @@
     "color.enigma.debugBorder": "Contour des jetons mis en surbrillance pour le débogage.",
     "color.enigma.editingBackground": "Fond des occurrences d'un nom pendant sa saisie.",
     "color.enigma.editingBorder": "Contour des occurrences d'un nom pendant sa saisie.",
+    "capabilities.untrustedWorkspaces": "Enigma exécute un moteur Java et les plugins configurés pour lui, et ouvre les jars de l'espace de travail. Faites confiance à l'espace de travail pour l'utiliser.",
+    "capabilities.virtualWorkspaces": "Enigma a besoin de jars présents sur le disque et d'un environnement Java sur la même machine.",
     "extension.description": "Déobfusquez du bytecode Java avec le moteur Enigma : décompilez des jars, renommez classes, méthodes, champs et paramètres, et gérez vos mappings."
 }

@@ -490,5 +490,7 @@
     "color.enigma.debugBorder": "Rahmen von Tokens, die zum Debuggen hervorgehoben sind.",
     "color.enigma.editingBackground": "Hintergrund der Vorkommen eines Namens, während er eingegeben wird.",
     "color.enigma.editingBorder": "Rahmen der Vorkommen eines Namens, während er eingegeben wird.",
+    "capabilities.untrustedWorkspaces": "Enigma führt eine Java-Engine samt der dafür konfigurierten Plugins aus und öffnet die Jars des Arbeitsbereichs. Vertrauen Sie dem Arbeitsbereich, um es zu verwenden.",
+    "capabilities.virtualWorkspaces": "Enigma braucht Jars, die als Datei auf dem Datenträger liegen, und eine Java-Laufzeit auf demselben Rechner.",
     "extension.description": "Java-Bytecode mit der Enigma-Engine deobfuskieren: Jars dekompilieren, Klassen, Methoden, Felder und Parameter umbenennen und Mappings verwalten."
 }

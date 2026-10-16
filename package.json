@@ -5,6 +5,14 @@
   "version": "1.0.0",
   "publisher": "danibcastro",
   "license": "LGPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Dani-error/enigma-vscode.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Dani-error/enigma-vscode/issues"
+  },
+  "homepage": "https://github.com/Dani-error/enigma-vscode#readme",
   "engines": {
     "vscode": "^1.141.0"
   },
@@ -21,6 +29,19 @@
     "bytecode"
   ],
   "main": "./dist/extension.js",
+  "extensionKind": [
+    "workspace"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "%capabilities.untrustedWorkspaces%"
+    },
+    "virtualWorkspaces": {
+      "supported": false,
+      "description": "%capabilities.virtualWorkspaces%"
+    }
+  },
   "activationEvents": [
     "onStartupFinished",
     "onFileSystem:enigma"

@@ -490,5 +490,7 @@
     "color.enigma.debugBorder": "デバッグ用に強調表示されたトークンの枠線。",
     "color.enigma.editingBackground": "入力中の名前の出現箇所の背景。",
     "color.enigma.editingBorder": "入力中の名前の出現箇所の枠線。",
+    "capabilities.untrustedWorkspaces": "Enigma は Java エンジンとそのプラグインを実行し、ワークスペースの Jar を開きます。使用するにはワークスペースを信頼してください。",
+    "capabilities.virtualWorkspaces": "Enigma には、ディスク上のファイルとして存在する Jar と、同じマシン上の Java ランタイムが必要です。",
     "extension.description": "Enigma エンジンで Java バイトコードの難読化を解除: Jar のデコンパイル、クラス・メソッド・フィールド・パラメータの名前変更、マッピングの管理。"
 }

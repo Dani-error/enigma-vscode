@@ -490,5 +490,7 @@
     "color.enigma.debugBorder": "Outline of tokens highlighted for debugging.",
     "color.enigma.editingBackground": "Background of the occurrences of a name while it is being typed.",
     "color.enigma.editingBorder": "Outline of the occurrences of a name while it is being typed.",
+    "capabilities.untrustedWorkspaces": "Enigma runs a Java engine and the plugins configured for it, and opens the jars of the workspace. Trust the workspace to use it.",
+    "capabilities.virtualWorkspaces": "Enigma needs jars that are files on disk, and a Java runtime on the same machine.",
     "extension.description": "Deobfuscate Java bytecode with the Enigma engine: decompile jars, rename classes, methods, fields and parameters, and manage mappings."
 }
