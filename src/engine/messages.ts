@@ -1,5 +1,15 @@
 import { t } from '../l10n';
-import { ErrorData, Problem, Task } from './protocol';
+import { Editable, ErrorData, Problem, Task } from './protocol';
+
+/** What the user may be kept from editing, in the words the panes already use for it. */
+const EDITABLE: Record<Editable, () => string> = {
+    class: () => t('common.class'),
+    method: () => t('entryDescription.method'),
+    field: () => t('entryDescription.field'),
+    parameter: () => t('entryDescription.parameter'),
+    local: () => t('entryDescription.localVariable'),
+    javadoc: () => t('entryPage.javadoc'),
+};
 
 /** What went wrong, by the key of `RpcException.said` and `Backend.notifyUserOf`. */
 const SAID: Record<Problem, (...args: string[]) => string> = {
@@ -22,7 +32,7 @@ const SAID: Record<Problem, (...args: string[]) => string> = {
     'snapshot-failed': reason => t('messages.failedToWriteRecoverySnapshot', reason),
     'class-not-found': name => t('messages.classNotFoundInJar', name),
     'export-source-failed': (count, first) => t('messages.failedToWriteSourceFileS', count, first),
-    'editing-disabled': what => t('messages.editingNamesIsDisabledByThe', what),
+    'editing-disabled': what => t('messages.editingNamesIsDisabledByThe', (EDITABLE[what as Editable] as (() => string) | undefined)?.() ?? what),
     'not-renamable': () => t('messages.thisEntryCannotBeRenamed'),
     'nothing-to-undo': () => t('messages.nothingToUndo'),
     'nothing-to-redo': () => t('messages.nothingToRedo'),

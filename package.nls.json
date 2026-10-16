@@ -1,4 +1,5 @@
 {
+
   "command.enigma.openJar": "Open Jar...",
   "command.enigma.openJarFile": "Open with Enigma",
   "command.enigma.closeJar": "Close Jar",
@@ -77,9 +78,11 @@
   "command.enigma.structure.sorting.z_a": "Z to A",
   "command.enigma.structure.sorting.z_a.checked": "✓ Z to A",
   "command.enigma.mcp.connect": "Connect an Assistant over MCP...",
+
   "container.enigma-identifier": "Identifier",
   "container.enigma-analysis": "Analysis",
   "container.enigma-collaboration": "Collaboration",
+
   "view.enigma.classes.obfuscated": "Obfuscated Classes",
   "view.enigma.classes.deobfuscated": "Deobfuscated Classes",
   "view.enigma.classes.all": "All Classes",
@@ -87,6 +90,7 @@
   "view.enigma.structure": "Structure",
   "view.enigma.analysis": "Inheritance and Calls",
   "view.enigma.collab": "Collaboration",
+
   "welcome.enigma.classes.obfuscated.0": "Open a jar to decompile it and start naming things.\n[Open Jar...](command:enigma.openJar)\n[Open Recent Project...](command:enigma.openRecent)",
   "welcome.enigma.classes.obfuscated.1": "Every class has a name. Nothing left to do here.",
   "welcome.enigma.classes.deobfuscated.2": "Classes you have named appear here.",
@@ -94,7 +98,9 @@
   "welcome.enigma.classes.all.4": "Open a jar to decompile it and start naming things.\n[Open Jar...](command:enigma.openJar)\n[Open Recent Project...](command:enigma.openRecent)",
   "welcome.enigma.structure.5": "Open a class to see its fields, methods and inner classes.",
   "welcome.enigma.analysis.6": "Place the cursor on a class, method or field, then choose what to look at with the buttons above: who inherits from it, who implements it, or who references it.",
+
   "submenu.enigma.structure.options": "Filter and Sort",
+
   "setting.enigma.java.home": "Installation directory of the Java runtime (17 or newer) that runs the Enigma engine. When empty, a suitable one is found automatically: `JAVA_HOME`, then `java` on the `PATH`, then the JDKs installed in the usual places, skipping any that are too old. Use the command **Enigma: Select Java Runtime...** to pick one from a list.",
   "setting.enigma.java.vmArgs": "Extra arguments for the Java virtual machine running the Enigma engine, for example `-Xmx4G` for very large jars.",
   "setting.enigma.profile": "Path to an Enigma profile JSON file configuring services (indexers, name proposers, obfuscation tests) and mapping save parameters. When empty, Enigma's default profile is used.",
@@ -125,6 +131,7 @@
   "setting.enigma.layout.revealPanes": "Show the Identifier pane (bottom) and the Structure pane (right) when the first class of a jar is opened, if they are hidden.",
   "setting.enigma.mcp.enabled": "Let assistants outside the editor, such as Claude Code, work on the jar that is open, over the Model Context Protocol. They connect to this window on this machine only, with a token: run **Enigma: Connect an Assistant over MCP...** to get what they need. The chat of the editor itself does not need this.",
   "setting.enigma.mcp.port": "The port on this machine that the MCP server listens on. One window at a time can have it.",
+
   "color.enigma.obfuscatedBackground": "Background of names that have no mapping.",
   "color.enigma.obfuscatedBorder": "Outline of names that have no mapping.",
   "color.enigma.deobfuscatedBackground": "Background of names that were mapped manually or read from a mappings file.",
@@ -137,5 +144,7 @@
   "color.enigma.debugBorder": "Outline of tokens highlighted for debugging.",
   "color.enigma.editingBackground": "Background of the occurrences of a name while it is being typed.",
   "color.enigma.editingBorder": "Outline of the occurrences of a name while it is being typed.",
+
   "extension.description": "Deobfuscate Java bytecode with the Enigma engine: decompile jars, rename classes, methods, fields and parameters, and manage mappings."
+
 }
