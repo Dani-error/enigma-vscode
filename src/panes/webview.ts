@@ -37,10 +37,10 @@ export function page(webview: vscode.Webview, extensionUri: vscode.Uri, name: Pa
 </html>`;
 }
 
-export const webviewOptions = (extensionUri: vscode.Uri) => {
-    return { enableScripts: true, localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'dist')] } as vscode.WebviewOptions;
+export const webviewOptions = (extensionUri: vscode.Uri): vscode.WebviewOptions => {
+    return { enableScripts: true, localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'dist')] };
 }
 
-export const problemOf = (error: unknown) => {
-    return { severity: 'error', message: error instanceof Error ? error.message : String(error) } as Problem;
+export const problemOf = (error: unknown): Problem => {
+    return { severity: 'error', message: error instanceof Error ? error.message : String(error) };
 }

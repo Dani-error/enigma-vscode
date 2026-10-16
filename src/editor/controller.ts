@@ -119,7 +119,7 @@ export class EditorController implements vscode.Disposable {
 
         const editable = parseClassUri(uri)?.view === 'source' && this.enabled && !source.error;
         // without the "renamable" flag, names are still highlighted but cannot be typed over
-        const refs = editable ? source.refs : source.refs.map(ref => [ref[0], ref[1], ref[2], ref[3], ref[4] & ~FLAG_RENAMABLE, ref[5]] as RefTuple);
+        const refs = editable ? source.refs : source.refs.map((ref): RefTuple => [ref[0], ref[1], ref[2], ref[3], ref[4] & ~FLAG_RENAMABLE, ref[5]]);
         const model = new ZoneModel(source.text, refs, source.groups);
         const document = vscode.workspace.textDocuments.find(candidate => candidate.uri.toString() === key);
         this.debug(uri, `source revision ${source.revision} loaded${previous?.session ? ', which ends the name being typed' : ''}`);

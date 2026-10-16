@@ -201,21 +201,21 @@ export type EditVerdict =
     | { kind: 'rename'; group: number; zones: number[] };
 
 /** Decides what an edited text means. */
-export const judge = (model: ZoneModel, parsed: ParsedText | undefined) => {
+export const judge = (model: ZoneModel, parsed: ParsedText | undefined): EditVerdict => {
     if (!parsed) {
-        return { kind: 'invalid' } as EditVerdict;
+        return { kind: 'invalid' };
     }
 
     if (parsed.changed.length === 0) {
-        return { kind: 'unchanged' } as EditVerdict;
+        return { kind: 'unchanged' };
     }
 
     const group = model.zones[parsed.changed[0]].group;
     if (parsed.changed.some(index => model.zones[index].group !== group)) {
-        return { kind: 'invalid' } as EditVerdict;
+        return { kind: 'invalid' };
     }
 
-    return { kind: 'rename', group, zones: parsed.changed } as EditVerdict;
+    return { kind: 'rename', group, zones: parsed.changed };
 }
 
 /**

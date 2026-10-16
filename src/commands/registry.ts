@@ -10,8 +10,8 @@ import { t } from '../l10n';
 /** Registers a command of the extension. What it throws is shown to the user. */
 export type Register = (id: string, handler: (...args: any[]) => unknown) => void;
 
-export const commandRegistry = (context: vscode.ExtensionContext, report: (error: unknown) => void) => {
-    return ((id, handler) => {
+export const commandRegistry = (context: vscode.ExtensionContext, report: (error: unknown) => void): Register => {
+    return (id, handler) => {
         context.subscriptions.push(vscode.commands.registerCommand(id, async (...args: any[]) => {
             try {
                 return await handler(...args);
@@ -20,7 +20,7 @@ export const commandRegistry = (context: vscode.ExtensionContext, report: (error
                 return undefined;
             }
         }));
-    }) as Register;
+    };
 }
 
 const isEntry = (value: unknown): value is EntryRef => {

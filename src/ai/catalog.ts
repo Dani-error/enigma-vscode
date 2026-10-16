@@ -148,7 +148,7 @@ export const TOOLS: ToolDescription[] = [
 ];
 
 /** What package.json declares to the chat of the editor for these tools. */
-export const manifestTools = () => {
+export const manifestTools = (): object[] => {
     return TOOLS.map(tool => ({
         name: tool.name,
         displayName: tool.title,
@@ -158,5 +158,5 @@ export const manifestTools = () => {
         userDescription: tool.summary,
         modelDescription: tool.description,
         inputSchema: tool.inputSchema,
-    })) as object[];
+    }));
 }

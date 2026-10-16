@@ -31,7 +31,7 @@ export const toText = (answer: unknown) => {
     return typeof answer === 'string' ? answer : JSON.stringify(answer, undefined, 1);
 }
 
-export const createAiTools = (backend: Backend, index: ClassIndex, state: () => OpenState | undefined) => {
+export const createAiTools = (backend: Backend, index: ClassIndex, state: () => OpenState | undefined): AiTool[] => {
     const requireProject = (): OpenState => {
         const open = state();
         if (!open?.jarPath) {
@@ -200,5 +200,5 @@ export const createAiTools = (backend: Backend, index: ClassIndex, state: () => 
         }),
     };
 
-    return TOOLS.map(tool => ({ ...tool, run: run[tool.name], describeChange: describeChange[tool.name] })) as AiTool[];
+    return TOOLS.map(tool => ({ ...tool, run: run[tool.name], describeChange: describeChange[tool.name] }));
 }

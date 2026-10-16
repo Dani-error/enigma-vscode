@@ -19,7 +19,7 @@ const kinds = () => new Map<SymbolKind, [label: string, icon: string]>([
 
 const dotted = (name: string) => name.replace(/\//g, '.');
 
-export const describeEntry = (info: EntryInfo | TokenInfo) => {
+export const describeEntry = (info: EntryInfo | TokenInfo): PaneEntry => {
     const [kindLabel, icon] = kinds().get(info.kind) ?? [info.kind, 'symbol-misc'];
     const entry = info.entry;
     const isClass = entry.kind === 'class';
@@ -137,5 +137,5 @@ export const describeEntry = (info: EntryInfo | TokenInfo) => {
                 : { label: t('entryDescription.markAsDeobfuscated'), title: t('entryDescription.keepTheCurrentNameAsIts') }
             : null,
         actions,
-    } as PaneEntry;
+    };
 }
