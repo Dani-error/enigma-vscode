@@ -80,7 +80,15 @@ function stage(): void {
     fs.writeFileSync(path.join(paths.extension, '.vscodeignore'), '**/*.map\ntest/**\n');
 }
 
-/** What is shipped as it is: the style sheet of the pages, and the icon font of the editor from its own package. */
+/** The colours of icons in the editor's light and dark themes, for icons that cannot follow the theme by themselves. */
+const ICON_COLOURS = { light: '#424242', dark: '#C5C5C5' };
+/** Icons of the editor's own set, as images: tabs of pages take one before VS Code 1.110, not one of the set by name. */
+const ICON_IMAGES = ['graph'];
+
+/**
+ * What is shipped as it is: the style sheet of the pages, and the icon font of the editor from its own package. With
+ * the icons that are needed as images, in a light and a dark version.
+ */
 function copyAssets(): void {
     const codicons = path.join(root, 'node_modules', '@vscode', 'codicons', 'dist');
     fs.mkdirSync(path.join(dist, 'pages'), { recursive: true });
@@ -88,6 +96,13 @@ function copyAssets(): void {
     fs.copyFileSync(path.join(root, 'src', 'pages', 'panes.css'), path.join(dist, 'pages', 'panes.css'));
     for (const file of ['codicon.css', 'codicon.ttf']) {
         fs.copyFileSync(path.join(codicons, file), path.join(dist, 'codicons', file));
+    }
+
+    for (const icon of ICON_IMAGES) {
+        const svg = fs.readFileSync(path.join(codicons, '..', 'src', 'icons', `${icon}.svg`), 'utf8');
+        for (const [theme, colour] of Object.entries(ICON_COLOURS)) {
+            fs.writeFileSync(path.join(dist, 'codicons', `${icon}-${theme}.svg`), svg.replace(/currentColor/g, colour));
+        }
     }
 }
 

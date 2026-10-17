@@ -4,7 +4,8 @@ import * as path from 'node:path';
 import { runTests } from '@vscode/test-electron';
 
 // Runs the extension inside a real VS Code and drives it through the editor's own commands.
-// An installed VS Code is used when found; set VSCODE_EXECUTABLE to choose one, or VSCODE_DOWNLOAD=1 to download a build.
+// An installed VS Code is used when found; set VSCODE_EXECUTABLE to choose one, VSCODE_DOWNLOAD=1 to download the
+// latest build, or VSCODE_VERSION to download that one: the oldest the extension supports is in package.json.
 /**
  * Takes a picture of the editor's window through the debugging protocol of its browser engine. Nothing else shows what
  * the interface really looks like: where the panes are, how the code is highlighted.
@@ -130,7 +131,9 @@ async function main(): Promise<void> {
         '/Applications/Visual Studio Code.app/Contents/MacOS/Electron',
         '/usr/share/code/code',
     ];
-    const installed = process.env.VSCODE_DOWNLOAD ? undefined : candidates.find(candidate => candidate && fs.existsSync(candidate));
+    const version = process.env.VSCODE_VERSION;
+    const installed =
+        process.env.VSCODE_DOWNLOAD || version ? undefined : candidates.find(candidate => candidate && fs.existsSync(candidate));
 
     // ENIGMA_E2E_SCREENSHOTS=<folder> makes the tests leave pictures of the window there
     const screenshots = process.env.ENIGMA_E2E_SCREENSHOTS ? path.resolve(process.env.ENIGMA_E2E_SCREENSHOTS) : undefined;
@@ -145,6 +148,7 @@ async function main(): Promise<void> {
     try {
         await runTests({
             vscodeExecutablePath: installed,
+            version,
             extensionDevelopmentPath: extension,
             extensionTestsPath: path.resolve(__dirname, './suite/index'),
             extensionTestsEnv: testEnv,

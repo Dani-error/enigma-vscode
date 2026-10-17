@@ -66,7 +66,8 @@ export class StatsPanel implements vscode.Disposable {
             retainContextWhenHidden: true,
         });
         this.panel = panel;
-        panel.iconPath = new vscode.ThemeIcon('graph');
+        const icon = (theme: string) => vscode.Uri.joinPath(this.context.extensionUri, 'dist', 'codicons', `graph-${theme}.svg`);
+        panel.iconPath = { light: icon('light'), dark: icon('dark') };
         panel.webview.html = page(panel.webview, this.context.extensionUri, 'stats', t('common.mappingStatistics'));
         panel.webview.onDidReceiveMessage((message: FromStatsPage) => void this.onMessage(message), undefined, this.disposables);
         panel.onDidDispose(

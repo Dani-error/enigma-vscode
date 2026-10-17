@@ -144,7 +144,19 @@ export class ClassEditors implements vscode.Disposable {
             }
         }
 
-        await vscode.window.tabGroups.close(tab, true);
+        // The tab as it is now: some versions of VS Code, such as 1.106, replace tabs and their groups by others whenever
+        // one changes, and closing one that was replaced never finishes.
+        const uri = tab.input instanceof vscode.TabInputText ? tab.input.uri.toString() : undefined;
+        const live = vscode.window.tabGroups.all
+            .filter(group => group.viewColumn === tab.group.viewColumn)
+            .flatMap(group => group.tabs)
+            .find(
+                candidate =>
+                    candidate === tab || (candidate.input instanceof vscode.TabInputText && candidate.input.uri.toString() === uri),
+            );
+        if (live) {
+            await vscode.window.tabGroups.close(live, true);
+        }
     }
 
     /**
