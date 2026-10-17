@@ -16,8 +16,8 @@ const describe = (messages: ValidationMessage[]) => {
 
 /** How long the editor may take to read a document again, which on a busy machine is long. */
 const REREAD_TIMEOUT_MS = 10000;
-/** How often a document is saved at most, in a while: see maySave. */
-const MAX_SAVES = 8;
+/** How often a document is saved at most, in a while: see saveDelay. */
+const MAX_SAVES = 20;
 const SAVES_WINDOW_MS = 3000;
 
 /**
@@ -30,10 +30,13 @@ export class EditorController implements vscode.Disposable {
     /** The text the edit under way gives a document, by address, until the document changes: see wasOwnEdit. */
     private readonly applying = new Map<string, string>();
     /**
-     * Documents that a save left with unsaved changes, by address. Changed while it is being saved, a document stays
-     * modified, but the extension host is told that it was saved, and takes it for unmodified: see settle.
+     * Documents known to have unsaved changes, by address, which the extension host may not know. It learns that a
+     * document is modified some time after the change that made it so; and changed while it is being saved, a
+     * document stays modified, but the extension host is told that it was saved. See settle.
      */
-    private readonly leftModified = new Set<string>();
+    private readonly unsaved = new Set<string>();
+    /** When a document is saved next, by address, as one saved too often a moment ago: see saveDelay. */
+    private readonly saveRetries = new Map<string, NodeJS.Timeout>();
     private readonly decorations = new Decorations();
     private readonly disposables: vscode.Disposable[] = [];
     private lastRefusal = 0;
@@ -65,7 +68,7 @@ export class EditorController implements vscode.Disposable {
                 }
             }),
             vscode.workspace.onDidCloseTextDocument(document => {
-                this.leftModified.delete(document.uri.toString());
+                this.unsaved.delete(document.uri.toString());
                 const state = this.states.get(document.uri.toString());
                 if (state) {
                     this.endSession(state);
@@ -385,7 +388,9 @@ export class EditorController implements vscode.Disposable {
     /** Passes on whether an edit was made, and forgets the text it was to give when it was not. */
     private applied(document: vscode.TextDocument, target: string, applied: boolean): boolean {
         const key = document.uri.toString();
-        if (!applied && this.applying.get(key) === target) {
+        if (applied) {
+            this.unsaved.add(key);
+        } else if (this.applying.get(key) === target) {
             this.applying.delete(key);
         }
 
@@ -414,7 +419,7 @@ export class EditorController implements vscode.Disposable {
     private editsItself(document: vscode.TextDocument): boolean {
         return (
             document.isDirty ||
-            this.leftModified.has(document.uri.toString()) ||
+            this.unsaved.has(document.uri.toString()) ||
             (!this.documents.isReadOnly(document.uri) &&
                 vscode.window.visibleTextEditors.some(candidate => candidate.document === document))
         );
@@ -855,20 +860,30 @@ export class EditorController implements vscode.Disposable {
                         this.decorateDocument(document);
                     }
 
-                    // modified, whatever the document says after a save that did not save everything (see leftModified)
+                    // modified, also when the document does not say so (see unsaved)
                     const key = document.uri.toString();
-                    if (!current.session && (document.isDirty || this.leftModified.has(key))) {
-                        if (!this.maySave(document)) {
+                    if (!current.session && (document.isDirty || this.unsaved.has(key))) {
+                        const delay = this.saveDelay(document);
+                        if (delay > 0) {
                             // once the saves of the last moments are long enough ago
-                            setTimeout(() => void this.settle(document), SAVES_WINDOW_MS);
+                            if (!this.saveRetries.has(key)) {
+                                this.saveRetries.set(
+                                    key,
+                                    setTimeout(() => {
+                                        this.saveRetries.delete(key);
+                                        void this.settle(document);
+                                    }, delay),
+                                );
+                            }
+
                             return;
                         }
 
                         const saved = await document.save();
                         if (saved) {
-                            this.leftModified.delete(key);
+                            this.unsaved.delete(key);
                         } else {
-                            this.leftModified.add(key);
+                            this.unsaved.add(key);
                         }
 
                         this.debug(document, `marked as unmodified: ${saved}`);
@@ -882,14 +897,21 @@ export class EditorController implements vscode.Disposable {
         return state.settling;
     }
 
-    /** Something that edits documents whenever they are saved would otherwise keep {@link settle} going forever. */
-    private maySave(document: vscode.TextDocument): boolean {
+    /**
+     * How long to wait before a document is saved, and 0 to save it now, which counts as a save. Something that edits
+     * documents whenever they are saved would otherwise keep {@link settle} going forever.
+     */
+    private saveDelay(document: vscode.TextDocument): number {
         const now = Date.now();
         const key = document.uri.toString();
         const recent = (this.saves.get(key) ?? []).filter(time => now - time < SAVES_WINDOW_MS);
-        recent.push(now);
         this.saves.set(key, recent);
-        return recent.length <= MAX_SAVES;
+        if (recent.length >= MAX_SAVES) {
+            return recent[0] + SAVES_WINDOW_MS - now;
+        }
+
+        recent.push(now);
+        return 0;
     }
 
     /** Selects the name under the cursor, so that typing replaces it: what Enter does on a name. */
@@ -937,6 +959,8 @@ export class EditorController implements vscode.Disposable {
         for (const state of this.states.values()) {
             this.endSession(state);
         }
+
+        this.saveRetries.forEach(timer => clearTimeout(timer));
 
         for (const disposable of this.disposables) {
             disposable.dispose();
