@@ -133,6 +133,8 @@ export class ClassEditors implements vscode.Disposable {
             const uri = tab.input.uri.toString();
             // nothing changes it anymore, or it would have changes again by the time it is closed
             this.documents.retire(tab.input.uri);
+            // nor while it is closed: an edit that arrives after it was is refused, and logged as an error
+            await this.documents.editsDone(tab.input.uri);
             const document = vscode.workspace.textDocuments.find(candidate => candidate.uri.toString() === uri);
             // a tab with unsaved changes would ask whether to save them; there is nothing to save in a generated text
             // Until it has none: saving is refused while another save of the document is under way, as the one that

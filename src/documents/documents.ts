@@ -8,7 +8,12 @@ import { t } from '../l10n';
 interface LoadedFile {
     source: SourceResult;
     bytes: Uint8Array;
+}
+
+/** What the editor is told of a file when it asks: see stampOf. */
+interface Stamp {
     mtime: number;
+    size: number;
 }
 
 export interface SourceEvent {
@@ -39,7 +44,6 @@ const placeholder = (parsed: { class: string; view: View }): LoadedFile => ({
         groups: [],
     },
     bytes: new Uint8Array(),
-    mtime: 0,
 });
 
 /** How many classes are kept in memory although no document shows them (anymore). */
@@ -57,6 +61,10 @@ export class EnigmaDocuments implements vscode.FileSystemProvider, vscode.Dispos
     private readonly retired = new Set<string>();
     /** Classes whose tabs are being closed because their jar is not open: see setAside. */
     private readonly aside = new Set<string>();
+    /** By address, until the document is closed: see stampOf. */
+    private readonly stamps = new Map<string, Stamp>();
+    /** The texts the editor read of documents it had already, by address, since they last had unsaved changes. */
+    private readonly rereads = new Map<string, Set<string>>();
     private readonly changeEmitter = new vscode.EventEmitter<vscode.FileChangeEvent[]>();
     private readonly sourceEmitter = new vscode.EventEmitter<SourceEvent>();
     private readonly diagnostics = vscode.languages.createDiagnosticCollection('enigma');
@@ -71,6 +79,10 @@ export class EnigmaDocuments implements vscode.FileSystemProvider, vscode.Dispos
     isEditing: (uri: vscode.Uri) => boolean = () => false;
     /** Set by the editor controller: makes a document identical to what the engine says and marks it saved. */
     settle: (document: vscode.TextDocument) => Promise<void> = () => Promise.resolve();
+    /** Set by the editor controller: whether it brings this document in line itself (see refresh). */
+    manages: (document: vscode.TextDocument) => boolean = () => false;
+    /** Set by the editor controller: resolves once the edits it is making to a document are done. */
+    editsDone: (uri: vscode.Uri) => Promise<void> = () => Promise.resolve();
 
     constructor(
         private readonly backend: Backend,
@@ -87,6 +99,12 @@ export class EnigmaDocuments implements vscode.FileSystemProvider, vscode.Dispos
                     }
                 }
             }),
+            vscode.workspace.onDidChangeTextDocument(event => {
+                // typed in, or edited by the controller: what the editor read before is not what it shows anymore
+                if (event.document.isDirty) {
+                    this.rereads.delete(event.document.uri.toString());
+                }
+            }),
             vscode.workspace.onDidCloseTextDocument(document => {
                 const parsed = parseClassUri(document.uri);
                 if (!parsed) {
@@ -94,6 +112,8 @@ export class EnigmaDocuments implements vscode.FileSystemProvider, vscode.Dispos
                 }
 
                 this.forget(document.uri);
+                this.stamps.delete(document.uri.toString());
+                this.rereads.delete(document.uri.toString());
                 this.retired.delete(document.uri.toString());
                 // the same class can be open under its previous name for a moment after it was renamed
                 const stillOpen = vscode.workspace.textDocuments.some(other => {
@@ -139,6 +159,12 @@ export class EnigmaDocuments implements vscode.FileSystemProvider, vscode.Dispos
         return this.retired.has(uri.toString());
     }
 
+    /** Whether a document cannot be typed in. Its editor does not take edits of extensions either. */
+    isReadOnly(uri: vscode.Uri): boolean {
+        const parsed = parseClassUri(uri);
+        return !parsed || this.readOnly(parsed.view);
+    }
+
     /**
      * Tells that the tabs of these classes are being closed because their jar is not open, or is about to close. The
      * editor may be reading them at this very moment: for the tabs it restored when the window was opened, or for
@@ -162,7 +188,7 @@ export class EnigmaDocuments implements vscode.FileSystemProvider, vscode.Dispos
         }
 
         const text = document.getText();
-        return { source: { ...placeholder(parsed).source, text }, bytes: Buffer.from(text, 'utf8'), mtime: 0 };
+        return { source: { ...placeholder(parsed).source, text }, bytes: Buffer.from(text, 'utf8') };
     }
 
     private readOnly(view: View): boolean {
@@ -232,7 +258,7 @@ export class EnigmaDocuments implements vscode.FileSystemProvider, vscode.Dispos
             return known;
         }
 
-        const file: LoadedFile = { source, bytes: Buffer.from(source.text, 'utf8'), mtime: ++this.clock };
+        const file: LoadedFile = { source, bytes: Buffer.from(source.text, 'utf8') };
         this.files.set(uri.toString(), file);
         this.reportDecompileError(uri, source);
         this.sourceEmitter.fire({ uri, source });
@@ -278,17 +304,27 @@ export class EnigmaDocuments implements vscode.FileSystemProvider, vscode.Dispos
             return;
         }
 
-        // The controller first: it changes the text name by name, which leaves cursors where they are. Told that the
-        // file changed, the editor reloads it if it has no unsaved changes, and that moves cursors (see settle); told
-        // afterwards, it finds nothing left to change. It still has to be told, for the classes that cannot be typed
-        // in, which the controller does not look after.
-        // in a document that is not on display there is no cursor to keep, and the editor does it all
-        if (vscode.window.visibleTextEditors.some(candidate => candidate.document === document)) {
-            await this.settle(document);
+        // One way or the other, never both: the editor reading the document while the controller edits it refuses the
+        // controller's edit, as made for a document that changed in the meantime. The controller knows which it is for a
+        // document it looks after (see EditorController.settle); the others the editor reads again.
+        if (!this.manages(document)) {
+            this.reload(uri);
+        }
+
+        await this.settle(document);
+    }
+
+    /**
+     * Has the editor read a file again, some time later, which on a busy machine is long after. It does not for a
+     * document with unsaved changes.
+     */
+    reload(uri: vscode.Uri): void {
+        const stamp = this.stamps.get(uri.toString());
+        if (stamp) {
+            stamp.mtime = ++this.clock;
         }
 
         this.changeEmitter.fire([{ type: vscode.FileChangeType.Changed, uri }]);
-        await this.settle(document);
     }
 
     private forget(uri: vscode.Uri): void {
@@ -342,18 +378,58 @@ export class EnigmaDocuments implements vscode.FileSystemProvider, vscode.Dispos
             return { type: vscode.FileType.Directory, ctime: 0, mtime: 0, size: 0 };
         }
 
-        const file = await this.load(uri);
+        const stamp = this.stampOf(uri, await this.load(uri));
         return {
             type: vscode.FileType.File,
             ctime: 0,
-            mtime: file.mtime,
-            size: file.bytes.byteLength,
+            mtime: stamp.mtime,
+            size: stamp.size,
             permissions: this.readOnly(parsed.view) ? vscode.FilePermission.Readonly : undefined,
         };
     }
 
+    /**
+     * The time and size of a file, as the editor knows them. The editor reads a document again whenever they are not
+     * what it last read, also of its own accord, as when a tab of the document is opened, and that would change the
+     * document under the edits of the controller. So the time changes only when the editor is to read it again (see
+     * reload), and the size never does: the editor refuses to save a file that is newer than what it read and of
+     * another size, as one changed by someone else, and saving is how the controller marks a document as unmodified.
+     */
+    private stampOf(uri: vscode.Uri, file: LoadedFile): Stamp {
+        const key = uri.toString();
+        let stamp = this.stamps.get(key);
+        if (!stamp) {
+            stamp = { mtime: ++this.clock, size: file.bytes.byteLength };
+            this.stamps.set(key, stamp);
+        }
+
+        return stamp;
+    }
+
     async readFile(uri: vscode.Uri): Promise<Uint8Array> {
-        return (await this.load(uri)).bytes;
+        const file = await this.load(uri);
+        const key = uri.toString();
+        // a document the editor has already, which it reads again (see wasReread)
+        if (vscode.workspace.textDocuments.some(document => document.uri.toString() === key)) {
+            this.rereads.set(key, (this.rereads.get(key) ?? new Set<string>()).add(file.source.text));
+        }
+
+        return file.bytes;
+    }
+
+    /**
+     * Whether what last changed a document was the editor reading it again (see reload), rather than someone typing:
+     * it has a text the editor read since it last had unsaved changes. The engine may have another one by then, as
+     * the editor reads a document when told to, but applies what it read some time later.
+     */
+    wasReread(document: vscode.TextDocument): boolean {
+        const key = document.uri.toString();
+        if (!this.rereads.get(key)?.has(document.getText())) {
+            return false;
+        }
+
+        this.rereads.delete(key);
+        return true;
     }
 
     writeFile(): void {

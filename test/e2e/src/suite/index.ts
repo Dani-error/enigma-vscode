@@ -55,6 +55,11 @@ export function run(): Promise<void> {
     return new Promise((resolve, reject) => {
         try {
             const runner = mocha.run(failures => {
+                // everything the extension logged, for looking further back than a failure shows
+                if (process.env.ENIGMA_E2E_TRACE_FILE) {
+                    fs.writeFileSync(process.env.ENIGMA_E2E_TRACE_FILE, (globalThis.enigmaTestTrace ?? []).join('\n'));
+                }
+
                 // the extension host is not left in a way that writes it by itself
                 if (process.env.NODE_V8_COVERAGE) {
                     v8.takeCoverage();
@@ -73,7 +78,7 @@ export function run(): Promise<void> {
             runner.on('fail', (test, error) => {
                 // what the extension logged while the test ran explains most failures
                 const trace = globalThis.enigmaTestTrace ?? [];
-                const text = `${error?.stack ?? error}\n--- log ---\n${trace.slice(-30).join('\n')}`;
+                const text = `${error?.stack ?? error}\n--- log ---\n${trace.slice(-Number(process.env.ENIGMA_E2E_TRACE_LINES ?? 30)).join('\n')}`;
                 record(
                     `  FAIL ${test.fullTitle()}\n${text
                         .split('\n')

@@ -108,6 +108,15 @@ async function main(): Promise<void> {
         ENIGMA_E2E_FIXTURES: fixtures,
         ENIGMA_E2E_EXPECTED: expected,
     };
+    // how much of what the extension logged a failing test shows; more, to see further back
+    if (process.env.ENIGMA_E2E_TRACE_FILE) {
+        testEnv.ENIGMA_E2E_TRACE_FILE = path.resolve(process.env.ENIGMA_E2E_TRACE_FILE);
+    }
+
+    if (process.env.ENIGMA_E2E_TRACE_LINES) {
+        testEnv.ENIGMA_E2E_TRACE_LINES = process.env.ENIGMA_E2E_TRACE_LINES;
+    }
+
     if (process.env.ENIGMA_E2E_FILES) {
         testEnv.ENIGMA_E2E_FILES = process.env.ENIGMA_E2E_FILES;
     }

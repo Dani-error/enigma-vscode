@@ -14,9 +14,8 @@ const describe = (messages: ValidationMessage[]) => {
     return messages.map(message => message.text).join(' ');
 };
 
-const delay = (milliseconds: number) => {
-    return new Promise<void>(resolve => setTimeout(resolve, milliseconds));
-};
+/** How long the editor may take to read a document again, which on a busy machine is long. */
+const REREAD_TIMEOUT_MS = 10000;
 
 /**
  * Turns decompiled classes into a constrained editor.
@@ -37,6 +36,8 @@ export class EditorController implements vscode.Disposable {
     ) {
         documents.isEditing = uri => this.states.get(uri.toString())?.session !== undefined;
         documents.settle = document => this.settle(document);
+        documents.manages = document => this.states.has(document.uri.toString());
+        documents.editsDone = uri => (this.edits.get(uri.toString()) ?? Promise.resolve()).then(() => undefined);
 
         this.disposables.push(
             documents.onDidLoadSource(event => this.setSource(event.uri, event.source)),
@@ -86,7 +87,15 @@ export class EditorController implements vscode.Disposable {
 
                 this.updateContext();
             }),
-            vscode.window.onDidChangeVisibleTextEditors(editors => editors.forEach(editor => this.decorate(editor))),
+            vscode.window.onDidChangeVisibleTextEditors(editors =>
+                editors.forEach(editor => {
+                    this.decorate(editor);
+                    // what the editor did not read again while nothing showed it (see reread) is edited now
+                    if (this.stateOf(editor.document)?.synced === false) {
+                        void this.settle(editor.document);
+                    }
+                }),
+            ),
             // Also when a tab comes to the front. A class renamed back to a name it had gets the document of that name
             // again, which the editor may still have, with the very text it is to show: nothing changes then, and
             // nothing else would mark its names.
@@ -190,8 +199,14 @@ export class EditorController implements vscode.Disposable {
             return;
         }
 
-        if (!state.synced) {
-            // not typing: the document is on its way to the text it is supposed to have
+        // Not typing: the document is on its way to the text it is supposed to have; nothing shows it, so nobody types
+        // in it; or the editor read it again, with a text the engine may have replaced in the meantime (see reread).
+        if (
+            !state.synced ||
+            !vscode.window.visibleTextEditors.some(candidate => candidate.document === document) ||
+            this.documents.wasReread(document)
+        ) {
+            state.synced = false;
             void this.settle(document);
             return;
         }
@@ -268,8 +283,12 @@ export class EditorController implements vscode.Disposable {
     /** Undoes a change that touched something other than the name being edited. */
     private refuse(document: vscode.TextDocument, state: State): void {
         this.debug(document, `refused an edit${state.session ? ' outside the name being typed' : ' outside of a name'}`);
-        // what is expected when the edit's turn comes: the engine may have sent another text meanwhile
-        void this.replaceText(document, () => this.stateOf(document)?.expected ?? state.expected);
+        if (this.editsItself(document)) {
+            // what is expected when the edit's turn comes: the engine may have sent another text meanwhile
+            void this.replaceText(document, () => this.stateOf(document)?.expected ?? state.expected);
+        } else {
+            void this.settle(document);
+        }
         const now = Date.now();
         if (now - this.lastRefusal > 4000) {
             this.lastRefusal = now;
@@ -303,6 +322,11 @@ export class EditorController implements vscode.Disposable {
     }
 
     private async replaceTextNow(document: vscode.TextDocument, target: string): Promise<boolean> {
+        // its tab is being closed, which waits for this (see ClassEditors.closeTab); or the editor reads it now
+        if (this.documents.isRetired(document.uri) || !this.editsItself(document)) {
+            return false;
+        }
+
         const changes = changesBetween(this.stateOf(document)?.model, document.getText(), target).map(change => ({
             range: new vscode.Range(document.positionAt(change.start), document.positionAt(change.end)),
             text: change.text,
@@ -311,7 +335,10 @@ export class EditorController implements vscode.Disposable {
             return true;
         }
 
-        const editor = vscode.window.visibleTextEditors.find(candidate => candidate.document === document);
+        const editor = this.documents.isReadOnly(document.uri)
+            ? undefined
+            : vscode.window.visibleTextEditors.find(candidate => candidate.document === document);
+        this.debug(document, `editing version ${document.version} ${editor ? 'in its editor' : 'as a workspace edit'}`);
         if (editor) {
             // part of the user's own edit as far as undo is concerned; fails if the document changed in the meantime,
             // in which case the next change event brings us back here
@@ -328,9 +355,78 @@ export class EditorController implements vscode.Disposable {
             }
         }
 
+        // unsaved changes, which nothing but this changes (see editsItself), saved right after (see settle)
         const edit = new vscode.WorkspaceEdit();
         changes.forEach(change => edit.replace(document.uri, change.range, change.text));
         return vscode.workspace.applyEdit(edit);
+    }
+
+    /**
+     * Whether a document is brought in line by editing it, rather than by having the editor read it again: one that an
+     * editor shows, where an edit leaves the cursors where they are, and one with unsaved changes, which the editor does
+     * not read again. The others are left to the editor. An edit would give a document that nothing shows unsaved
+     * changes, and the editor opens a tab for such a document after a moment. An editor that cannot be typed in ignores
+     * edits.
+     */
+    private editsItself(document: vscode.TextDocument): boolean {
+        return (
+            document.isDirty ||
+            (!this.documents.isReadOnly(document.uri) &&
+                vscode.window.visibleTextEditors.some(candidate => candidate.document === document))
+        );
+    }
+
+    /**
+     * Has the editor read a document again, and waits until it has, or until the document is one to edit after all (see
+     * editsItself).
+     * @returns whether to look at the document again: not when the editor would read another text than the one the
+     * document is to have, as while its jar is not open, or did not read it in time
+     */
+    private async reread(document: vscode.TextDocument, target: string): Promise<boolean> {
+        if (this.documents.source(document.uri)?.text !== target) {
+            this.debug(document, 'left as it is: the engine has another text for it');
+            return false;
+        }
+
+        const outcome = new Promise<string | undefined>(resolve => {
+            const done = (reason?: string) => {
+                clearTimeout(timer);
+                for (const listener of listeners) {
+                    listener.dispose();
+                }
+
+                resolve(reason);
+            };
+
+            const timer = setTimeout(() => done(), REREAD_TIMEOUT_MS);
+            const listeners: vscode.Disposable[] = [
+                vscode.workspace.onDidChangeTextDocument(event => {
+                    if (event.document === document) {
+                        done(event.contentChanges.length > 0 ? 'read again by the editor' : 'got unsaved changes');
+                    }
+                }),
+                vscode.workspace.onDidCloseTextDocument(closed => {
+                    if (closed === document) {
+                        done('closed');
+                    }
+                }),
+                // which may be the one the document has, and then the editor changes nothing
+                this.documents.onDidLoadSource(event => {
+                    if (event.uri.toString() === document.uri.toString()) {
+                        done('got another text from the engine');
+                    }
+                }),
+                vscode.window.onDidChangeVisibleTextEditors(() => {
+                    if (this.editsItself(document)) {
+                        done('shown');
+                    }
+                }),
+            ];
+        });
+        this.documents.reload(document.uri);
+        const reason = await outcome;
+        this.debug(document, reason ?? `not read again by the editor within ${REREAD_TIMEOUT_MS} ms`);
+        return reason !== undefined;
     }
 
     /**
@@ -688,22 +784,20 @@ export class EditorController implements vscode.Disposable {
                     }
 
                     const target = current.session ? current.expected : current.model.text;
+                    if (document.getText() !== target && !this.editsItself(document)) {
+                        if (!(await this.reread(document, target))) {
+                            return;
+                        }
+
+                        continue;
+                    }
+
                     if (document.getText() !== target) {
                         // Name by name, which leaves cursors where they are. The editor would bring an unmodified file
                         // in line by itself, but by replacing all the lines from the first to the last that differ at
                         // once: a cursor among them ends up behind them, off the name that was just renamed from a pane.
-                        // Where there is no cursor, in a document nobody looks at, the editor is left to do it: that
-                        // does not make the document one with unsaved changes, which nothing shown could save again.
-                        if (!document.isDirty && !vscode.window.visibleTextEditors.some(candidate => candidate.document === document)) {
-                            for (let waited = 0; waited < 12 && document.getText() !== target && !document.isDirty; waited++) {
-                                await delay(15);
-                            }
-
-                            if (this.stateOf(document) !== current || document.getText() === target) {
-                                continue;
-                            }
-                        }
-
+                        // It is not told to, then (see EnigmaDocuments.refresh), nor does it of its own accord (see
+                        // EnigmaDocuments.stampOf): the edit is the only change.
                         const replaced = await this.replaceText(document, target);
                         this.debug(
                             document,
