@@ -59,12 +59,17 @@ export const registerSearchCommands = (register: Register, targets: Targets, { b
             timer = setTimeout(update, 120);
         });
         quickPick.onDidAccept(async () => {
-            const result = quickPick.selectedItems[0]?.result;
-            quickPick.hide();
-            if (result) {
-                void backend.request('search/hit', { id: result.id }).catch(() => undefined);
-                await editors.navigate(result.entry).catch(error => reporter.report(error));
+            // Nothing is selected when the picker is accepted before it took in the item highlighted a moment ago, as
+            // when Enter follows the results at once: what is highlighted is what was meant. Without either, nothing was.
+            const result = (quickPick.selectedItems[0] ?? quickPick.activeItems[0])?.result;
+            backend.output.debug(`[search] accepted ${result ? result.name : 'nothing'}`);
+            if (!result) {
+                return;
             }
+
+            quickPick.hide();
+            void backend.request('search/hit', { id: result.id }).catch(() => undefined);
+            await editors.navigate(result.entry).catch(error => reporter.report(error));
         });
         quickPick.onDidHide(() => {
             clearTimeout(timer);
