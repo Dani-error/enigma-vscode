@@ -10,6 +10,9 @@ import { CommitReason, Problem, State } from './state';
 import { CATEGORY_OBFUSCATED, FLAG_RENAMABLE, RefTuple, ZoneModel, changesBetween, insertedText, judge, newNameOf } from './zones';
 import { t } from '../l10n';
 
+/** How long a document nobody looks at is given to be reloaded by the editor, after the file changed. */
+const BACKGROUND_RELOAD_MS = 3000;
+
 const describe = (messages: ValidationMessage[]) => {
     return messages.map(message => message.text).join(' ');
 };
@@ -671,14 +674,23 @@ export class EditorController implements vscode.Disposable {
                         // once: a cursor among them ends up behind them, off the name that was just renamed from a pane.
                         // Where there is no cursor, in a document nobody looks at, the editor is left to do it: that
                         // does not make the document one with unsaved changes, which nothing shown could save again.
+                        // It is never edited instead: an edit sent while the editor reloads it is refused, and logged as an
+                        // error of the editor, which is slow to reload on a busy machine.
                         if (!document.isDirty && !vscode.window.visibleTextEditors.some(candidate => candidate.document === document)) {
-                            for (let waited = 0; waited < 12 && document.getText() !== target && !document.isDirty; waited++) {
+                            for (
+                                let waited = 0;
+                                waited < BACKGROUND_RELOAD_MS / 15 && document.getText() !== target && !document.isDirty;
+                                waited++
+                            ) {
                                 await delay(15);
                             }
 
-                            if (this.stateOf(document) !== current || document.getText() === target) {
+                            if (this.stateOf(document) !== current || document.getText() === target || document.isDirty) {
                                 continue;
                             }
+
+                            // it was told the file changed (see EnigmaDocuments.refresh), and reloads it when it gets to it
+                            return;
                         }
 
                         const replaced = await this.replaceText(document, target);
