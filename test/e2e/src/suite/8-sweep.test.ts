@@ -16,6 +16,7 @@ import {
     Trouble,
     unexpectedTrouble,
     waitFor,
+    withStub,
     workspace,
 } from './harness';
 
@@ -469,5 +470,25 @@ describe('Enigma in VS Code: every command, from everywhere it is offered', () =
     it('with mappings and unsaved changes: a class in the editor', async function () {
         this.timeout(600000);
         await sweepInClass('source', withMappings);
+    });
+
+    it('names the tabs of open classes after mappings that replace all others', async () => {
+        // as when they are opened here, or arrive from the host of a session: which classes changed is not said
+        await jarOpen();
+        await execute('workbench.action.closeAllEditors');
+        const opened = await openClass(api, 'e');
+        const tabOf = () =>
+            vscode.window.tabGroups.all
+                .flatMap(group => group.tabs)
+                .find(tab => tab.input instanceof vscode.TabInputText && tab.input.uri.query === opened.document.uri.query);
+        const replacement = path.join(workspace, 'replacement.mapping');
+        fs.writeFileSync(replacement, 'CLASS e TabRenamed\n');
+        await withStub(
+            vscode.window,
+            'showWarningMessage',
+            () => Promise.resolve("Don't Save"),
+            () => api.project.openMappings(replacement),
+        );
+        await waitFor('the tab to have the new name', () => tabOf()?.label === 'TabRenamed.java');
     });
 });

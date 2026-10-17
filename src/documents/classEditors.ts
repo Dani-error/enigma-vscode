@@ -10,14 +10,21 @@ import { EnigmaDocuments } from './documents';
  */
 export class ClassEditors implements vscode.Disposable {
     private migrating = Promise.resolve();
-    private readonly subscription: vscode.Disposable;
+    private readonly subscriptions: vscode.Disposable[];
+    /** Whether all mappings changed, and the tabs follow once the classes have their new names. */
+    private changedAll = false;
+    /** How many projects are being opened, during which tabs keep their names (see whileOpening). */
+    private opening = 0;
 
     constructor(
         private readonly backend: Backend,
         private readonly index: ClassIndex,
         private readonly documents: EnigmaDocuments,
     ) {
-        this.subscription = backend.onDidChangeMappings(params => this.onMappingsChanged(params));
+        this.subscriptions = [
+            backend.onDidChangeMappings(params => this.onMappingsChanged(params)),
+            index.onDidChange(() => this.onIndexChanged()),
+        ];
     }
 
     /** Opens a class, optionally at a token. */
@@ -68,14 +75,52 @@ export class ClassEditors implements vscode.Disposable {
     }
 
     private onMappingsChanged(params: MappingsChangedParams): void {
-        if (params.classes.length > 0) {
-            // one at a time: each migration opens and closes editors
-            this.migrating = this.migrating
-                .then(() => this.migrateTabs(params.classes))
-                .catch(error => {
-                    this.backend.output.warn(`Failed to update editor tabs: ${error}`);
-                });
+        if (params.full) {
+            // as when other mappings were opened, here or by the host of a session: which classes changed is not said
+            this.changedAll = true;
+        } else if (params.classes.length > 0) {
+            this.migrate(params.classes);
         }
+    }
+
+    /** After all mappings changed, the classes have their new names here: every open one may have another. */
+    private onIndexChanged(): void {
+        if (!this.changedAll || this.opening > 0) {
+            return;
+        }
+
+        this.changedAll = false;
+        const open = [...new Set(this.openTabs().map(tab => tab.class))];
+        const classes = open.map(obf => this.index.get(obf)).filter((item): item is ClassItem => item !== undefined);
+        if (classes.length > 0) {
+            this.migrate(classes);
+        }
+    }
+
+    /**
+     * Leaves tabs as they are while a project opens: its jar first, its mappings a moment later, which can be a while
+     * on a large jar. Tabs follow once both are there, rather than show the names of the jar alone in between.
+     */
+    async whileOpening<T>(action: () => Promise<T>): Promise<T> {
+        this.opening++;
+        try {
+            return await action();
+        } finally {
+            this.opening--;
+            if (this.opening === 0 && this.changedAll) {
+                await this.index.loaded();
+                this.onIndexChanged();
+            }
+        }
+    }
+
+    private migrate(classes: ClassItem[]): void {
+        // one at a time: each migration opens and closes editors
+        this.migrating = this.migrating
+            .then(() => this.migrateTabs(classes))
+            .catch(error => {
+                this.backend.output.warn(`Failed to update editor tabs: ${error}`);
+            });
     }
 
     /** Resolves when tabs have caught up with the classes that were renamed. */
@@ -178,6 +223,8 @@ export class ClassEditors implements vscode.Disposable {
     }
 
     dispose(): void {
-        this.subscription.dispose();
+        for (const subscription of this.subscriptions) {
+            subscription.dispose();
+        }
     }
 }

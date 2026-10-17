@@ -64,6 +64,11 @@ export class ClassIndex implements vscode.Disposable {
         return load;
     }
 
+    /** Resolves when the classes asked for last are here. */
+    async loaded(): Promise<void> {
+        await this.loading?.catch(() => undefined);
+    }
+
     update(items: ClassItem[]): void {
         for (const item of items) {
             this.classes.set(item.obf, item);

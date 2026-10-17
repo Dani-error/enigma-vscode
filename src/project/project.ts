@@ -355,6 +355,17 @@ export class Project implements vscode.Disposable {
     }
 
     private async open(descriptor: ProjectDescriptor, options: { quiet?: boolean } = {}): Promise<boolean> {
+        const opened = await (this.editors
+            ? this.editors.whileOpening(() => this.openJarAndMappings(descriptor, options))
+            : this.openJarAndMappings(descriptor, options));
+        if (opened) {
+            await this.recovery.offer();
+        }
+
+        return opened;
+    }
+
+    private async openJarAndMappings(descriptor: ProjectDescriptor, options: { quiet?: boolean }): Promise<boolean> {
         const libraries = settings.libraries;
         try {
             await this.backend.request('project/openJar', { jar: descriptor.jar, libraries });
@@ -376,7 +387,6 @@ export class Project implements vscode.Disposable {
 
         await this.index.reload().catch(() => undefined);
         await this.bringBackTabs(descriptor.jar);
-        await this.recovery.offer();
         return true;
     }
 
@@ -488,8 +498,10 @@ export class Project implements vscode.Disposable {
     async reloadAll(): Promise<void> {
         if (this.isOpen && (await this.confirmDiscard(t('project.saveBeforeReloading')))) {
             const libraries = settings.libraries;
-            await this.reporter.run(() => this.backend.request('project/reload', { libraries }));
-            await this.index.reload().catch(() => undefined);
+            await this.editors.whileOpening(async () => {
+                await this.reporter.run(() => this.backend.request('project/reload', { libraries }));
+                await this.index.reload().catch(() => undefined);
+            });
             this.documents.refreshAll();
         }
     }
