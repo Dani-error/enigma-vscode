@@ -91,7 +91,7 @@ class WorkflowTest {
             assertThat(chat.get("text").getAsString(), containsString("hello there"));
 
             // the host owns the mappings: guests cannot save
-            TestClient.RpcError error = assertThrows(TestClient.RpcError.class, () -> guest.call("mappings/save", "path", "/tmp/nope.mapping", "format", "enigma:enigma_file"));
+            TestClient.RpcError error = assertThrows(TestClient.RpcError.class, () -> guest.call("mappings/save", "path", Path.of(System.getProperty("java.io.tmpdir"), "nope.mapping").toString(), "format", "enigma:enigma_file"));
             assertThat(error.code, is(2));
 
             // when the host stops the server, guests are disconnected
@@ -152,6 +152,8 @@ class WorkflowTest {
             guest.openJar("inheritance_tree");
             stranger.openJar("lone_class");
             host.call("collab/host", "username", "host_user", "port", port, "password", "secret");
+            // the host learns who is there as everyone does, a moment after it joined its own server
+            host.awaitNotification("collab/stateChanged", 0, p -> p.getAsJsonArray("users").size() == 1);
 
             TestClient.RpcError badName = assertThrows(TestClient.RpcError.class, () -> guest.call("collab/connect", "username", "x", "address", "127.0.0.1:" + port));
             assertThat(badName.code, is(2));

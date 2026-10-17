@@ -772,7 +772,9 @@ class BackendTest {
             TestClient.RpcError unknown = assertThrows(TestClient.RpcError.class, () -> client.call("does/notExist"));
             assertThat(unknown.code, is(-32601));
 
-            TestClient.RpcError missing = assertThrows(TestClient.RpcError.class, () -> client.call("project/openJar", "jar", "/does/not/exist.jar"));
+            // absolute on every system, which a path has to be
+            String nowhere = TestClient.jar("does_not_exist").toAbsolutePath().toString();
+            TestClient.RpcError missing = assertThrows(TestClient.RpcError.class, () -> client.call("project/openJar", "jar", nowhere));
             assertThat(missing.code, is(2));
 
             client.openJar("lone_class");
