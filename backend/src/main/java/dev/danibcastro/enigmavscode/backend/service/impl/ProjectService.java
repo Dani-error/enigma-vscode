@@ -43,9 +43,7 @@ public final class ProjectService implements Service {
 
     /**
      * What Vineflower is always told, whatever the settings say. Enigma has it decompile one class at a time, and runs
-     * several such at once; Vineflower would spread each over threads of its own as well, as many as there are
-     * processors, with what it reads (the classes of the JDK among them) kept per thread. Seen on a busy machine: one
-     * of those reading from what had already been closed.
+     * as many such at once as there are processors; Vineflower would spread each over as many threads again.
      */
     // the key of IFernflowerPreferences.THREADS, which is not on the classpath this is compiled with
     private static final Map<String, Object> FIXED_VINEFLOWER_OPTIONS = Map.of("thread-count", "1");

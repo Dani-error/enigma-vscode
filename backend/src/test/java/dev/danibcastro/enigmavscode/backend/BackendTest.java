@@ -17,6 +17,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.jar.JarFile;
 import java.util.stream.Stream;
 
@@ -146,6 +148,41 @@ class BackendTest {
                 assertThat("round " + round, text, containsString("void second" + round + "()"));
                 assertThat("round " + round, text, not(containsString("Short-lived.")));
             }
+        }
+    }
+
+    /**
+     * Closing the jar stops the threads Enigma decompiles on, in the middle of decompiling if need be. Vineflower must
+     * not notice: one of those threads stopping while it waits for Vineflower's own made Vineflower close what it reads
+     * the classes of the JDK from, while its thread was still reading from it.
+     */
+    @Test
+    void closesTheJarWhileClassesAreBeingDecompiled() throws Exception {
+        ExecutorService askers = Executors.newCachedThreadPool(task -> {
+            Thread thread = new Thread(task, "test-asker");
+            thread.setDaemon(true);
+            return thread;
+        });
+        try (TestClient client = new TestClient()) {
+            List<String> errors = LogCapture.errorsDuring(() -> {
+                for (int round = 0; round < 40; round++) {
+                    client.openJar("inheritance_tree");
+                    for (String name : classes(client).keySet()) {
+                        // not waited for: the jar may be gone before there is an answer
+                        askers.execute(() -> client.exchange("class/source", TestClient.params("class", name)));
+                    }
+
+                    // at another moment of decompiling each time
+                    Thread.sleep(round % 8 * 4L);
+                    client.call("project/closeJar");
+                }
+
+                // what Vineflower still does once the jar is closed
+                Thread.sleep(2000);
+            });
+            assertThat(String.join("\n", errors), errors, is(empty()));
+        } finally {
+            askers.shutdownNow();
         }
     }
 

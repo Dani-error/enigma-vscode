@@ -239,7 +239,7 @@ public final class SourceService implements Service {
     }
 
     public void onProjectOpened(EnigmaProject project, DecompilerService decompiler) {
-        this.sourceProvider = new ClassHandleProvider(project, decompiler);
+        this.sourceProvider = new ClassHandleProvider(project, new IsolatedDecompilerService(decompiler));
         this.bytecodeProvider = new ClassHandleProvider(project, Decompilers.BYTECODE);
     }
 
@@ -263,7 +263,7 @@ public final class SourceService implements Service {
     public void setDecompiler(DecompilerService decompiler) {
         if (this.sourceProvider != null) {
             // invalidates every open class
-            this.sourceProvider.setDecompilerService(decompiler);
+            this.sourceProvider.setDecompilerService(new IsolatedDecompilerService(decompiler));
         }
     }
 
