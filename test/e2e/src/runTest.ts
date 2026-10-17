@@ -222,7 +222,7 @@ function loggedErrors(directory: string): string[] {
             }
 
             // about this extension: its scheme, its id, or its code; what VS Code says about itself is not ours to fix
-            const ours = /enigma:|danibcastro\.enigma-vscode|build\/extension\/dist/.test(trace.join(' '));
+            const ours = /enigma:|danibcastro\.enigma-vscode|build[\\/]extension[\\/]dist/.test(trace.join(' '));
             if (line.includes('[error]') && ours && !VSCODE_BOOKKEEPING.some(pattern => pattern.test(line))) {
                 found.push(`${entry.name}: ${trace.map(part => part.trim()).join('\n      ')}`);
             }

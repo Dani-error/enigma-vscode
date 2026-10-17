@@ -41,6 +41,16 @@ import java.util.*;
 @RequiredArgsConstructor
 public final class ProjectService implements Service {
 
+    /**
+     * What Vineflower is always told, whatever the settings say. Enigma has it decompile one class at a time, and runs
+     * several such at once; Vineflower would spread each over threads of its own as well, as many as there are
+     * processors, with what it reads (the classes of the JDK among them) kept per thread. Seen on a busy machine: one
+     * of those reading from what had already been closed.
+     */
+    // the key of IFernflowerPreferences.THREADS, which is not on the classpath this is compiled with
+    private static final Map<String, Object> FIXED_VINEFLOWER_OPTIONS = Map.of("thread-count", "1");
+
+
     private final Session session;
     private final SourceService sources;
     private final MappingsService mappings;
@@ -139,6 +149,7 @@ public final class ProjectService implements Service {
                 }
             }
 
+            options.putAll(FIXED_VINEFLOWER_OPTIONS);
             if (!options.equals(VineflowerPreferences.OPTIONS)) {
                 VineflowerPreferences.OPTIONS.clear();
                 VineflowerPreferences.OPTIONS.putAll(options);
@@ -146,6 +157,7 @@ public final class ProjectService implements Service {
             }
         }
 
+        FIXED_VINEFLOWER_OPTIONS.forEach(VineflowerPreferences.OPTIONS::putIfAbsent);
         if (this.session.project() != null) {
             if (vineflowerChanged) {
                 this.sources.invalidateAll();

@@ -353,6 +353,9 @@ const state = () =>
     });
 
 /** What the editor wrote down as errors, in the logs of its window and of its extensions. */
+/** What is about this extension: its scheme, its id, or its code, with the separators of any system. */
+const OURS = /enigma:|danibcastro\.enigma-vscode|build[\\/]extension[\\/]dist/;
+
 function loggedErrors(): string[] {
     const found: string[] = [];
     const walk = (directory: string) => {
@@ -363,10 +366,15 @@ function loggedErrors(): string[] {
             } else if (entry.name === 'renderer.log' || entry.name === 'exthost.log') {
                 const lines = fs.readFileSync(file, 'utf8').split('\n');
                 lines.forEach((line, index) => {
-                    // the editor's own complaints about itself are not ours to fix
-                    if (line.includes('[error]') && !/DEP0\d+|EXTRA proposals|product\.json|punycode/.test(line)) {
-                        const origin = lines[index + 3] ?? '';
-                        found.push(`${entry.name}: ${line}${/^\s+at /.test(origin) ? ` | ${origin.trim()}` : ''}`);
+                    // the error and where it happened: the stack trace below it
+                    const trace = [line];
+                    for (let next = index + 1; next < lines.length && /^\s+at /.test(lines[next]); next++) {
+                        trace.push(lines[next]);
+                    }
+
+                    // about this extension, as in test/e2e/src/runTest.ts; what the editor says about itself is not ours to fix
+                    if (line.includes('[error]') && OURS.test(trace.join(' '))) {
+                        found.push(`${entry.name}: ${trace.map(part => part.trim()).join(' | ')}`);
                     }
                 });
             }
@@ -472,6 +480,7 @@ async function comesBack(how: string): Promise<void> {
         problem(`${how}: ${messageOf(error)}`),
     );
     await pointAtMethod().catch((error: unknown) => problem(`${how}: ${messageOf(error)}`));
+    await paneShowsMethod().catch((error: unknown) => problem(`${how}: ${messageOf(error)}`));
     const open = await watch(`${how}: the jar is open again`, 3000);
     await shot(`${how}-2-open-again`);
     if (open.state.classTabs.join() !== 'd.java,e.java') {
@@ -539,6 +548,17 @@ async function paneWorks() {
     }
 }
 
+/** Waits for the Identifier pane to have loaded its page and to show the method: slow on a busy machine. */
+const paneShowsMethod = () =>
+    until(
+        'the Identifier pane to show the method under the cursor',
+        async () => {
+            const pane = (await state()).pane;
+            return pane?.loaded && pane.kind === 'Method';
+        },
+        30000,
+    );
+
 async function main(executable: string): Promise<void> {
     start(executable);
     await until('the window to open', () => hosts() === 1);
@@ -548,6 +568,7 @@ async function main(executable: string): Promise<void> {
     }, jar);
     await until('the jar to be open', async () => (await state()).jarOpen);
     await openClassesAndPointAtMethod();
+    await paneShowsMethod().catch((error: unknown) => problem(`before: ${messageOf(error)}`));
     const before = await watch('a jar, two classes and a method under the cursor', 2000);
     await shot('0-before');
     if (!/Method/.test(identifier(before)?.text ?? '')) {

@@ -10,9 +10,6 @@ import { CommitReason, Problem, State } from './state';
 import { CATEGORY_OBFUSCATED, FLAG_RENAMABLE, RefTuple, ZoneModel, changesBetween, insertedText, judge, newNameOf } from './zones';
 import { t } from '../l10n';
 
-/** How long a document nobody looks at is given to be reloaded by the editor, after the file changed. */
-const BACKGROUND_RELOAD_MS = 3000;
-
 const describe = (messages: ValidationMessage[]) => {
     return messages.map(message => message.text).join(' ');
 };
@@ -26,6 +23,8 @@ const delay = (milliseconds: number) => {
  */
 export class EditorController implements vscode.Disposable {
     private readonly states = new Map<string, State>();
+    /** The edit each document is waiting for, by address: see replaceText. */
+    private readonly edits = new Map<string, Promise<boolean>>();
     private readonly decorations = new Decorations();
     private readonly disposables: vscode.Disposable[] = [];
     private lastRefusal = 0;
@@ -282,7 +281,27 @@ export class EditorController implements vscode.Disposable {
         }
     }
 
-    private async replaceText(document: vscode.TextDocument, target: string): Promise<boolean> {
+    /**
+     * Makes the text of a document another, one edit at a time per document: the edits of settling it and of refusing
+     * what was typed would otherwise be computed from the same text, and the editor refuses the one that comes second,
+     * as made for a document that changed in the meantime, and logs that as an error.
+     */
+    private replaceText(document: vscode.TextDocument, target: string): Promise<boolean> {
+        const key = document.uri.toString();
+        const edit = (this.edits.get(key) ?? Promise.resolve()).then(() =>
+            document.isClosed ? false : this.replaceTextNow(document, target),
+        );
+        const settled = edit.catch(() => false);
+        this.edits.set(key, settled);
+        void settled.then(() => {
+            if (this.edits.get(key) === settled) {
+                this.edits.delete(key);
+            }
+        });
+        return edit;
+    }
+
+    private async replaceTextNow(document: vscode.TextDocument, target: string): Promise<boolean> {
         const changes = changesBetween(this.stateOf(document)?.model, document.getText(), target).map(change => ({
             range: new vscode.Range(document.positionAt(change.start), document.positionAt(change.end)),
             text: change.text,
@@ -306,13 +325,6 @@ export class EditorController implements vscode.Disposable {
                 // document nothing shows. Whoever asked tries again, and finds the document closed or shown elsewhere.
                 return false;
             }
-        }
-
-        // Not shown, and without changes of its own: the editor reloads it from the file (see EnigmaDocuments.refresh),
-        // and an edit sent meanwhile collides with that reload, refused and logged by the editor as an error. One with
-        // unsaved changes is not reloaded, and only an edit brings it back.
-        if (!document.isDirty) {
-            return false;
         }
 
         const edit = new vscode.WorkspaceEdit();
@@ -681,23 +693,14 @@ export class EditorController implements vscode.Disposable {
                         // once: a cursor among them ends up behind them, off the name that was just renamed from a pane.
                         // Where there is no cursor, in a document nobody looks at, the editor is left to do it: that
                         // does not make the document one with unsaved changes, which nothing shown could save again.
-                        // It is never edited instead: an edit sent while the editor reloads it is refused, and logged as an
-                        // error of the editor, which is slow to reload on a busy machine.
                         if (!document.isDirty && !vscode.window.visibleTextEditors.some(candidate => candidate.document === document)) {
-                            for (
-                                let waited = 0;
-                                waited < BACKGROUND_RELOAD_MS / 15 && document.getText() !== target && !document.isDirty;
-                                waited++
-                            ) {
+                            for (let waited = 0; waited < 12 && document.getText() !== target && !document.isDirty; waited++) {
                                 await delay(15);
                             }
 
-                            if (this.stateOf(document) !== current || document.getText() === target || document.isDirty) {
+                            if (this.stateOf(document) !== current || document.getText() === target) {
                                 continue;
                             }
-
-                            // it was told the file changed (see EnigmaDocuments.refresh), and reloads it when it gets to it
-                            return;
                         }
 
                         const replaced = await this.replaceText(document, target);
