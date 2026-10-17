@@ -9,6 +9,7 @@ import {
     everywhere,
     execute,
     openClass,
+    pause,
     positionOf,
     typeAt,
     typeOver,
@@ -58,6 +59,38 @@ describe('Enigma in VS Code: the constrained editor', () => {
         await waitFor('the document to be unmodified', () => !editor.document.isDirty);
         assert.equal(api.editor.renaming, false);
         assert.equal(api.project.state?.dirty, false, 'nothing was renamed');
+    });
+
+    it('reads a class again that changed while it was being saved', async () => {
+        // A change that arrives while a document is saved leaves it modified, but the extension host is told that it
+        // was saved, and takes it for unmodified. The editor does not read again what it holds as modified: shown or
+        // not, the class would keep its old text. Here a refused change is undone and saved, and another arrives
+        // meanwhile, at another moment each round.
+        let document: vscode.TextDocument | undefined;
+        for (let round = 0; round < 10; round++) {
+            const editor = await openClass(api, 'd');
+            document = editor.document;
+            const before = document.getText();
+            await editor.edit(builder => builder.insert(new vscode.Position(0, 0), 'x'));
+            await pause(round);
+            // refused when the first change was undone first, which a test cannot know: made again until it is made
+            await waitFor('the second change', () =>
+                Promise.resolve(editor.edit(builder => builder.insert(new vscode.Position(0, 0), '// injected\n'))),
+            );
+            await waitFor('the text to be restored', () => document!.getText() === before && !document!.isDirty);
+
+            // not shown, and changed by a new name of the class it extends
+            await openClass(api, 'c');
+            const name = `Base${round}`;
+            await api.backend.request('entry/rename', { entry: { kind: 'class', name: 'a' }, newName: name, confirmWarnings: true });
+            await waitFor(`the subclass to extend ${name}`, () => document!.getText().includes(`extends ${name} `), 15000);
+            // a document is saved a few times a second at most
+            await pause(400);
+        }
+
+        // back to the name the following tests expect
+        await api.backend.request('entry/toggleMapping', { entry: { kind: 'class', name: 'a' }, confirmWarnings: true });
+        await waitFor('the class to have its name from the jar again', () => document!.getText().includes('extends a '));
     });
 
     it('renames by typing over a name, with every other use in the file following', async () => {

@@ -136,13 +136,15 @@ export class ClassEditors implements vscode.Disposable {
             // nor while it is closed: an edit that arrives after it was is refused, and logged as an error
             await this.documents.editsDone(tab.input.uri);
             const document = vscode.workspace.textDocuments.find(candidate => candidate.uri.toString() === uri);
-            // a tab with unsaved changes would ask whether to save them; there is nothing to save in a generated text
-            // Until it has none: saving is refused while another save of the document is under way, as the one that
-            // follows a name typed in the code, and a tab closed with changes makes the editor ask about them.
-            for (let attempt = 0; document?.isDirty && !document.isClosed && attempt < 25; attempt++) {
-                if (!(await document.save()) && document.isDirty) {
-                    await new Promise(resolve => setTimeout(resolve, 40));
+            // A tab with unsaved changes would ask whether to save them; there is nothing to save in a generated text.
+            // Until it has none, which only a save says: changed while it is being saved, as by the save that follows
+            // a name typed in the code, a document stays modified, although the extension host takes it for unmodified.
+            for (let attempt = 0; document && !document.isClosed && !this.documents.isReadOnly(document.uri) && attempt < 25; attempt++) {
+                if (await document.save()) {
+                    break;
                 }
+
+                await new Promise(resolve => setTimeout(resolve, 40));
             }
         }
 
