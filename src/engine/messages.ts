@@ -26,6 +26,7 @@ const SAID: Record<Problem, (...args: string[]) => string> = {
     'unknown-mapping-format': format => t('messages.unknownMappingFormat', format),
     'mappings-not-found': path => t('messages.mappingsNotFound', path),
     'mappings-read-failed': (path, reason) => t('messages.couldNotReadMappings', path, reason),
+    'mappings-from-server': () => t('messages.mappingsFromServer'),
     'no-mappings-file-to-save': () => t('messages.noMappingsFileIsOpenUse'),
     'no-mappings-file': () => t('messages.noMappingsFileIsOpen'),
     'save-while-connected': () => t('messages.mappingsCannotBeSavedWhileConnected'),

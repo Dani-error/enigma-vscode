@@ -26,7 +26,10 @@ import org.quiltmc.enigma.network.packet.Packet;
 import org.quiltmc.enigma.network.packet.c2s.EntryChangeC2SPacket;
 import org.quiltmc.enigma.network.packet.c2s.LoginC2SPacket;
 import org.quiltmc.enigma.network.packet.c2s.MessageC2SPacket;
+import org.quiltmc.enigma.network.packet.s2c.EntryChangeS2CPacket;
+import org.quiltmc.enigma.network.packet.s2c.SyncMappingsS2CPacket;
 import org.quiltmc.enigma.network.packet.s2c.UserListS2CPacket;
+import org.quiltmc.enigma.util.EntryUtil;
 import org.quiltmc.enigma.util.I18n;
 import org.tinylog.Logger;
 
@@ -49,8 +52,10 @@ public final class CollabService implements Service, ClientPacketHandler {
     @Nullable
     private EnigmaClient client;
     @Nullable
-    private EnigmaServer server;
+    private Server server;
     private List<String> users = List.of();
+    /** Who hosts the session from here, if this does. */
+    private @Nullable String hostName;
 
     public CollabService(Session session, EditService edits, MappingsService mappings) {
         this.session = session;
@@ -59,6 +64,7 @@ public final class CollabService implements Service, ClientPacketHandler {
 
         // what is changed here is sent to the others
         edits.onChange(this::sendChange);
+        mappings.onReplaced(this::shareMappings);
     }
 
     @Override
@@ -143,15 +149,7 @@ public final class CollabService implements Service, ClientPacketHandler {
         }
 
         try {
-            // the server works on its own copy of the mappings, exactly like GuiController#createServer
-            EntryRemapper serverRemapper = EntryRemapper.mapped(
-                    project.getEnigma(), project.getCombinedIndex(), project.getMappingsIndex(),
-                    new HashEntryTree<>(project.getRemapper().getJarProposedMappings()),
-                    new HashEntryTree<>(project.getRemapper().getDeobfMappings()),
-                    project.getEnigma().getNameProposalServices()
-            );
-
-            Server server = new Server(project.getJarChecksum(), password, serverRemapper, port);
+            Server server = new Server(project.getJarChecksum(), password, copyForServer(project), port);
             server.start();
             this.server = server;
 
@@ -159,6 +157,7 @@ public final class CollabService implements Service, ClientPacketHandler {
             client.connect();
             this.client = client;
             client.sendPacket(new LoginC2SPacket(project.getJarChecksum(), password, username));
+            this.hostName = username;
         } catch (IOException e) {
             this.stopNetworking();
             throw RpcException.said(Problem.SERVER_START_FAILED, port, e.getMessage());
@@ -167,6 +166,27 @@ public final class CollabService implements Service, ClientPacketHandler {
         this.setState(ConnectionState.HOSTING);
         this.session.notifyUser(Severity.INFO, I18n.translate("validation.message.server_started"), null);
         return this.session.state();
+    }
+
+    /** The server works on its own copy of the mappings, exactly like GuiController#createServer. */
+    private static EntryRemapper copyForServer(EnigmaProject project) {
+        return EntryRemapper.mapped(
+                project.getEnigma(), project.getCombinedIndex(), project.getMappingsIndex(),
+                new HashEntryTree<>(project.getRemapper().getJarProposedMappings()),
+                new HashEntryTree<>(project.getRemapper().getDeobfMappings()),
+                project.getEnigma().getNameProposalServices()
+        );
+    }
+
+    /**
+     * The host replaced its mappings, as by opening a file. Enigma's server would go on with those it started with,
+     * and tell nobody: it takes these instead, and sends them to everyone as it does to whoever joins.
+     */
+    private void shareMappings() {
+        EnigmaProject project = this.session.project();
+        if (this.server != null && project != null) {
+            this.server.replaceMappings(copyForServer(project), this.hostName);
+        }
     }
 
     private void sendMessage(SendMessageParams params) {
@@ -190,6 +210,8 @@ public final class CollabService implements Service, ClientPacketHandler {
             this.server.stop();
             this.server = null;
         }
+
+        this.hostName = null;
     }
 
     /**
@@ -303,8 +325,39 @@ public final class CollabService implements Service, ClientPacketHandler {
         /** Mirrors the server's own, private, list of logged in users. Touched by the session and the network threads. */
         private final Map<Socket, String> usernames = new ConcurrentHashMap<>();
 
+        /** The mappings of the session. Enigma's own field cannot be replaced. */
+        private volatile EntryRemapper remapper;
+
         Server(byte[] jarChecksum, char[] password, EntryRemapper remapper, int port) {
             super(jarChecksum, password, remapper, port);
+            this.remapper = remapper;
+        }
+
+        @Override
+        public EntryRemapper getRemapper() {
+            return this.remapper;
+        }
+
+        @Override
+        public void sendCorrectMapping(Socket client, Entry<?> entry) {
+            EntryChange<Entry<?>> change = EntryUtil.changeFromMapping(entry, this.remapper.getMapping(entry));
+            this.sendPacket(client, new EntryChangeS2CPacket(DUMMY_SYNC_ID, change));
+        }
+
+        /**
+         * Goes on with other mappings, sending them to everyone but the one who has them already. This is the packet a
+         * client gets when it joins, so unmodified Enigma clients handle it too. It goes to everyone who logged in:
+         * Enigma's own way to send to all leaves out who has not yet confirmed the mappings they got when joining, and
+         * they would be left with those.
+         */
+        void replaceMappings(EntryRemapper remapper, @Nullable String keeper) {
+            this.remapper = remapper;
+            SyncMappingsS2CPacket sync = new SyncMappingsS2CPacket(remapper.getDeobfMappings());
+            this.usernames.forEach((client, name) -> {
+                if (!name.equals(keeper)) {
+                    this.sendPacket(client, sync);
+                }
+            });
         }
 
         @Override

@@ -62,6 +62,7 @@ export type Problem =
     | 'unknown-mapping-format'
     | 'mappings-not-found'
     | 'mappings-read-failed'
+    | 'mappings-from-server'
     | 'no-mappings-file-to-save'
     | 'no-mappings-file'
     | 'save-while-connected'

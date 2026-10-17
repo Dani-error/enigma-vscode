@@ -20,6 +20,7 @@
     "messages.mappingsCannotBeSavedWhileConnected": "Mappings cannot be saved while connected to a server; the host owns the mappings.",
     "messages.mappingsNotFound": "Mappings not found: {0}",
     "messages.couldNotReadMappings": "Could not read mappings {0}: {1}",
+    "messages.mappingsFromServer": "The session uses the mappings of its server. Disconnect to use others.",
     "messages.noJarIsOpen": "No jar is open.",
     "messages.noMappingsFileIsOpen": "No mappings file is open.",
     "messages.noMappingsFileIsOpenUse": "No mappings file is open. Use \"Save Mappings As\" first.",

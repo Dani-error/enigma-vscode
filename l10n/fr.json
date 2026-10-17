@@ -20,6 +20,7 @@
     "messages.mappingsCannotBeSavedWhileConnected": "Impossible d'enregistrer les mappings en étant connecté à un serveur : c'est l'hôte qui s'en charge.",
     "messages.mappingsNotFound": "Mappings introuvables : {0}",
     "messages.couldNotReadMappings": "Impossible de lire les mappings {0} : {1}",
+    "messages.mappingsFromServer": "La session utilise les mappings de son serveur. Déconnectez-vous pour en utiliser d'autres.",
     "messages.noJarIsOpen": "Aucun jar ouvert.",
     "messages.noMappingsFileIsOpen": "Aucun fichier de mappings ouvert.",
     "messages.noMappingsFileIsOpenUse": "Aucun fichier de mappings ouvert. Utilisez d'abord « Enregistrer les mappings sous ».",

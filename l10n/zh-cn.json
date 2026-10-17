@@ -20,6 +20,7 @@
     "messages.mappingsCannotBeSavedWhileConnected": "连接服务器时无法保存映射，映射由主机保存。",
     "messages.mappingsNotFound": "找不到映射：{0}",
     "messages.couldNotReadMappings": "无法读取映射 {0}：{1}",
+    "messages.mappingsFromServer": "会话使用其服务器的映射。要使用其他映射，请先断开连接。",
     "messages.noJarIsOpen": "未打开 Jar。",
     "messages.noMappingsFileIsOpen": "未打开映射文件。",
     "messages.noMappingsFileIsOpenUse": "未打开映射文件。请先使用“映射另存为”。",

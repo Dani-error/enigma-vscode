@@ -1,6 +1,8 @@
 package dev.danibcastro.enigmavscode.backend.service.impl;
 
 
+import java.util.concurrent.CopyOnWriteArrayList;
+import dev.danibcastro.enigmavscode.backend.protocol.collab.ConnectionState;
 import dev.danibcastro.enigmavscode.backend.LogCapture;
 import dev.danibcastro.enigmavscode.backend.Session;
 import dev.danibcastro.enigmavscode.backend.protocol.entry.EntryRef;
@@ -49,6 +51,23 @@ public final class MappingsService implements Service {
 
     private final Session session;
     private final SourceService sources;
+    /** Told when the mappings were replaced here, as by opening a file: not when the server sent them. */
+    private final List<Runnable> replacedListeners = new CopyOnWriteArrayList<>();
+
+    public void onReplaced(Runnable listener) {
+        this.replacedListeners.add(listener);
+    }
+
+    private void replaced() {
+        this.replacedListeners.forEach(Runnable::run);
+    }
+
+    /** Someone who joined a session works on its mappings: swapping them for others would leave it unnoticed. */
+    private void requireOwnMappings() {
+        if (this.session.connectionState() == ConnectionState.CONNECTED) {
+            throw RpcException.said(Problem.MAPPINGS_FROM_SERVER);
+        }
+    }
 
     @Override
     public void register() {
@@ -83,6 +102,7 @@ public final class MappingsService implements Service {
 
     private State openMappings(OpenMappingsParams params) throws Exception {
         this.session.requireProject();
+        this.requireOwnMappings();
         Path path = Path.of(params.path()).toAbsolutePath();
         if (!Files.exists(path)) {
             throw RpcException.said(Problem.MAPPINGS_NOT_FOUND, path);
@@ -118,6 +138,7 @@ public final class MappingsService implements Service {
         this.sources.invalidateJavadoc();
         this.session.notifyMappingsChanged(null);
         this.session.notifyUser(Severity.INFO, I18n.translateFormatted("validation.message.opened_project", project.getJarPath().getFileName().toString(), path.getFileName().toString()), null);
+        this.replaced();
     }
 
     /**
@@ -226,6 +247,14 @@ public final class MappingsService implements Service {
     }
 
     private State closeMappings() {
+        this.session.requireProject();
+        this.requireOwnMappings();
+        this.unload();
+        this.replaced();
+        return this.session.state();
+    }
+
+    private void unload() {
         EnigmaProject project = this.session.requireProject();
         project.setMappings(null, ProgressListener.createEmpty());
         this.session.setMappingsFile(null, null);
@@ -233,24 +262,26 @@ public final class MappingsService implements Service {
         this.session.history().clear();
         this.sources.invalidateJavadoc();
         this.session.notifyMappingsChanged(null);
-        return this.session.state();
     }
 
     private State reloadMappings() throws Exception {
         this.session.requireProject();
+        this.requireOwnMappings();
         Path path = this.session.mappingsPath();
         ReadWriteService service = this.session.mappingsService();
         if (path == null || service == null) {
             throw RpcException.said(Problem.NO_MAPPINGS_FILE);
         }
 
-        this.closeMappings();
+        // shared once, when they are back
+        this.unload();
         this.load(service, path);
         return this.session.state();
     }
 
     private Dropped dropMappings() {
         EnigmaProject project = this.session.requireProject();
+        this.requireOwnMappings();
         RpcProgress progress = this.session.progress(Task.DROPPING_MAPPINGS);
         Collection<Entry<?>> dropped;
         try {
@@ -268,6 +299,7 @@ public final class MappingsService implements Service {
             this.session.history().clear();
             this.sources.invalidateJavadoc();
             this.session.notifyMappingsChanged(null);
+            this.replaced();
         }
 
         return new Dropped(entries);
@@ -312,6 +344,7 @@ public final class MappingsService implements Service {
         // nothing of this has been saved to the real mappings file yet
         project.getRemapper().getMappings().getAllEntries().toList().forEach(project.getRemapper().getMappings()::trackChange);
         this.session.notifyState();
+        this.replaced();
         return this.session.state();
     }
 }

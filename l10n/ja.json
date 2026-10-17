@@ -20,6 +20,7 @@
     "messages.mappingsCannotBeSavedWhileConnected": "サーバー接続中はマッピングを保存できません。保存はホストが行います。",
     "messages.mappingsNotFound": "マッピングが見つかりません: {0}",
     "messages.couldNotReadMappings": "マッピング {0} を読み込めません: {1}",
+    "messages.mappingsFromServer": "このセッションではサーバーのマッピングを使います。別のマッピングを使うには切断してください。",
     "messages.noJarIsOpen": "Jar が開かれていません。",
     "messages.noMappingsFileIsOpen": "マッピングファイルが開かれていません。",
     "messages.noMappingsFileIsOpenUse": "マッピングファイルが開かれていません。先に「名前を付けてマッピングを保存」を使ってください。",

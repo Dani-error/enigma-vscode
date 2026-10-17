@@ -20,6 +20,7 @@
     "messages.mappingsCannotBeSavedWhileConnected": "Während einer Serververbindung können Mappings nicht gespeichert werden – das übernimmt der Host.",
     "messages.mappingsNotFound": "Mappings nicht gefunden: {0}",
     "messages.couldNotReadMappings": "Mappings {0} konnten nicht gelesen werden: {1}",
+    "messages.mappingsFromServer": "Die Sitzung nutzt die Mappings ihres Servers. Trenne die Verbindung, um andere zu nutzen.",
     "messages.noJarIsOpen": "Kein Jar geöffnet.",
     "messages.noMappingsFileIsOpen": "Keine Mapping-Datei geöffnet.",
     "messages.noMappingsFileIsOpenUse": "Keine Mapping-Datei geöffnet. Verwenden Sie zuerst „Mappings speichern unter“.",

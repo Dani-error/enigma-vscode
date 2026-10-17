@@ -83,6 +83,8 @@ tasks.jacocoTestReport {
 
 // the tests fail when they run less of the backend than they did: a little below what they reach now
 tasks.jacocoTestCoverageVerification {
+	// some of the tests, chosen with --tests, run only some of the backend
+	onlyIf { gradle.startParameter.taskRequests.none { "--tests" in it.args } }
 	violationRules {
 		rule {
 			limit {

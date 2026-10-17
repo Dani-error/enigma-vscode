@@ -103,6 +103,48 @@ class WorkflowTest {
     }
 
     @Test
+    void mappingsTheHostOpensAreSharedWithEveryone(@TempDir Path temp) throws IOException {
+        int port = freePort();
+        Path file = temp.resolve("opened.mapping");
+        Files.writeString(file, "CLASS a OpenedBase\n\tFIELD a openedName Ljava/lang/String;\n");
+        try (TestClient host = new TestClient(); TestClient guest = new TestClient(); TestClient late = new TestClient()) {
+            host.openJar("inheritance_tree");
+            guest.openJar("inheritance_tree");
+            late.openJar("inheritance_tree");
+            host.call("collab/host", "username", "host_user", "port", port, "password", "");
+            int guestSeen = guest.notificationCount();
+            guest.call("collab/connect", "username", "guest_user", "address", "127.0.0.1:" + port, "password", "");
+            guest.awaitNotification("mappingsChanged", guestSeen, p -> p.get("full").getAsBoolean());
+
+            guestSeen = guest.notificationCount();
+            host.call("mappings/open", "path", file.toString(), "format", "enigma:enigma_file");
+            guest.awaitNotification("mappingsChanged", guestSeen, p -> p.get("full").getAsBoolean());
+            assertThat(guest.source("a"), containsString("class OpenedBase"));
+
+            // whoever joins later gets them too, and what they change reaches the host
+            int lateSeen = late.notificationCount();
+            late.call("collab/connect", "username", "late_user", "address", "127.0.0.1:" + port, "password", "");
+            late.awaitNotification("mappingsChanged", lateSeen, p -> p.get("full").getAsBoolean());
+            assertThat(late.source("a"), containsString("String openedName"));
+            int hostSeen = host.notificationCount();
+            assertThat(late.rename(DO_BASE_THINGS, "afterOpening").get("applied").getAsBoolean(), is(true));
+            host.awaitNotification("mappingsChanged", hostSeen, p -> true);
+            assertThat(host.source("a"), containsString("void afterOpening()"));
+
+            // closing them is shared as well
+            guestSeen = guest.notificationCount();
+            host.call("mappings/close");
+            guest.awaitNotification("mappingsChanged", guestSeen, p -> p.get("full").getAsBoolean());
+            assertThat(guest.source("a"), not(containsString("OpenedBase")));
+
+            // the mappings of a session are the server's: someone who joined cannot swap them for others alone
+            TestClient.RpcError refused = assertThrows(TestClient.RpcError.class,
+                    () -> guest.call("mappings/open", "path", file.toString(), "format", "enigma:enigma_file"));
+            assertThat(refused.data.getAsJsonObject().get("key").getAsString(), is("mappings-from-server"));
+        }
+    }
+
+    @Test
     void rejectsBadCredentialsAndMismatchedJars() throws IOException {
         int port = freePort();
         try (TestClient host = new TestClient(); TestClient guest = new TestClient(); TestClient stranger = new TestClient()) {
