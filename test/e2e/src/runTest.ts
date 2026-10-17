@@ -177,7 +177,13 @@ async function main(): Promise<void> {
                   .map(line => new RegExp(line))
             : [];
         logged = loggedErrors(path.join(temp, 'user-data', 'logs')).filter(line => !allowed.some(pattern => pattern.test(line)));
-        fs.rmSync(temp, { recursive: true, force: true });
+        try {
+            // Windows keeps the files of the editor locked for a moment after it exits
+            fs.rmSync(temp, { recursive: true, force: true, maxRetries: 10, retryDelay: 500 });
+        } catch (error) {
+            // what the tests left is read by now; a folder in the temporary directory is no reason to fail them
+            console.warn(`Could not remove ${temp}: ${String(error)}`);
+        }
     }
 
     if (logged && logged.length > 0) {

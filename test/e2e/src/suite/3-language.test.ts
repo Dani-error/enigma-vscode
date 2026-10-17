@@ -155,7 +155,12 @@ describe('Enigma in VS Code: the features of the editor on decompiled classes', 
         await withStub(
             vscode.window,
             'createQuickPick',
-            () => (picker = create.call(vscode.window)),
+            () => {
+                picker = create.call(vscode.window);
+                // a picker closes when its window loses the focus of the system, which a test cannot keep: on CI, nobody gives it
+                picker.ignoreFocusOut = true;
+                return picker;
+            },
             () => execute('enigma.searchMethods'),
         );
         assert.ok(picker, 'the search is shown');

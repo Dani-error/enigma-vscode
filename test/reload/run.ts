@@ -590,7 +590,12 @@ try {
         fs.writeFileSync(path.join(shots, 'report.json'), JSON.stringify(report, undefined, 2));
     }
 
-    fs.rmSync(temp, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+    try {
+        // Windows keeps the files of the editor locked for a moment after it exits
+        fs.rmSync(temp, { recursive: true, force: true, maxRetries: 10, retryDelay: 500 });
+    } catch (error) {
+        console.warn(`Could not remove ${temp}: ${String(error)}`);
+    }
 }
 
 console.log(
