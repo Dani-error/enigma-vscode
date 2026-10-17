@@ -1,9 +1,33 @@
 import * as assert from 'node:assert/strict';
 import * as vscode from 'vscode';
-import { Api, activate, classDocument, execute, expectTrouble, positionOf, waitFor } from './harness';
+import type { EntryRef } from '../../../../src/engine/protocol';
+import {
+    Api,
+    METHOD_DO_BASE_THINGS,
+    METHOD_GET_NAME,
+    activate,
+    classDocument,
+    execute,
+    expectTrouble,
+    positionOf,
+    waitFor,
+    withStub,
+} from './harness';
 
 describe('Enigma in VS Code: the features of the editor on decompiled classes', () => {
     let api: Api;
+
+    /** Where something is declared: its document, and a position on its name. */
+    const declaration = async (entry: EntryRef): Promise<[vscode.TextDocument, vscode.Position]> => {
+        const found = await api.backend.request('nav/declaration', { entry });
+        assert.ok(found, `${entry.name} is declared in the jar`);
+        const location = api.index.location(found);
+        const document = await vscode.workspace.openTextDocument(location.uri);
+        await waitFor(`the source of ${entry.name}`, () => api.documents.source(document.uri));
+        return [document, location.range.start.translate(0, 1)];
+    };
+    /** The class of a document, by its name in the jar. */
+    const classOf = (uri: vscode.Uri) => new URLSearchParams(uri.query).get('class');
 
     before(async () => {
         api = await activate();
@@ -67,6 +91,91 @@ describe('Enigma in VS Code: the features of the editor on decompiled classes', 
 
         const workspaceSymbols = await execute<vscode.SymbolInformation[]>('vscode.executeWorkspaceSymbolProvider', 'doBase');
         assert.ok(workspaceSymbols.some(symbol => symbol.name.startsWith('doBaseThings')));
+    });
+
+    it('shows what a class extends and what extends it', async () => {
+        const [document, position] = await declaration({ kind: 'class', name: 'c' });
+        const [item] = await execute<vscode.TypeHierarchyItem[]>('vscode.prepareTypeHierarchy', document.uri, position);
+        assert.ok(item, 'there is a hierarchy at the name of the class');
+        assert.equal(classOf(item.uri), 'c');
+
+        const supertypes = await execute<vscode.TypeHierarchyItem[]>('vscode.provideSupertypes', item);
+        assert.deepEqual(
+            supertypes.map(type => classOf(type.uri)),
+            ['a'],
+            'what it extends, of the jar: Object is not part of it',
+        );
+        const subtypes = await execute<vscode.TypeHierarchyItem[]>('vscode.provideSubtypes', item);
+        assert.deepEqual(
+            subtypes.map(type => classOf(type.uri)),
+            ['e'],
+        );
+
+        // from a member, the hierarchy of its class
+        const [, member] = await declaration(METHOD_GET_NAME);
+        const [ofMember] = await execute<vscode.TypeHierarchyItem[]>('vscode.prepareTypeHierarchy', classDocument('a').uri, member);
+        assert.equal(classOf(ofMember.uri), 'a');
+    });
+
+    it('shows who calls a method and what it calls', async () => {
+        const overriding: EntryRef = { kind: 'method', owner: 'e', name: 'a', desc: '()Ljava/lang/String;' };
+        const [document, position] = await declaration(overriding);
+        const [item] = await execute<vscode.CallHierarchyItem[]>('vscode.prepareCallHierarchy', document.uri, position);
+        assert.ok(item, 'there is a call hierarchy at the name of the method');
+
+        // e's getName calls super.getName(), and e's doBaseThings calls this.getName()
+        const outgoing = await execute<vscode.CallHierarchyOutgoingCall[]>('vscode.provideOutgoingCalls', item);
+        const toBase = outgoing.find(call => classOf(call.to.uri) === 'a');
+        assert.ok(toBase, `calls the method it overrides: ${outgoing.map(call => `${classOf(call.to.uri)}.${call.to.name}`).join(', ')}`);
+        assert.ok(toBase.fromRanges.length > 0, 'with where it is called');
+        assert.match(document.getText(toBase.fromRanges[0]), /\w+/);
+
+        const incoming = await execute<vscode.CallHierarchyIncomingCall[]>('vscode.provideIncomingCalls', item);
+        assert.ok(
+            incoming.some(call => classOf(call.from.uri) === 'e'),
+            `called in its own class: ${incoming.map(call => `${classOf(call.from.uri)}.${call.from.name}`).join(', ')}`,
+        );
+
+        // not a method: no call hierarchy
+        const [classDocumentOfE, className] = await declaration({ kind: 'class', name: 'e' });
+        assert.deepEqual(await execute('vscode.prepareCallHierarchy', classDocumentOfE.uri, className), []);
+    });
+
+    it('goes to the implementations of a method', async () => {
+        const [document, position] = await declaration(METHOD_DO_BASE_THINGS);
+        const implementations = await execute<vscode.Location[]>('vscode.executeImplementationProvider', document.uri, position);
+        const classes = new Set(implementations.map(location => classOf(location.uri)));
+        assert.ok(classes.has('d') && classes.has('e'), `d and e override it: ${[...classes].join(', ')}`);
+    });
+
+    it('finds a method by part of its name, and goes to it', async () => {
+        // the picker of the editor, as the command shows it
+        const create = vscode.window.createQuickPick;
+        let picker: vscode.QuickPick<vscode.QuickPickItem> | undefined;
+        await withStub(
+            vscode.window,
+            'createQuickPick',
+            () => (picker = create.call(vscode.window)),
+            () => execute('enigma.searchMethods'),
+        );
+        assert.ok(picker, 'the search is shown');
+        const shown = picker;
+        shown.value = 'doBase';
+        const found = await waitFor('results', () => !shown.busy && shown.items.find(item => item.label.includes('doBaseThings')));
+        assert.ok(
+            shown.items.every(item => item.label.startsWith('$(symbol-method)')),
+            'only methods',
+        );
+
+        shown.activeItems = [found];
+        await execute('workbench.action.acceptSelectedQuickOpenItem');
+        const editor = await waitFor('the method in an editor', () => {
+            const active = vscode.window.activeTextEditor;
+            return active?.document.uri.scheme === 'enigma' && active.document.getText(active.selection) === 'doBaseThings'
+                ? active
+                : undefined;
+        });
+        assert.ok(['a', 'd', 'e'].includes(classOf(editor.document.uri) ?? ''));
     });
 
     it('undoes and redoes mapping changes', async () => {

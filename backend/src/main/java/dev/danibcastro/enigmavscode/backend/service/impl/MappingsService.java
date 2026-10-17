@@ -27,6 +27,7 @@ import org.quiltmc.enigma.api.translation.representation.entry.Entry;
 import org.quiltmc.enigma.util.I18n;
 import org.tinylog.Logger;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -105,6 +106,8 @@ public final class MappingsService implements Service {
             project.setMappings(mappings, progress);
         } catch (MappingParseException e) {
             throw parseError(e);
+        } catch (IOException e) {
+            throw RpcException.said(Problem.MAPPINGS_READ_FAILED, path, RpcException.reason(e));
         } finally {
             progress.end();
         }
@@ -278,8 +281,12 @@ public final class MappingsService implements Service {
         EnigmaProject project = this.session.requireProject();
         Path path = Path.of(params.path()).toAbsolutePath();
         ReadWriteService service = this.findReadWriteService("enigma:enigma_file", path);
-        Files.createDirectories(path.getParent());
-        Files.deleteIfExists(path);
+        try {
+            Files.createDirectories(path.getParent());
+            Files.deleteIfExists(path);
+        } catch (IOException e) {
+            throw RpcException.said(Problem.SNAPSHOT_FAILED, RpcException.reason(e));
+        }
 
         List<String> errors = LogCapture.errorsDuring(() ->
                 service.write(project.getRemapper().getMappings(), path, ProgressListener.createEmpty(), this.session.enigma().getProfile().getMappingSaveParameters()));
@@ -297,6 +304,8 @@ public final class MappingsService implements Service {
             mappings = service.read(path, ProgressListener.createEmpty());
         } catch (MappingParseException e) {
             throw parseError(e);
+        } catch (IOException e) {
+            throw RpcException.said(Problem.MAPPINGS_READ_FAILED, path, RpcException.reason(e));
         }
 
         this.replaceMappings(mappings, ProgressListener.createEmpty());

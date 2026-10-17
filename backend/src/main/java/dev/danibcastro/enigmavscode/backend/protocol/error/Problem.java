@@ -13,6 +13,7 @@ import java.util.Locale;
 public enum Problem implements WireName {
     NO_JAR,
     PROFILE_NOT_FOUND,
+    PROFILE_INVALID,
     UNKNOWN_DECOMPILER,
     JAR_NOT_FOUND,
     LIBRARY_NOT_FOUND,
@@ -22,6 +23,7 @@ public enum Problem implements WireName {
     SERVER_START_FAILED,
     UNKNOWN_MAPPING_FORMAT,
     MAPPINGS_NOT_FOUND,
+    MAPPINGS_READ_FAILED,
     NO_MAPPINGS_FILE_TO_SAVE,
     NO_MAPPINGS_FILE,
     SAVE_WHILE_CONNECTED,
@@ -30,6 +32,7 @@ public enum Problem implements WireName {
     SNAPSHOT_FAILED,
     CLASS_NOT_FOUND,
     EXPORT_SOURCE_FAILED,
+    EXPORT_JAR_FAILED,
     EDITING_DISABLED,
     NOT_RENAMABLE,
     NOTHING_TO_UNDO,

@@ -96,7 +96,9 @@ export const parseMajorVersion = (text: string) => {
 };
 
 /**
- * Asks a java executable for its version.
+ * Asks a java executable for its version, and for the installation it belongs to: a launcher such as macOS'
+ * /usr/bin/java only stands in for one, and runs another one wherever JAVA_HOME is set to something else, as in a
+ * terminal whose shell sets it.
  *
  * JAVA_HOME is removed from its environment: launchers such as macOS' /usr/bin/java run whatever JAVA_HOME points
  * to, which would make "java on the PATH" report the very installation that was just found unsuitable.
@@ -105,15 +107,17 @@ export const probeJava = (executable: string, env: NodeJS.ProcessEnv = process.e
     const childEnv = { ...env };
     delete childEnv.JAVA_HOME;
 
-    return new Promise<{ version?: number; error?: string }>(resolve => {
-        execFile(executable, ['-version'], { timeout: 20000, env: childEnv }, (error, stdout, stderr) => {
+    return new Promise<{ version?: number; home?: string; error?: string }>(resolve => {
+        execFile(executable, ['-XshowSettings:properties', '-version'], { timeout: 20000, env: childEnv }, (error, stdout, stderr) => {
             if (error) {
                 resolve({ error: error.message.split('\n')[0] });
                 return;
             }
 
-            const version = parseMajorVersion(`${stderr}\n${stdout}`);
-            resolve(version === undefined ? { error: 'its version could not be determined' } : { version });
+            const output = `${stderr}\n${stdout}`;
+            const version = parseMajorVersion(output);
+            const home = /^\s*java\.home = (.+?)\s*$/m.exec(output)?.[1];
+            resolve(version === undefined ? { error: 'its version could not be determined' } : { version, home });
         });
     });
 };
@@ -311,8 +315,11 @@ export async function findJava(options: JavaSearchOptions = {}): Promise<JavaSea
     if (pathJava) {
         const probe = await probeJava(pathJava, env);
         if (probe.version !== undefined && probe.version >= minimum) {
+            // the installation itself, rather than a launcher that stands in for it
+            const installed = probe.home ? path.join(probe.home, 'bin', executable) : undefined;
+            const resolved = installed && fs.existsSync(installed) ? { executable: installed, home: probe.home } : { executable: pathJava };
             return {
-                runtime: { executable: pathJava, version: probe.version, origin: { kind: 'path' }, source: sourceOf({ kind: 'path' }) },
+                runtime: { ...resolved, version: probe.version, origin: { kind: 'path' }, source: sourceOf({ kind: 'path' }) },
                 rejected,
             };
         }

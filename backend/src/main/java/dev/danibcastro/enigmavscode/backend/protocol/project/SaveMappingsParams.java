@@ -2,6 +2,7 @@ package dev.danibcastro.enigmavscode.backend.protocol.project;
 
 
 import org.jspecify.annotations.Nullable;
+import dev.danibcastro.enigmavscode.backend.protocol.wire.FilePath;
 
 /*
  * Project: enigma-vscode
@@ -12,6 +13,6 @@ import org.jspecify.annotations.Nullable;
  * @param path where to save, if not where the mappings were opened from or saved last
  */
 public record SaveMappingsParams(
-        @Nullable String path,
+        @FilePath @Nullable String path,
         @Nullable String format
 ) { }

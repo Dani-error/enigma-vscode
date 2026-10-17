@@ -58,7 +58,11 @@ export const registerEditCommands = (register: Register, targets: Targets, { bac
 
     register('enigma.toggleMapping', async (argument?: unknown) => {
         const target = await targets.entry(argument);
-        if (target) {
+        if (target && !target.renamable) {
+            // Enigma's own interface offers no way to do this here; a key still can
+            const why = target.inJar ? 'rename.cannotBeRenamedItIsA' : 'rename.isNotPartOfTheJar';
+            vscode.window.setStatusBarMessage(`Enigma: ${t(why, target.simpleName)}`, 4000);
+        } else if (target) {
             await editing.toggleMapping(target.renameEntry);
         }
     });

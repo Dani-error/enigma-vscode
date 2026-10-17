@@ -49,6 +49,12 @@ export interface Offered extends vscode.QuickPickItem {
 
 export const reported: string[] = [];
 
+/**
+ * The context keys the extension set since the tests started, which the conditions of its menus are about. What it set
+ * while it activated, before the tests, is missing.
+ */
+export const contextKeys = new Map<string, unknown>();
+
 /** Something that went wrong while the tests ran, and where it showed. */
 export interface Trouble {
     where: 'notification' | 'log' | 'engine' | 'rejection' | 'exception';
@@ -105,6 +111,15 @@ export async function waitFor<T>(
         const value = await condition();
         if (value) {
             return value;
+        }
+
+        // what went wrong may be why it does not come: say so now instead of at the end of the wait
+        const trouble = unexpectedTrouble();
+        if (trouble.length > 0) {
+            throw new Error(
+                `Gave up waiting for ${what}: ${trouble.map(found => `[${found.where}] ${found.text}`).join(' | ')}` +
+                    `\n--- log ---\n${trace.slice(-30).join('\n')}`,
+            );
         }
 
         if (Date.now() > deadline) {
@@ -316,8 +331,12 @@ export function activate(): Promise<Api> {
         // the engine writes its log here, line by line
         const appendLine = output.appendLine.bind(output);
         output.appendLine = (line: string) => {
+            const last = troubles[troubles.length - 1];
             if (/\[ERROR\]|^Exception in thread/.test(line)) {
                 note('engine', line);
+            } else if (last?.where === 'engine' && /^\s+at |^Caused by/.test(line) && last.text.split('\n').length < 10) {
+                // where it happened, for the report
+                last.text += `\n${line}`;
             }
 
             appendLine(line);
@@ -326,6 +345,15 @@ export function activate(): Promise<Api> {
         output.debug = (message: string, ...rest: unknown[]) => {
             trace.push(`${new Date().toISOString().substring(17, 23)} ${message}`);
             debug(message, ...rest);
+        };
+
+        const executeCommand = vscode.commands.executeCommand;
+        (vscode.commands as unknown as Record<string, unknown>).executeCommand = (command: string, ...rest: unknown[]) => {
+            if (command === 'setContext') {
+                contextKeys.set(String(rest[0]), rest[1]);
+            }
+
+            return Reflect.apply(executeCommand, vscode.commands, [command, ...rest]);
         };
 
         const showError = vscode.window.showErrorMessage;

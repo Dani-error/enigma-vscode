@@ -3,6 +3,7 @@ package dev.danibcastro.enigmavscode.backend.protocol.source;
 
 import com.google.gson.annotations.SerializedName;
 import org.jspecify.annotations.Nullable;
+import dev.danibcastro.enigmavscode.backend.protocol.wire.NonEmpty;
 
 /*
  * Project: enigma-vscode
@@ -11,7 +12,7 @@ import org.jspecify.annotations.Nullable;
  */
 /** A position in a text of a class. */
 public record PositionParams(
-        @SerializedName("class") String className,
+        @NonEmpty @SerializedName("class") String className,
         @Nullable View view,
         @Nullable Long serial,
         Integer line,

@@ -4,6 +4,7 @@ package dev.danibcastro.enigmavscode.backend.protocol.search;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
+import dev.danibcastro.enigmavscode.backend.protocol.wire.NonNegative;
 
 /*
  * Project: enigma-vscode
@@ -12,7 +13,7 @@ import java.util.List;
  */
 public record SearchParams(
         String query,
-        @Nullable Integer limit,
+        @NonNegative @Nullable Integer limit,
         @Nullable Boolean exact,
         @Nullable List<SearchType> types
 ) { }

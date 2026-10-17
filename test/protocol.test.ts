@@ -18,8 +18,40 @@ function said(error: unknown, key: Problem): boolean {
     return data !== undefined && 'key' in data && data.key === key;
 }
 
+/**
+ * Starts an engine of its own with a profile, and opens a jar with it.
+ * @returns what it refused the profile for, if it did
+ */
+async function withProfile(content: string): Promise<Problem | undefined> {
+    const profile = join(temp, 'profile.json');
+    writeFileSync(profile, content);
+    const other = new Engine(temp);
+    try {
+        await other.request('initialize', { language: 'en_us', profile });
+        await other.request('project/openJar', { jar: join(fixtures, 'inheritance_tree.jar') });
+        assert.match((await other.request('class/source', { class: 'd' })).text, /class d extends a/);
+        return undefined;
+    } catch (error) {
+        const data = isResponseError(error, ErrorCode.UserError) ? (error.data as ErrorData | undefined) : undefined;
+        if (data && 'key' in data) {
+            return data.key;
+        }
+
+        throw error;
+    } finally {
+        await other.close();
+    }
+}
+
 let failed = false;
 try {
+    // a profile that names no services has none; one that is not a profile says so
+    assert.equal(await withProfile('{}\n'), undefined);
+    assert.equal(await withProfile('{ "services": {} }'), undefined);
+    assert.equal(await withProfile('[]'), 'profile-invalid');
+    assert.equal(await withProfile('{ "services": '), 'profile-invalid');
+    assert.equal(await withProfile('{ "services": 3 }'), 'profile-invalid');
+
     const info = await engine.request('initialize', { language: 'en_us' });
     console.log(`backend up: Enigma ${info.enigmaVersion} on Java ${info.javaVersion}`);
     assert.ok(info.decompilers.some(decompiler => decompiler.id === 'enigma:vineflower'));

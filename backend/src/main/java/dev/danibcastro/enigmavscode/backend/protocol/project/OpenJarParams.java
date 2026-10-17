@@ -4,6 +4,7 @@ package dev.danibcastro.enigmavscode.backend.protocol.project;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
+import dev.danibcastro.enigmavscode.backend.protocol.wire.FilePath;
 
 /*
  * Project: enigma-vscode
@@ -12,6 +13,6 @@ import java.util.List;
  */
 /** What is sent with a request. */
 public record OpenJarParams(
-        String jar,
+        @FilePath String jar,
         @Nullable List<String> libraries
 ) { }

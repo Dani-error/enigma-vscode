@@ -160,7 +160,8 @@ export class EnigmaDocuments implements vscode.FileSystemProvider, vscode.Dispos
         return pending;
     }
 
-    private async request(uri: vscode.Uri): Promise<LoadedFile> {
+    /** @param again whether this is the second try, after the project went and came back while the first was asked */
+    private async request(uri: vscode.Uri, again = false): Promise<LoadedFile> {
         const parsed = parseClassUri(uri);
         if (!parsed) {
             throw vscode.FileSystemError.FileNotFound(uri);
@@ -179,9 +180,14 @@ export class EnigmaDocuments implements vscode.FileSystemProvider, vscode.Dispos
         try {
             source = await this.backend.request('class/source', parsed);
         } catch (error) {
-            // the jar went while this was asked for, as its tab was closing: on a restart, or with "Close Jar"
+            // the jar went while this was asked for, as its tab was closing: with "Close Jar", or opening another
             if (error instanceof BackendError && error.code === ErrorCode.NoProject && this.aside.has(`${parsed.view}:${parsed.class}`)) {
                 return placeholder(parsed);
+            }
+
+            // the engine restarted while this was asked for, and has the project again
+            if (error instanceof BackendError && error.code === ErrorCode.NoProject && !again && (await this.ready())) {
+                return this.request(uri, true);
             }
 
             throw vscode.FileSystemError.Unavailable(error instanceof Error ? error.message : String(error));

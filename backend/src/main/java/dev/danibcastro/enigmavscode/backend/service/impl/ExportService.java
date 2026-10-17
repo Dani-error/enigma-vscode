@@ -68,6 +68,8 @@ public final class ExportService implements Service {
         try {
             EnigmaProject.JarExport jar = project.exportRemappedJar(progress);
             jar.write(path, progress);
+        } catch (IOException e) {
+            throw RpcException.said(Problem.EXPORT_JAR_FAILED, path, RpcException.reason(e));
         } finally {
             progress.end();
         }

@@ -5,7 +5,10 @@ import com.google.gson.*;
 import com.google.gson.annotations.SerializedName;
 import dev.danibcastro.enigmavscode.backend.protocol.error.ErrorData;
 import dev.danibcastro.enigmavscode.backend.protocol.wire.EnumAdapterFactory;
+import dev.danibcastro.enigmavscode.backend.protocol.wire.FilePath;
 import dev.danibcastro.enigmavscode.backend.protocol.wire.IntTupleAdapterFactory;
+import dev.danibcastro.enigmavscode.backend.protocol.wire.NonEmpty;
+import dev.danibcastro.enigmavscode.backend.protocol.wire.NonNegative;
 import dev.danibcastro.enigmavscode.backend.protocol.wire.RecordAdapterFactory;
 import lombok.Getter;
 import org.jspecify.annotations.Nullable;
@@ -14,7 +17,12 @@ import org.tinylog.Logger;
 import java.io.*;
 import java.lang.reflect.RecordComponent;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.*;
 
 /*
@@ -39,6 +47,8 @@ public final class JsonRpcConnection {
 
     private final Object writeLock = new Object();
     private final Map<String, Raw> handlers = new ConcurrentHashMap<>();
+    /** What each request is sent with, by its method; empty for those sent with nothing. */
+    private final Map<String, Optional<Class<? extends Record>>> requests = new ConcurrentSkipListMap<>();
 
     @Getter
     private final ExecutorService sessionExecutor = Executors.newSingleThreadExecutor(runnable -> {
@@ -94,25 +104,32 @@ public final class JsonRpcConnection {
         Object handle(JsonObject params) throws Exception;
     }
 
-    private void add(String method, Raw handler) {
+    private void add(String method, @Nullable Class<? extends Record> params, Raw handler) {
         if (this.handlers.put(method, handler) != null) {
             throw new IllegalStateException("duplicate handler for " + method);
         }
+
+        this.requests.put(method, Optional.ofNullable(params));
+    }
+
+    /** The requests that are answered, with what each is sent with: a record, or nothing. */
+    public Map<String, Optional<Class<? extends Record>>> requests() {
+        return Collections.unmodifiableMap(this.requests);
     }
 
     /** Registers a request that is answered at once. */
     public <P extends Record, R> void register(String method, Class<P> params, Handler<P, R> handler) {
-        this.add(method, json -> handler.handle(read(json, params)));
+        this.add(method, params, json -> handler.handle(read(json, params)));
     }
 
     /** Registers a request that nothing is sent with. */
     public <R> void register(String method, Call<R> handler) {
-        this.add(method, json -> handler.call());
+        this.add(method, null, json -> handler.call());
     }
 
     /** Registers a request that is carried out and has nothing to answer. */
     public <P extends Record> void registerAction(String method, Class<P> params, Action<P> action) {
-        this.add(method, json -> {
+        this.add(method, params, json -> {
             action.run(read(json, params));
             return null;
         });
@@ -120,7 +137,7 @@ public final class JsonRpcConnection {
 
     /** Registers a request that nothing is sent with and that has nothing to answer. */
     public void registerAction(String method, Procedure action) {
-        this.add(method, json -> {
+        this.add(method, null, json -> {
             action.run();
             return null;
         });
@@ -128,7 +145,7 @@ public final class JsonRpcConnection {
 
     /** Registers a request whose answer takes a while to produce, like a class that has to be decompiled first. */
     public <P extends Record, R> void registerLater(String method, Class<P> params, Handler<P, CompletableFuture<R>> handler) {
-        this.add(method, json -> handler.handle(read(json, params)));
+        this.add(method, params, json -> handler.handle(read(json, params)));
     }
 
     /**
@@ -143,22 +160,88 @@ public final class JsonRpcConnection {
             throw RpcException.invalidParams("Malformed parameters: " + e.getMessage());
         }
 
-        for (RecordComponent component : type.getRecordComponents()) {
-            if (component.getAnnotatedType().isAnnotationPresent(Nullable.class) || component.getType().isPrimitive()) {
-                continue;
-            }
+        requireComplete(params, "");
+        return params;
+    }
 
+    /**
+     * Makes sure that a record has everything it has to, and so has every record in it, and that lists have no holes:
+     * what is missing deep inside would otherwise only show where it is used.
+     * @param path where the record is in what was sent, with a dot after it, or nothing for the parameters themselves
+     */
+    private static void requireComplete(Record record, String path) {
+        for (RecordComponent component : record.getClass().getRecordComponents()) {
+            Object value;
             try {
-                if (component.getAccessor().invoke(params) == null) {
-                    SerializedName name = type.getDeclaredField(component.getName()).getAnnotation(SerializedName.class);
-                    throw RpcException.invalidParams("Missing parameter: " + (name == null ? component.getName() : name.value()));
-                }
+                value = component.getAccessor().invoke(record);
             } catch (ReflectiveOperationException e) {
                 throw new IllegalStateException(e);
             }
+
+            String name = path + wireName(record.getClass(), component);
+            if (value == null) {
+                if (!component.getAnnotatedType().isAnnotationPresent(Nullable.class) && !component.getType().isPrimitive()) {
+                    throw RpcException.invalidParams("Missing parameter: " + name);
+                }
+            } else {
+                requireAllowed(component, value, name);
+                requireCompleteValue(value, name);
+            }
+        }
+    }
+
+    /** Makes sure that a value is what its component says it has to be (see the annotations of the protocol's wire package). */
+    private static void requireAllowed(RecordComponent component, Object value, String name) {
+        if (component.isAnnotationPresent(NonEmpty.class) && value instanceof String text && text.isEmpty()) {
+            throw RpcException.invalidParams("Empty parameter: " + name);
         }
 
-        return params;
+        if (component.isAnnotationPresent(NonNegative.class) && value instanceof Number number && number.longValue() < 0) {
+            throw RpcException.invalidParams("Negative parameter: " + name);
+        }
+
+        if (component.isAnnotationPresent(FilePath.class) && value instanceof String file && !isAbsolute(file)) {
+            throw RpcException.invalidParams("Not an absolute path: " + name);
+        }
+    }
+
+    private static boolean isAbsolute(String file) {
+        try {
+            return Path.of(file).isAbsolute();
+        } catch (InvalidPathException e) {
+            return false;
+        }
+    }
+
+    private static void requireCompleteValue(Object value, String name) {
+        if (value instanceof Record nested) {
+            requireComplete(nested, name + ".");
+        } else if (value instanceof Collection<?> items) {
+            int index = 0;
+            for (Object item : items) {
+                if (item == null) {
+                    throw RpcException.invalidParams("Missing parameter: " + name + "[" + index + "]");
+                }
+
+                requireCompleteValue(item, name + "[" + index + "]");
+                index++;
+            }
+        } else if (value instanceof Map<?, ?> entries) {
+            for (Map.Entry<?, ?> entry : entries.entrySet()) {
+                if (entry.getValue() != null) {
+                    requireCompleteValue(entry.getValue(), name + "." + entry.getKey());
+                }
+            }
+        }
+    }
+
+    private static String wireName(Class<?> type, RecordComponent component) {
+        try {
+            SerializedName name = type.getDeclaredField(component.getName()).getAnnotation(SerializedName.class);
+            return name == null ? component.getName() : name.value();
+        } catch (NoSuchFieldException e) {
+            return component.getName();
+        }
     }
 
     /**
@@ -180,12 +263,12 @@ public final class JsonRpcConnection {
     public void listen() {
         try {
             while (!this.closed) {
-                JsonObject message = this.readMessage();
-                if (message == null) {
+                String body = this.readMessage();
+                if (body == null) {
                     break;
                 }
 
-                this.dispatch(message);
+                this.receive(body);
             }
         } catch (EOFException e) {
             // the client went away
@@ -201,8 +284,9 @@ public final class JsonRpcConnection {
         this.sessionExecutor.shutdown();
     }
 
+    /** The body of the next message, or nothing once the input is closed. */
     @Nullable
-    private JsonObject readMessage() throws IOException {
+    private String readMessage() throws IOException {
         int contentLength = -1;
 
         while (true) {
@@ -222,7 +306,12 @@ public final class JsonRpcConnection {
 
             int colon = line.indexOf(':');
             if (colon > 0 && line.substring(0, colon).trim().equalsIgnoreCase("Content-Length")) {
-                contentLength = Integer.parseInt(line.substring(colon + 1).trim());
+                try {
+                    contentLength = Integer.parseInt(line.substring(colon + 1).trim());
+                } catch (NumberFormatException e) {
+                    // without it, nothing tells where this message ends and the next begins
+                    throw new IOException("Invalid header: " + line, e);
+                }
             }
         }
 
@@ -231,12 +320,28 @@ public final class JsonRpcConnection {
             throw new EOFException();
         }
 
-        JsonElement element = JsonParser.parseString(new String(body, StandardCharsets.UTF_8));
-        if (!element.isJsonObject()) {
-            throw new IOException("Expected a JSON object");
+        return new String(body, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Handles a message. One that cannot be understood is answered as JSON-RPC asks, and the next is read: its length
+     * said where it ends.
+     */
+    private void receive(String body) {
+        JsonElement element;
+        try {
+            element = JsonParser.parseString(body);
+        } catch (JsonParseException e) {
+            this.sendError(JsonNull.INSTANCE, RpcException.PARSE_ERROR, "Parse error: " + e.getMessage(), null);
+            return;
         }
 
-        return element.getAsJsonObject();
+        if (!element.isJsonObject()) {
+            this.sendError(JsonNull.INSTANCE, RpcException.INVALID_REQUEST, "Invalid request: expected a JSON object", null);
+            return;
+        }
+
+        this.dispatch(element.getAsJsonObject());
     }
 
     @Nullable
@@ -264,8 +369,17 @@ public final class JsonRpcConnection {
             return;
         }
 
-        String method = message.get("method").getAsString();
         JsonElement id = message.get("id");
+        JsonElement name = message.get("method");
+        if (!name.isJsonPrimitive() || !name.getAsJsonPrimitive().isString()) {
+            if (id != null) {
+                this.sendError(id, RpcException.INVALID_REQUEST, "Invalid request: the method is not a string", null);
+            }
+
+            return;
+        }
+
+        String method = name.getAsString();
         JsonElement rawParams = message.get("params");
         JsonObject params = rawParams != null && rawParams.isJsonObject() ? rawParams.getAsJsonObject() : new JsonObject();
 

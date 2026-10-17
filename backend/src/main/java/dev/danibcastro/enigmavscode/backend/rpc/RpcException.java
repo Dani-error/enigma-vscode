@@ -6,6 +6,7 @@ import dev.danibcastro.enigmavscode.backend.protocol.error.Problem;
 import lombok.Getter;
 import org.jspecify.annotations.Nullable;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -62,6 +63,11 @@ public class RpcException extends RuntimeException {
     /** No jar is open: the request needs one. */
     public static RpcException noProject() {
         return new RpcException(NO_PROJECT, describe(Problem.NO_JAR), new ErrorData.Said(Problem.NO_JAR, List.of()));
+    }
+
+    /** What went wrong with a file, as the system says it. */
+    public static String reason(IOException e) {
+        return e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
     }
 
     public static String describe(Problem problem, Object... args) {

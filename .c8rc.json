@@ -1,0 +1,8 @@
+{
+    "temp-directory": "build/coverage/e2e/raw",
+    "reports-dir": "build/coverage/e2e",
+    "reporter": ["text-summary", "html", "lcov"],
+    "exclude": ["src/pages/**", "test/**", "build/**", "node_modules/**"],
+    "exclude-after-remap": true,
+    "check-coverage": false
+}

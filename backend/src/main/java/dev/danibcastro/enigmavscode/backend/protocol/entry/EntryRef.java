@@ -13,7 +13,8 @@ public record EntryRef(
         EntryKind kind,
         @OmitIfNull @Nullable String owner,
         @OmitIfNull @Nullable String method,
-        String name,
+        // what an entry needs depends on its kind, and EntryCodec checks it: a local variable is known by its index
+        @Nullable String name,
         @OmitIfNull @Nullable String desc,
         @OmitIfNull @Nullable Integer index,
         @OmitIfNull @Nullable Boolean parameter

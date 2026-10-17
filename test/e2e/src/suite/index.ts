@@ -1,5 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import * as v8 from 'node:v8';
 import Mocha from 'mocha';
 import { startWatching, unexpectedTrouble } from './harness';
 
@@ -33,9 +34,11 @@ export function run(): Promise<void> {
         // with it.only and it.skip as they are
         context.it = Object.assign(strict, it) as Mocha.TestFunction;
     });
-    // in the order of their names: the files build on each other
+    // in the order of their names: the files build on each other. ENIGMA_E2E_FILES=8 runs only the files starting so,
+    // for working on them; a file has to cope with starting from the beginning then.
+    const only = process.env.ENIGMA_E2E_FILES?.split(',');
     for (const file of fs.readdirSync(__dirname).sort()) {
-        if (file.endsWith('.test.js')) {
+        if (file.endsWith('.test.js') && (!only || only.some(prefix => file.startsWith(prefix)))) {
             mocha.addFile(path.join(__dirname, file));
         }
     }
@@ -52,6 +55,11 @@ export function run(): Promise<void> {
     return new Promise((resolve, reject) => {
         try {
             const runner = mocha.run(failures => {
+                // the extension host is not left in a way that writes it by itself
+                if (process.env.NODE_V8_COVERAGE) {
+                    v8.takeCoverage();
+                }
+
                 const notes = (globalThis.enigmaTestTrace ?? []).filter(line => line.startsWith('[test] keys do not reach'));
                 notes.forEach(note => record(`  note ${note.substring('[test] '.length)}`));
                 record(`${failures === 0 ? 'PASSED' : 'FAILED'}: ${runner.stats?.passes ?? 0} passing, ${failures} failing`);

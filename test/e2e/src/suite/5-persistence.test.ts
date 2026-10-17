@@ -91,7 +91,9 @@ describe('Enigma in VS Code: saving, restarting and working together', () => {
             'the engine to restart on the chosen Java',
             () =>
                 api.backend.running &&
-                api.backend.runtime?.home === installed.home &&
+                // from the setting: the Java that was found before may well be the same installation
+                api.backend.runtime?.source === 'the enigma.java.home setting' &&
+                api.backend.runtime.home === installed.home &&
                 api.project.isOpen &&
                 api.index.get('a')?.deobf === 'BaseClass',
         );
@@ -127,6 +129,17 @@ describe('Enigma in VS Code: saving, restarting and working together', () => {
                 !classDocument('d').isDirty &&
                 ['a', 'd', 'e'].every(name => api.documents.source(classDocument(name).uri)),
         );
+
+        // changed twice in a row, the second time while the engine restarts for the first: it ends up on the second
+        const java = vscode.workspace.getConfiguration('enigma');
+        await java.update('java.home', installed.home, vscode.ConfigurationTarget.Global);
+        await java.update('java.home', undefined, vscode.ConfigurationTarget.Global);
+        let since: number | undefined;
+        await waitFor('the engine to settle on the last choice', () => {
+            const settled = api.backend.running && api.project.isOpen && api.backend.runtime?.source !== 'the enigma.java.home setting';
+            since = settled ? (since ?? Date.now()) : undefined;
+            return since !== undefined && Date.now() - since > 3000;
+        });
     });
 
     it('hosts a collaboration session from its pane', async () => {

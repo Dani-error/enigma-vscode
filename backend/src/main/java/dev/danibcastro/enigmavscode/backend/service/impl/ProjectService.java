@@ -2,6 +2,9 @@ package dev.danibcastro.enigmavscode.backend.service.impl;
 
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 import dev.danibcastro.enigmavscode.backend.Session;
 import dev.danibcastro.enigmavscode.backend.protocol.error.Problem;
 import dev.danibcastro.enigmavscode.backend.protocol.project.*;
@@ -11,6 +14,7 @@ import dev.danibcastro.enigmavscode.backend.rpc.RpcException;
 import dev.danibcastro.enigmavscode.backend.rpc.RpcProgress;
 import dev.danibcastro.enigmavscode.backend.service.Service;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.quiltmc.enigma.api.Enigma;
 import org.quiltmc.enigma.api.EnigmaProfile;
 import org.quiltmc.enigma.api.EnigmaProject;
@@ -24,6 +28,7 @@ import org.quiltmc.enigma.impl.source.vineflower.VineflowerPreferences;
 import org.quiltmc.enigma.util.I18n;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -65,7 +70,7 @@ public final class ProjectService implements Service {
             throw RpcException.said(Problem.PROFILE_NOT_FOUND, profilePath);
         }
 
-        EnigmaProfile profile = EnigmaProfile.read(profilePath);
+        EnigmaProfile profile = readProfile(profilePath);
         this.session.enigma(Enigma.builder().setProfile(profile).build());
 
         String decompilerId = params.decompiler();
@@ -74,6 +79,32 @@ public final class ProjectService implements Service {
         }
 
         return this.describeEnvironment();
+    }
+
+    /**
+     * Reads a profile, or Enigma's own when there is none. Enigma reads a profile without services into one that fails
+     * when its services are looked up: a profile that names none has none here.
+     */
+    private static EnigmaProfile readProfile(@Nullable Path path) throws IOException {
+        if (path == null) {
+            return EnigmaProfile.read(null);
+        }
+
+        try {
+            JsonElement json = JsonParser.parseString(Files.readString(path));
+            if (!json.isJsonObject()) {
+                throw RpcException.said(Problem.PROFILE_INVALID, path, "Expected a JSON object");
+            }
+
+            if (json.getAsJsonObject().has("services")) {
+                return EnigmaProfile.read(path);
+            }
+
+            json.getAsJsonObject().add("services", new JsonObject());
+            return EnigmaProfile.parse(new StringReader(json.toString()));
+        } catch (JsonParseException e) {
+            throw RpcException.said(Problem.PROFILE_INVALID, path, e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
+        }
     }
 
     /**

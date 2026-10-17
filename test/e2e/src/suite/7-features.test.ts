@@ -1,9 +1,25 @@
 import * as assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
 import * as fs from 'node:fs';
+import * as net from 'node:net';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import type { EntryRef } from '../../../../src/engine/protocol';
-import { Api, Offered, activate, entryInfo, execute, fixtures, jar, pause, reported, waitFor, workspace } from './harness';
+import {
+    Api,
+    Offered,
+    activate,
+    entryInfo,
+    execute,
+    fixtures,
+    freePort,
+    jar,
+    pause,
+    reported,
+    waitFor,
+    withStub,
+    workspace,
+} from './harness';
 
 // The commands around the mappings and the jar that the other suites do not get to: what the menus of the class
 // trees and of the editor do, saving in other ways, exporting, and the choices about the engine. On a jar of its own,
@@ -301,6 +317,58 @@ describe('Enigma in VS Code: the commands around mappings, classes and the engin
         assert.equal(`${editor.selection.active.line}:${editor.selection.active.character}`, visited[0], 'and then the first one again');
         await execute('enigma.previousObfuscated');
         assert.equal(`${editor.selection.active.line}:${editor.selection.active.character}`, visited[visited.length - 1]);
+    });
+
+    it('starts the dedicated server for the jar in a terminal, with a command that runs it', async () => {
+        const port = await freePort();
+        let sent: string | undefined;
+        let environment: Record<string, string | null | undefined> | undefined;
+        // a terminal that only takes note: the command is run below, where the test can stop it
+        const terminal = (options: vscode.TerminalOptions) => {
+            environment = options.env;
+            return { show: () => undefined, sendText: (text: string) => (sent = text), dispose: () => undefined };
+        };
+        const inputs = [...(api.project.state?.mappingsPath ? [] : [saved]), String(port), ''];
+        await withStub(vscode.window, 'createTerminal', terminal, () =>
+            answering({ input: inputs }, () => execute('enigma.startDedicatedServer')),
+        );
+        assert.ok(sent, 'a command is sent to the terminal');
+        assert.match(sent, /org\.quiltmc\.enigma\.network\.DedicatedEnigmaServer/);
+        assert.ok(sent.includes(`--port ${port}`) && sent.includes('--jar '), sent);
+
+        // as a terminal starts it: with what the extension asked for (null removes), and then the user's shell, which
+        // may well set JAVA_HOME to an old Java again
+        const env: NodeJS.ProcessEnv = { ...process.env };
+        for (const [key, value] of Object.entries(environment ?? {})) {
+            if (value === null || value === undefined) {
+                delete env[key];
+            } else {
+                env[key] = value;
+            }
+        }
+
+        if (process.env.ENIGMA_E2E_OLD_JAVA) {
+            env.JAVA_HOME = process.env.ENIGMA_E2E_OLD_JAVA;
+        }
+        const server = spawn(sent, { shell: true, env, cwd: workspace, stdio: ['ignore', 'pipe', 'pipe'] });
+        let output = '';
+        server.stdout.on('data', (data: Buffer) => (output += data.toString()));
+        server.stderr.on('data', (data: Buffer) => (output += data.toString()));
+        try {
+            await waitFor(
+                `the server to accept connections on port ${port}`,
+                () =>
+                    server.exitCode === null
+                        ? new Promise<boolean>(resolve => {
+                              const socket = net.connect(port, '127.0.0.1', () => (socket.destroy(), resolve(true)));
+                              socket.on('error', () => resolve(false));
+                          })
+                        : assert.fail(`the server exited: ${output}\ncommand: ${sent}\nJAVA_HOME: ${String(environment?.JAVA_HOME)}`),
+                60000,
+            );
+        } finally {
+            server.kill();
+        }
     });
 
     it('opens a recent project again, with the mappings it was used with', async () => {

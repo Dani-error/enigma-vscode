@@ -32,6 +32,8 @@ export class Project implements vscode.Disposable {
     /** A project was open in this window since it started: bringing it back after a hiccup of the engine is not a question. */
     private openedHere = false;
     private restarting = false;
+    private lastRestart: Promise<unknown> = Promise.resolve();
+    private restartsPending = 0;
     /** What could not be opened because the engine did not start; opened once it does. */
     private pendingOpen?: ProjectDescriptor;
 
@@ -137,6 +139,12 @@ export class Project implements vscode.Disposable {
         }
 
         const javaChanged = event.affectsConfiguration('enigma.java.home') || event.affectsConfiguration('enigma.java.vmArgs');
+        if (javaChanged && this.restartsPending > 0) {
+            // the engine is down for a restart that read the settings before this: once more, after it
+            void this.restartBackend();
+            return;
+        }
+
         if (!this.backend.running) {
             // The engine is not running, most likely because it could not be started with the previous Java settings.
             // Try again right away, so that fixing the setting visibly fixes the problem.
@@ -300,7 +308,30 @@ export class Project implements vscode.Disposable {
     }
 
     /** Restarts the engine, bringing the project and its unsaved changes back. */
-    async restartBackend(): Promise<void> {
+    restartBackend(): Promise<void> {
+        // One after the other: a restart asked for while another runs starts the engine again once that one is done,
+        // with the settings as they are then. Starting along with it would start it with those it read.
+        this.restartsPending++;
+        const restart = this.lastRestart.then(() => this.restart()).finally(() => this.restartsPending--);
+        this.lastRestart = restart.catch(() => undefined);
+        // What is read meanwhile waits for the jar to be open again (see whenReady). Not for the restart to end: that
+        // brings tabs back, and waits for them to be read.
+        this.restoring = new Promise<void>(resolve => {
+            const listener = this.backend.onDidChangeProject(state => {
+                if (state.jarPath) {
+                    listener.dispose();
+                    resolve();
+                }
+            });
+            void restart.finally(() => {
+                listener.dispose();
+                resolve();
+            });
+        });
+        return restart;
+    }
+
+    private async restart(): Promise<void> {
         const descriptor = this.state
             ? { jar: this.state.jarPath, mappings: this.state.mappingsPath ?? undefined, format: this.state.mappingsFormat ?? undefined }
             : this.memory.ofWindow;
@@ -399,7 +430,7 @@ export class Project implements vscode.Disposable {
             return;
         }
 
-        await this.editors.closeAll();
+        await this.closeTabs();
 
         // search for mappings that are associated with the jar, like Enigma does at startup
         const known = this.memory.recent().find(project => project.jar === jar && project.mappings && fs.existsSync(project.mappings));
@@ -433,7 +464,7 @@ export class Project implements vscode.Disposable {
         }
 
         if (await this.confirmDiscard(t('project.saveBeforeOpeningProject'))) {
-            await this.editors.closeAll();
+            await this.closeTabs();
             await this.open(picked.project);
         }
     }
@@ -443,11 +474,15 @@ export class Project implements vscode.Disposable {
             return;
         }
 
-        // what the editor is still reading of them is answered without the jar
-        this.documents.setAside(this.editors.openTabs());
-        await this.editors.closeAll();
+        await this.closeTabs();
         await this.reporter.run(() => this.backend.request('project/closeJar'));
         await this.memory.forgetWindow();
+    }
+
+    /** Closes the classes of the jar that is about to go. What the editor is still reading of them is answered without it. */
+    private async closeTabs(): Promise<void> {
+        this.documents.setAside(this.editors.openTabs());
+        await this.editors.closeAll();
     }
 
     async reloadAll(): Promise<void> {

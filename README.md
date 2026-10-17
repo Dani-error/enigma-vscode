@@ -39,8 +39,9 @@ The extension is written to `build/enigma-vscode-<version>.vsix`.
 
 ## Contributing
 
-Run `npm run check`, `npm run test:backend` and `npm test` before opening a pull request. Translations are in
-`l10n/`.
+Run `npm run check`, `npm run test:backend` and `npm test` before opening a pull request. Both test runs fail when
+they cover less than they do now; their reports are in `build/coverage/e2e` and `backend/build/reports/jacoco`.
+Translations are in `l10n/`.
 
 ## License
 

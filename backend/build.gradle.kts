@@ -8,6 +8,7 @@ import java.nio.file.StandardCopyOption
 
 plugins {
 	java
+	jacoco
 	alias(libs.plugins.shadow)
 }
 
@@ -70,6 +71,38 @@ tasks.test {
 		events("failed")
 		exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
 	}
+}
+
+// how much of the backend the tests run, in build/reports/jacoco
+tasks.jacocoTestReport {
+	reports {
+		xml.required = true
+		html.required = true
+	}
+}
+
+// the tests fail when they run less of the backend than they did: a little below what they reach now
+tasks.jacocoTestCoverageVerification {
+	violationRules {
+		rule {
+			limit {
+				counter = "LINE"
+				minimum = "0.87".toBigDecimal()
+			}
+			limit {
+				counter = "BRANCH"
+				minimum = "0.75".toBigDecimal()
+			}
+			limit {
+				counter = "METHOD"
+				minimum = "0.89".toBigDecimal()
+			}
+		}
+	}
+}
+
+tasks.test {
+	finalizedBy(tasks.jacocoTestReport, tasks.jacocoTestCoverageVerification)
 }
 
 tasks.jar {

@@ -2,6 +2,7 @@ package dev.danibcastro.enigmavscode.backend.protocol.project;
 
 
 import org.jspecify.annotations.Nullable;
+import dev.danibcastro.enigmavscode.backend.protocol.wire.FilePath;
 
 /*
  * Project: enigma-vscode
@@ -12,6 +13,6 @@ import org.jspecify.annotations.Nullable;
  * @param format the format, where the name of the file does not say it
  */
 public record OpenMappingsParams(
-        String path,
+        @FilePath String path,
         @Nullable String format
 ) { }

@@ -51,6 +51,7 @@ export type Editable = 'class' | 'method' | 'field' | 'parameter' | 'local' | 'j
 export type Problem =
     | 'no-jar'
     | 'profile-not-found'
+    | 'profile-invalid'
     | 'unknown-decompiler'
     | 'jar-not-found'
     | 'library-not-found'
@@ -60,6 +61,7 @@ export type Problem =
     | 'server-start-failed'
     | 'unknown-mapping-format'
     | 'mappings-not-found'
+    | 'mappings-read-failed'
     | 'no-mappings-file-to-save'
     | 'no-mappings-file'
     | 'save-while-connected'
@@ -68,6 +70,7 @@ export type Problem =
     | 'snapshot-failed'
     | 'class-not-found'
     | 'export-source-failed'
+    | 'export-jar-failed'
     | 'editing-disabled'
     | 'not-renamable'
     | 'nothing-to-undo'

@@ -37,6 +37,17 @@ writeFileSync(
 );
 chmodSync(join(stubDir, 'java'), 0o755);
 
+// The same, telling the installation it runs, as Java does when asked for its settings.
+// not among the installations the other tests find
+const java25 = fakeJdk(join(temp, 'elsewhere', 'temurin-25.jdk', 'Contents', 'Home'), '25.0.1');
+const tellingStubDir = join(temp, 'telling-stub');
+mkdirSync(tellingStubDir);
+writeFileSync(
+    join(tellingStubDir, 'java'),
+    `#!/bin/sh\nif [ -n "$JAVA_HOME" ]; then exec "$JAVA_HOME/bin/java" "$@"; fi\necho '    java.home = ${java25}' >&2\necho 'openjdk version "25.0.1" 2025-10-21 LTS' >&2\n`,
+);
+chmodSync(join(tellingStubDir, 'java'), 0o755);
+
 describe('java discovery', { skip }, () => {
     it('parses version strings', () => {
         assert.equal(parseMajorVersion('openjdk version "1.8.0_332"\nOpenJDK Runtime Environment'), 8);
@@ -63,6 +74,14 @@ describe('java discovery', { skip }, () => {
         assert.equal(search.runtime?.version, 25, 'the launcher is asked without JAVA_HOME');
         // ... and must be started that way too, or it would run Java 8 after all
         assert.equal('JAVA_HOME' in environmentFor(search.runtime, env), false);
+    });
+
+    it('runs the installation a launcher on the PATH stands in for, which JAVA_HOME cannot change', async () => {
+        // a terminal's shell may set JAVA_HOME again, after it was removed
+        const search = await findJava({ env: { JAVA_HOME: java8, PATH: tellingStubDir }, searchRoots: [none] });
+        assert.equal(search.runtime?.executable, join(java25, 'bin', 'java'));
+        assert.equal(search.runtime?.home, java25);
+        assert.equal(environmentFor(search.runtime, {}).JAVA_HOME, java25);
     });
 
     it('falls back to installed JDKs, newest first', async () => {

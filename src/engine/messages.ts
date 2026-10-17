@@ -15,6 +15,7 @@ const EDITABLE: Record<Editable, () => string> = {
 const SAID: Record<Problem, (...args: string[]) => string> = {
     'no-jar': () => t('messages.noJarIsOpen'),
     'profile-not-found': path => t('messages.enigmaProfileNotFound', path),
+    'profile-invalid': (path, reason) => t('messages.enigmaProfileInvalid', path, reason),
     'unknown-decompiler': id => t('messages.unknownDecompiler', id),
     'jar-not-found': path => t('messages.jarFileNotFound', path),
     'library-not-found': path => t('messages.libraryJarNotFound', path),
@@ -24,6 +25,7 @@ const SAID: Record<Problem, (...args: string[]) => string> = {
     'server-start-failed': (port, reason) => t('messages.couldNotStartTheServerOn', port, reason),
     'unknown-mapping-format': format => t('messages.unknownMappingFormat', format),
     'mappings-not-found': path => t('messages.mappingsNotFound', path),
+    'mappings-read-failed': (path, reason) => t('messages.couldNotReadMappings', path, reason),
     'no-mappings-file-to-save': () => t('messages.noMappingsFileIsOpenUse'),
     'no-mappings-file': () => t('messages.noMappingsFileIsOpen'),
     'save-while-connected': () => t('messages.mappingsCannotBeSavedWhileConnected'),
@@ -32,6 +34,7 @@ const SAID: Record<Problem, (...args: string[]) => string> = {
     'snapshot-failed': reason => t('messages.failedToWriteRecoverySnapshot', reason),
     'class-not-found': name => t('messages.classNotFoundInJar', name),
     'export-source-failed': (count, first) => t('messages.failedToWriteSourceFileS', count, first),
+    'export-jar-failed': (path, reason) => t('messages.couldNotExportJar', path, reason),
     'editing-disabled': what =>
         t('messages.editingNamesIsDisabledByThe', (EDITABLE[what as Editable] as (() => string) | undefined)?.() ?? what),
     'not-renamable': () => t('messages.thisEntryCannotBeRenamed'),

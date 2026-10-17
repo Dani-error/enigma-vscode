@@ -7,6 +7,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dev.danibcastro.enigmavscode.backend.rpc.JsonRpcConnection;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -17,6 +18,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.function.Predicate;
 
@@ -36,6 +38,8 @@ final class TestClient implements AutoCloseable {
     private final BlockingQueue<byte[]> fromServer = new LinkedBlockingQueue<>();
     private final Map<Integer, CompletableFuture<JsonObject>> pending = new ConcurrentHashMap<>();
     private final List<JsonObject> notifications = new ArrayList<>();
+    /** Answers to messages that could not be read, which have no id to match them by. */
+    private final BlockingQueue<JsonObject> unmatched = new LinkedBlockingQueue<>();
     private final JsonRpcConnection connection;
     private int nextId = 1;
 
@@ -177,7 +181,9 @@ final class TestClient implements AutoCloseable {
 
                 byte[] body = in.readNBytes(length);
                 JsonObject message = JsonParser.parseString(new String(body, StandardCharsets.UTF_8)).getAsJsonObject();
-                if (message.has("id") && !message.has("method")) {
+                if (message.has("id") && message.get("id").isJsonNull()) {
+                    this.unmatched.add(message);
+                } else if (message.has("id") && !message.has("method")) {
                     CompletableFuture<JsonObject> future = this.pending.remove(message.get("id").getAsInt());
                     if (future != null) {
                         future.complete(message);
@@ -195,6 +201,21 @@ final class TestClient implements AutoCloseable {
     }
 
     JsonElement request(String method, JsonObject params) {
+        JsonObject response = this.exchange(method, params);
+        if (response.has("error")) {
+            JsonObject error = response.getAsJsonObject("error");
+            throw new RpcError(error.get("code").getAsInt(), error.get("message").getAsString(), error.get("data"));
+        }
+
+        JsonElement result = response.get("result");
+        return result == null ? JsonNull.INSTANCE : result;
+    }
+
+    /**
+     * Sends a request with whatever is given as its parameters, and returns the whole answer.
+     * @param params what it is sent with, which need not be an object; nothing leaves them out
+     */
+    JsonObject exchange(String method, @Nullable JsonElement params) {
         int id;
         CompletableFuture<JsonObject> future = new CompletableFuture<>();
         synchronized (this) {
@@ -204,26 +225,46 @@ final class TestClient implements AutoCloseable {
             message.addProperty("jsonrpc", "2.0");
             message.addProperty("id", id);
             message.addProperty("method", method);
-            message.add("params", params);
-            byte[] body = message.toString().getBytes(StandardCharsets.UTF_8);
-            this.toServer.add(("Content-Length: " + body.length + "\r\n\r\n").getBytes(StandardCharsets.US_ASCII));
-            this.toServer.add(body);
+            if (params != null) {
+                message.add("params", params);
+            }
+
+            this.sendBody(message.toString());
         }
 
-        JsonObject response;
         try {
-            response = future.get(180, TimeUnit.SECONDS);
+            return future.get(180, TimeUnit.SECONDS);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             throw new RuntimeException("Request " + method + " did not complete", e);
         }
+    }
 
-        if (response.has("error")) {
-            JsonObject error = response.getAsJsonObject("error");
-            throw new RpcError(error.get("code").getAsInt(), error.get("message").getAsString(), error.get("data"));
+    /** Sends a message as it is given, framed as every message is. */
+    void sendBody(String text) {
+        byte[] body = text.getBytes(StandardCharsets.UTF_8);
+        synchronized (this) {
+            this.toServer.add(("Content-Length: " + body.length + "\r\n\r\n").getBytes(StandardCharsets.US_ASCII));
+            this.toServer.add(body);
         }
+    }
 
-        JsonElement result = response.get("result");
-        return result == null ? JsonNull.INSTANCE : result;
+    /** The answer to a message that could not be read. */
+    JsonObject awaitUnmatched() {
+        try {
+            JsonObject answer = this.unmatched.poll(30, TimeUnit.SECONDS);
+            if (answer == null) {
+                throw new AssertionError("No answer to a message that could not be read");
+            }
+
+            return answer;
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /** The requests the backend answers, with what each is sent with. */
+    Map<String, Optional<Class<? extends Record>>> requests() {
+        return this.connection.requests();
     }
 
     JsonObject call(String method, Object... keyValues) {

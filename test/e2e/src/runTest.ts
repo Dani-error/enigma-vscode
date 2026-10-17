@@ -107,6 +107,15 @@ async function main(): Promise<void> {
         ENIGMA_E2E_FIXTURES: fixtures,
         ENIGMA_E2E_EXPECTED: expected,
     };
+    if (process.env.ENIGMA_E2E_FILES) {
+        testEnv.ENIGMA_E2E_FILES = process.env.ENIGMA_E2E_FILES;
+    }
+
+    // what of the extension the tests run, as Node measures it in the extension host (see scripts/e2e.ts)
+    if (process.env.ENIGMA_E2E_COVERAGE) {
+        testEnv.NODE_V8_COVERAGE = path.resolve(process.env.ENIGMA_E2E_COVERAGE);
+    }
+
     if (process.platform !== 'win32') {
         fs.mkdirSync(path.join(oldJava, 'bin'), { recursive: true });
         fs.writeFileSync(path.join(oldJava, 'release'), 'JAVA_VERSION="1.8.0_332"\n');

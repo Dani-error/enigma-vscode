@@ -1,5 +1,6 @@
 package dev.danibcastro.enigmavscode.backend.protocol.project;
 
+import dev.danibcastro.enigmavscode.backend.protocol.wire.FilePath;
 
 /*
  * Project: enigma-vscode
@@ -9,5 +10,5 @@ package dev.danibcastro.enigmavscode.backend.protocol.project;
 
 /** A file or folder to read from or write to. */
 public record PathParams(
-        String path
+        @FilePath String path
 ) { }

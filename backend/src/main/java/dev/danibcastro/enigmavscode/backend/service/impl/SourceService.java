@@ -27,6 +27,8 @@ import org.quiltmc.enigma.api.translation.mapping.ResolutionStrategy;
 import org.quiltmc.enigma.api.translation.representation.entry.*;
 import org.quiltmc.enigma.util.Result;
 
+import org.tinylog.Logger;
+
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -152,7 +154,7 @@ public final class SourceService implements Service {
             // class that really cannot be decompiled fails the same way each time, and is reported after that.
             if (res.isErr() && this.retries < MAX_RETRIES) {
                 int attempt = ++this.retries;
-                CompletableFuture.delayedExecutor(120L * attempt, TimeUnit.MILLISECONDS).execute(this.handle::invalidate);
+                CompletableFuture.delayedExecutor(120L * attempt, TimeUnit.MILLISECONDS).execute(this::retry);
                 return;
             }
 
@@ -173,6 +175,16 @@ public final class SourceService implements Service {
 
             if (this.pinned) {
                 SourceService.this.session.rpc().notify(Announcement.SOURCE_CHANGED, new SourceChanged(this.key.entry().getFullName(), this.key.view()));
+            }
+        }
+
+        /** Decompiles the class again, unless it is gone in the meantime: closed, or its jar reloaded. */
+        private void retry() {
+            try {
+                this.handle.invalidate();
+            } catch (IllegalStateException e) {
+                // nothing is waiting for a class that is no longer there
+                Logger.debug("Not trying {} again: {}", this.key.entry().getFullName(), e.getMessage());
             }
         }
 

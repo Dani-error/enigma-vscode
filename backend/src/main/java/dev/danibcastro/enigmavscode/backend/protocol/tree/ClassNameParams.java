@@ -2,6 +2,7 @@ package dev.danibcastro.enigmavscode.backend.protocol.tree;
 
 
 import com.google.gson.annotations.SerializedName;
+import dev.danibcastro.enigmavscode.backend.protocol.wire.NonEmpty;
 
 /*
  * Project: enigma-vscode
@@ -10,5 +11,5 @@ import com.google.gson.annotations.SerializedName;
  */
 /** A class, whatever is shown of it. */
 public record ClassNameParams(
-        @SerializedName("class") String className
+        @NonEmpty @SerializedName("class") String className
 ) { }

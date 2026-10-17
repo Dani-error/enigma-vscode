@@ -3,6 +3,7 @@ package dev.danibcastro.enigmavscode.backend.protocol.source;
 
 import com.google.gson.annotations.SerializedName;
 import org.jspecify.annotations.Nullable;
+import dev.danibcastro.enigmavscode.backend.protocol.wire.NonEmpty;
 
 /*
  * Project: enigma-vscode
@@ -15,7 +16,7 @@ import org.jspecify.annotations.Nullable;
  * @param serial the text this is about, as given with it; another one may have been given out since
  */
 public record TextParams(
-        @SerializedName("class") String className,
+        @NonEmpty @SerializedName("class") String className,
         @Nullable View view,
         @Nullable Long serial
 ) { }
