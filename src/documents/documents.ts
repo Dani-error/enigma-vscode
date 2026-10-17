@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { Backend, BackendError } from '../engine/backend';
+import { Backend, BackendError, EngineStoppedError } from '../engine/backend';
 import { ErrorCode, PositionMethod, PositionOptions, ResultOf, SourceResult, TokenInfo, View } from '../engine/protocol';
 import { settings } from '../config';
 import { SCHEME, parseClassUri } from './classUri';
@@ -20,6 +20,12 @@ export interface SourceEvent {
  * What a class reads as while its tab is being closed because its jar is not open (see setAside). Not kept: this is
  * no text of the class.
  */
+/** Whether a tab shows a document. */
+const shownInTab = (uri: vscode.Uri) =>
+    vscode.window.tabGroups.all.some(group =>
+        group.tabs.some(tab => tab.input instanceof vscode.TabInputText && tab.input.uri.toString() === uri.toString()),
+    );
+
 const placeholder = (parsed: { class: string; view: View }): LoadedFile => ({
     source: {
         ...parsed,
@@ -167,9 +173,12 @@ export class EnigmaDocuments implements vscode.FileSystemProvider, vscode.Dispos
             throw vscode.FileSystemError.FileNotFound(uri);
         }
 
-        const isAside = this.aside.has(`${parsed.view}:${parsed.class}`);
+        // Answered with an empty text when there is no jar to read it from: what was set aside, and what no tab shows,
+        // which the editor reads for itself, as for a document it still keeps of a tab that was closed. An error is
+        // what it would log, for nobody to see.
+        const unseen = () => this.aside.has(`${parsed.view}:${parsed.class}`) || !shownInTab(uri);
         if (!(await this.ready())) {
-            if (isAside) {
+            if (unseen()) {
                 return placeholder(parsed);
             }
 
@@ -180,14 +189,15 @@ export class EnigmaDocuments implements vscode.FileSystemProvider, vscode.Dispos
         try {
             source = await this.backend.request('class/source', parsed);
         } catch (error) {
-            // the jar went while this was asked for, as its tab was closing: with "Close Jar", or opening another
-            if (error instanceof BackendError && error.code === ErrorCode.NoProject && this.aside.has(`${parsed.view}:${parsed.class}`)) {
-                return placeholder(parsed);
+            // the engine stopped or the jar went while this was asked for: restarted, closed, or another opened
+            const gone = error instanceof EngineStoppedError || (error instanceof BackendError && error.code === ErrorCode.NoProject);
+            if (gone && !again && (await this.ready())) {
+                // back with the project
+                return this.request(uri, true);
             }
 
-            // the engine restarted while this was asked for, and has the project again
-            if (error instanceof BackendError && error.code === ErrorCode.NoProject && !again && (await this.ready())) {
-                return this.request(uri, true);
+            if (gone && unseen()) {
+                return placeholder(parsed);
             }
 
             throw vscode.FileSystemError.Unavailable(error instanceof Error ? error.message : String(error));

@@ -12,6 +12,13 @@ import { t } from '../l10n';
 import { describeSaid } from './messages';
 import { TaskProgress } from './taskProgress';
 
+/** The engine is not there to answer: stopped, as when it is restarted, or not started. */
+export class EngineStoppedError extends Error {
+    constructor(options?: ErrorOptions) {
+        super(t('backend.theEnigmaBackendIsNotRunning'), options);
+    }
+}
+
 /** An error reported by the engine that is meant to be read by the user, as opposed to a bug. */
 export class BackendError extends Error {
     constructor(
@@ -246,13 +253,13 @@ export class Backend implements vscode.Disposable {
         // an engine on its way out takes nothing new: what is asked meanwhile goes to the one that follows, if any
         await this.stopped;
         if (this.disposed) {
-            throw new Error(t('backend.theEnigmaBackendIsNotRunning'));
+            throw new EngineStoppedError();
         }
 
         await this.start();
         const connection = this.connection;
         if (!connection) {
-            throw new Error(t('backend.theEnigmaBackendIsNotRunning'));
+            throw new EngineStoppedError();
         }
 
         try {
@@ -261,7 +268,7 @@ export class Backend implements vscode.Disposable {
             if (error instanceof rpc.ResponseError && GONE.has(error.code)) {
                 // stopped before it answered, as when it is restarted: nothing failed
                 this.output.debug(`${method} was not answered: the engine stopped`);
-                throw new Error(t('backend.theEnigmaBackendIsNotRunning'), { cause: error });
+                throw new EngineStoppedError({ cause: error });
             }
 
             if (error instanceof rpc.ResponseError) {
