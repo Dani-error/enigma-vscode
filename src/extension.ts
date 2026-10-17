@@ -63,10 +63,30 @@ export interface EnigmaApi {
 }
 
 let shutdown: (() => Promise<void>) | undefined;
+/** Whether the window is closing. VS Code may have closed the log by then, and says so as an error of its own. */
+let closing = false;
+
+const LOG_WRITES = new Set<PropertyKey>(['append', 'appendLine', 'replace', 'trace', 'debug', 'info', 'warn', 'error']);
+
+/** The log of the extension, which goes to the console of the extension host once the window is closing. */
+const createLog = (): vscode.LogOutputChannel => {
+    const channel = vscode.window.createOutputChannel('Enigma', { log: true });
+    return new Proxy(channel, {
+        get(target, key) {
+            const value: unknown = Reflect.get(target, key);
+            if (typeof value !== 'function') {
+                return value;
+            }
+
+            return (...args: unknown[]): unknown =>
+                closing && LOG_WRITES.has(key) ? console.warn('[Enigma]', ...args) : Reflect.apply(value, target, args);
+        },
+    });
+};
 
 /** Puts the extension together: nothing here decides anything, it only says what works with what. */
 export async function activate(context: vscode.ExtensionContext): Promise<EnigmaApi> {
-    const output = vscode.window.createOutputChannel('Enigma', { log: true });
+    const output = createLog();
     useIcons(vscode.Uri.joinPath(context.extensionUri, 'resources', 'icons'));
     const backend = new Backend(context, output);
     const index = new ClassIndex(backend);
@@ -202,5 +222,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<Enigma
 }
 
 export async function deactivate(): Promise<void> {
+    closing = true;
     await shutdown?.();
 }

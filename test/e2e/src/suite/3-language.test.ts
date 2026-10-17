@@ -168,13 +168,21 @@ describe('Enigma in VS Code: the features of the editor on decompiled classes', 
         );
 
         shown.activeItems = [found];
-        await execute('workbench.action.acceptSelectedQuickOpenItem');
-        const editor = await waitFor('the method in an editor', () => {
+        await waitFor('the result to be the active one', () => shown.activeItems[0] === found);
+        // the window may take in the active item after the command that accepts it arrives: then it accepts nothing
+        const showing = () => {
             const active = vscode.window.activeTextEditor;
             return active?.document.uri.scheme === 'enigma' && active.document.getText(active.selection) === 'doBaseThings'
                 ? active
                 : undefined;
-        });
+        };
+        assert.equal(showing(), undefined, 'the method is not shown before it is chosen');
+        for (let attempt = 0; attempt < 3 && !showing(); attempt++) {
+            await execute('workbench.action.acceptSelectedQuickOpenItem');
+            await waitFor('the method in an editor', showing, 3000).catch(() => undefined);
+        }
+
+        const editor = await waitFor('the method in an editor', showing);
         assert.ok(['a', 'd', 'e'].includes(classOf(editor.document.uri) ?? ''));
     });
 

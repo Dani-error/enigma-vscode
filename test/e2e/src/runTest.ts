@@ -189,6 +189,13 @@ async function main(): Promise<void> {
  * What VS Code wrote down as errors about the extension, in the logs of its window and of its extension host: what
  * goes wrong outside of any one test, like a document that could not be read while tabs were being restored.
  */
+/**
+ * What VS Code logs as errors of its own, naming the extension only because it is about one of its things: a page
+ * whose panel was closed while it was still loading asks for its files after VS Code forgot it, as the tests that
+ * open and close panels in quick succession do.
+ */
+const VSCODE_BOOKKEEPING = [/Blocked vscode-webview request/];
+
 function loggedErrors(directory: string): string[] {
     const found: string[] = [];
     if (!fs.existsSync(directory)) {
@@ -210,7 +217,7 @@ function loggedErrors(directory: string): string[] {
 
             // about this extension: its scheme, its id, or its code; what VS Code says about itself is not ours to fix
             const ours = /enigma:|danibcastro\.enigma-vscode|build\/extension\/dist/.test(trace.join(' '));
-            if (line.includes('[error]') && ours) {
+            if (line.includes('[error]') && ours && !VSCODE_BOOKKEEPING.some(pattern => pattern.test(line))) {
                 found.push(`${entry.name}: ${trace.map(part => part.trim()).join('\n      ')}`);
             }
         });
