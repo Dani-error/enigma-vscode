@@ -268,7 +268,8 @@ export class EditorController implements vscode.Disposable {
     /** Undoes a change that touched something other than the name being edited. */
     private refuse(document: vscode.TextDocument, state: State): void {
         this.debug(document, `refused an edit${state.session ? ' outside the name being typed' : ' outside of a name'}`);
-        void this.replaceText(document, state.expected);
+        // what is expected when the edit's turn comes: the engine may have sent another text meanwhile
+        void this.replaceText(document, () => this.stateOf(document)?.expected ?? state.expected);
         const now = Date.now();
         if (now - this.lastRefusal > 4000) {
             this.lastRefusal = now;
@@ -286,10 +287,10 @@ export class EditorController implements vscode.Disposable {
      * what was typed would otherwise be computed from the same text, and the editor refuses the one that comes second,
      * as made for a document that changed in the meantime, and logs that as an error.
      */
-    private replaceText(document: vscode.TextDocument, target: string): Promise<boolean> {
+    private replaceText(document: vscode.TextDocument, target: string | (() => string)): Promise<boolean> {
         const key = document.uri.toString();
         const edit = (this.edits.get(key) ?? Promise.resolve()).then(() =>
-            document.isClosed ? false : this.replaceTextNow(document, target),
+            document.isClosed ? false : this.replaceTextNow(document, typeof target === 'string' ? target : target()),
         );
         const settled = edit.catch(() => false);
         this.edits.set(key, settled);

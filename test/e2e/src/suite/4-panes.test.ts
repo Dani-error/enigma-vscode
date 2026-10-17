@@ -308,7 +308,7 @@ describe('Enigma in VS Code: panes and views', () => {
         const type: EntryRef = { kind: 'class', name: 'd' };
         const original = { method: (await entryInfo(api, method)).name, type: (await entryInfo(api, type)).name };
         const works = async (methodName: string, what: string) => {
-            await waitFor(`the class to be in line with the engine ${what}`, () => {
+            const inLine = () => {
                 const active = vscode.window.activeTextEditor;
                 return (
                     active?.document.uri.query === 'class=d&view=source' &&
@@ -316,7 +316,12 @@ describe('Enigma in VS Code: panes and views', () => {
                     api.editor.inSync(active.document) &&
                     active.document.getText().includes(`void ${methodName}()`)
                 );
-            });
+            };
+            await waitFor(`the class to be in line with the engine ${what}`, inLine);
+            // A renamed class moves to tabs of its new name, its bytecode as well, and the tab of each comes to the front
+            // for a moment as it opens: the one that was in front is put back once all have moved.
+            await api.editors.whenTabsMigrated();
+            await waitFor(`the class to be in front again ${what}`, inLine);
             await pause(300);
             const active = vscode.window.activeTextEditor!;
             assert.ok(api.editor.inSync(active.document), `in line ${what}`);

@@ -55,6 +55,7 @@ export interface EnigmaApi {
     classDecorations: ClassDecorations;
     mcp: McpServer;
     jarOpener: JarOpener;
+    editors: ClassEditors;
     entryPane: EntryPane;
     collabPane: CollabPane;
     statsPanel: StatsPanel;
@@ -204,6 +205,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Enigma
         project,
         index,
         documents,
+        editors,
         editing,
         editor,
         jarOpener,

@@ -16,16 +16,16 @@ export interface SourceEvent {
     source: SourceResult;
 }
 
-/**
- * What a class reads as while its tab is being closed because its jar is not open (see setAside). Not kept: this is
- * no text of the class.
- */
 /** Whether a tab shows a document. */
 const shownInTab = (uri: vscode.Uri) =>
     vscode.window.tabGroups.all.some(group =>
         group.tabs.some(tab => tab.input instanceof vscode.TabInputText && tab.input.uri.toString() === uri.toString()),
     );
 
+/**
+ * What a class reads as while its tab is being closed because its jar is not open (see setAside). Not kept: this is
+ * no text of the class.
+ */
 const placeholder = (parsed: { class: string; view: View }): LoadedFile => ({
     source: {
         ...parsed,
@@ -151,6 +151,20 @@ export class EnigmaDocuments implements vscode.FileSystemProvider, vscode.Dispos
         }
     }
 
+    /**
+     * The text the editor has of a class no tab shows, as if read again: neither kept nor passed on, so that the
+     * controller goes on with what it knew of the class.
+     */
+    private asItIs(uri: vscode.Uri, parsed: { class: string; view: View }): LoadedFile | undefined {
+        const document = vscode.workspace.textDocuments.find(candidate => candidate.uri.toString() === uri.toString());
+        if (!document || shownInTab(uri)) {
+            return undefined;
+        }
+
+        const text = document.getText();
+        return { source: { ...placeholder(parsed).source, text }, bytes: Buffer.from(text, 'utf8'), mtime: 0 };
+    }
+
     private readOnly(view: View): boolean {
         return view === 'bytecode' || !settings.inlineRename;
     }
@@ -173,13 +187,15 @@ export class EnigmaDocuments implements vscode.FileSystemProvider, vscode.Dispos
             throw vscode.FileSystemError.FileNotFound(uri);
         }
 
-        // Answered with an empty text when there is no jar to read it from: what was set aside, and what no tab shows,
-        // which the editor reads for itself, as for a document it still keeps of a tab that was closed. An error is
-        // what it would log, for nobody to see.
-        const unseen = () => this.aside.has(`${parsed.view}:${parsed.class}`) || !shownInTab(uri);
+        // Without a jar to read it from: a tab being closed reads as nothing (see setAside), and a document the editor
+        // keeps without a tab, as one an extension opened, reads as what it is, so that nothing changes in it until
+        // the jar is back. An error is what the editor would log, for nobody to see.
+        const withoutJar = (): LoadedFile | undefined =>
+            this.aside.has(`${parsed.view}:${parsed.class}`) ? placeholder(parsed) : this.asItIs(uri, parsed);
         if (!(await this.ready())) {
-            if (unseen()) {
-                return placeholder(parsed);
+            const answer = withoutJar();
+            if (answer) {
+                return answer;
             }
 
             throw vscode.FileSystemError.Unavailable(t('documents.noEnigmaProjectIsOpenOpen'));
@@ -196,8 +212,9 @@ export class EnigmaDocuments implements vscode.FileSystemProvider, vscode.Dispos
                 return this.request(uri, true);
             }
 
-            if (gone && unseen()) {
-                return placeholder(parsed);
+            const answer = gone ? withoutJar() : undefined;
+            if (answer) {
+                return answer;
             }
 
             throw vscode.FileSystemError.Unavailable(error instanceof Error ? error.message : String(error));

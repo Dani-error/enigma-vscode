@@ -399,12 +399,12 @@ export class Project implements vscode.Disposable {
     // editor no longer carries it out while it shuts down (tried).
     async setAsideTabs(jar: string): Promise<void> {
         const tabs = this.editors?.openTabs() ?? [];
-        // before anything is waited for: the editor is reading these right now, and gets no error for an answer
-        this.documents.setAside([...tabs, ...(this.editors?.openDocuments() ?? [])]);
         if (tabs.length === 0) {
             return;
         }
 
+        // before anything is waited for: the editor is reading these right now, and gets no error for an answer
+        this.documents.setAside(tabs);
         await this.memory.setAside({ jar, tabs });
         await this.editors.closeAll();
     }
@@ -494,7 +494,7 @@ export class Project implements vscode.Disposable {
 
     /** Closes the classes of the jar that is about to go. What the editor is still reading of them is answered without it. */
     private async closeTabs(): Promise<void> {
-        this.documents.setAside([...this.editors.openTabs(), ...this.editors.openDocuments()]);
+        this.documents.setAside(this.editors.openTabs());
         await this.editors.closeAll();
     }
 
