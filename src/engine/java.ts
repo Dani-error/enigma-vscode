@@ -6,13 +6,26 @@ import * as path from 'node:path';
 // Finding a Java runtime that can run the Enigma engine.
 
 export const MINIMUM_JAVA = 17;
+/**
+ * The newest Java the engine can run on. Enigma reads the classes of the runtime it runs on with ASM, which knows the
+ * class files of a Java up to the version it was made for: Enigma's version catalog has ASM 9.9, made for Java 26. On
+ * a newer one no jar can be opened. A test of the backend (JavaVersionTest) keeps this in line with ASM.
+ */
+export const MAXIMUM_JAVA = 26;
+
+/** Whether the engine can run on a Java of this major version. */
+export const isSupportedJava = (version: number, minimum = MINIMUM_JAVA, maximum = MAXIMUM_JAVA) =>
+    version >= minimum && version <= maximum;
 
 /** Where a runtime was found. The extension words it for the user; source is the same in English, for logs. */
 export type JavaOrigin = { kind: 'setting' } | { kind: 'javaHome' } | { kind: 'path' } | { kind: 'installed'; directory: string };
 
 /** Why a runtime was passed over. */
 export type JavaProblem =
-    { kind: 'noExecutable'; file: string } | { kind: 'notStartable'; error?: string } | { kind: 'tooOld'; version: number };
+    | { kind: 'noExecutable'; file: string }
+    | { kind: 'notStartable'; error?: string }
+    | { kind: 'tooOld'; version: number }
+    | { kind: 'tooNew'; version: number };
 
 export interface JavaRuntime {
     executable: string;
@@ -49,7 +62,9 @@ export const reasonOf = (problem: JavaProblem) =>
         ? `there is no ${problem.file} in it`
         : problem.kind === 'tooOld'
           ? `it is Java ${problem.version}`
-          : (problem.error ?? 'it could not be started');
+          : problem.kind === 'tooNew'
+            ? `it is Java ${problem.version}, newer than Enigma can read (Java ${MAXIMUM_JAVA} at most)`
+            : (problem.error ?? 'it could not be started');
 
 const rejection = (javaPath: string, origin: JavaOrigin, problem: JavaProblem): RejectedJava => ({
     path: javaPath,
@@ -75,6 +90,7 @@ export interface JavaSearchOptions {
     platform?: NodeJS.Platform;
     homeDir?: string;
     minimum?: number;
+    maximum?: number;
     /** Directories that contain Java installations; defaults to the usual ones of the platform. */
     searchRoots?: string[];
 }
@@ -273,6 +289,10 @@ export async function findJava(options: JavaSearchOptions = {}): Promise<JavaSea
     const homeDir = options.homeDir ?? os.homedir();
     const env = options.env ?? process.env;
     const minimum = options.minimum ?? MINIMUM_JAVA;
+    const maximum = options.maximum ?? MAXIMUM_JAVA;
+    /** Why a runtime that started cannot run the engine, if it cannot. */
+    const unsuitable = (version: number): JavaProblem | undefined =>
+        version < minimum ? { kind: 'tooOld', version } : version > maximum ? { kind: 'tooNew', version } : undefined;
     const executable = executableName(platform);
     const rejected: RejectedJava[] = [];
 
@@ -290,8 +310,9 @@ export async function findJava(options: JavaSearchOptions = {}): Promise<JavaSea
             return undefined;
         }
 
-        if (probe.version < minimum) {
-            rejected.push(rejection(java, origin, { kind: 'tooOld', version: probe.version }));
+        const problem = unsuitable(probe.version);
+        if (problem) {
+            rejected.push(rejection(java, origin, problem));
             return undefined;
         }
 
@@ -314,7 +335,7 @@ export async function findJava(options: JavaSearchOptions = {}): Promise<JavaSea
     const pathJava = onPath(env, platform);
     if (pathJava) {
         const probe = await probeJava(pathJava, env);
-        if (probe.version !== undefined && probe.version >= minimum) {
+        if (probe.version !== undefined && !unsuitable(probe.version)) {
             // the installation itself, rather than a launcher that stands in for it
             const installed = probe.home ? path.join(probe.home, 'bin', executable) : undefined;
             const resolved = installed && fs.existsSync(installed) ? { executable: installed, home: probe.home } : { executable: pathJava };
@@ -328,7 +349,7 @@ export async function findJava(options: JavaSearchOptions = {}): Promise<JavaSea
             rejection(
                 pathJava,
                 { kind: 'path' },
-                probe.version !== undefined ? { kind: 'tooOld', version: probe.version } : { kind: 'notStartable', error: probe.error },
+                probe.version !== undefined ? unsuitable(probe.version)! : { kind: 'notStartable', error: probe.error },
             ),
         );
     }
@@ -338,9 +359,15 @@ export async function findJava(options: JavaSearchOptions = {}): Promise<JavaSea
             continue;
         }
 
-        // the release file said it is new enough; make sure it actually starts
+        // newest first: one that is too new is said, for when none of the others will do either
+        if (installation.version > maximum) {
+            rejected.push(rejection(installation.executable, installation.origin, { kind: 'tooNew', version: installation.version }));
+            continue;
+        }
+
+        // the release file said it will do; make sure it actually starts
         const probe = await probeJava(installation.executable, env);
-        if (probe.version !== undefined && probe.version >= minimum) {
+        if (probe.version !== undefined && !unsuitable(probe.version)) {
             return { runtime: { ...installation, version: probe.version }, rejected };
         }
 
@@ -348,7 +375,7 @@ export async function findJava(options: JavaSearchOptions = {}): Promise<JavaSea
             rejection(
                 installation.executable,
                 installation.origin,
-                probe.version !== undefined ? { kind: 'tooOld', version: probe.version } : { kind: 'notStartable', error: probe.error },
+                probe.version !== undefined ? unsuitable(probe.version)! : { kind: 'notStartable', error: probe.error },
             ),
         );
     }
@@ -357,13 +384,13 @@ export async function findJava(options: JavaSearchOptions = {}): Promise<JavaSea
 }
 
 /** Explains a failed search, in English: for logs and the build (the extension words it for the user, see javaText.ts). */
-export const describeFailure = (search: JavaSearch, minimum: number = MINIMUM_JAVA) => {
+export const describeFailure = (search: JavaSearch, minimum: number = MINIMUM_JAVA, maximum: number = MAXIMUM_JAVA) => {
     const tried = search.rejected.map(entry => `${entry.path} (from ${entry.source}): ${entry.reason}`).join('; ');
     if (search.configuredInvalid) {
-        return `The Java installation chosen in the "enigma.java.home" setting cannot be used. ${tried}. Enigma needs Java ${minimum} or newer.`;
+        return `The Java installation chosen in the "enigma.java.home" setting cannot be used. ${tried}. Enigma needs Java ${minimum} to ${maximum}.`;
     }
 
-    return `Enigma needs Java ${minimum} or newer to run, and none was found.${tried ? ` Looked at: ${tried}.` : ''}`;
+    return `Enigma needs Java ${minimum} to ${maximum} to run, and none was found.${tried ? ` Looked at: ${tried}.` : ''}`;
 };
 
 export const environmentFor = (runtime: JavaRuntime, env: NodeJS.ProcessEnv = process.env) => {

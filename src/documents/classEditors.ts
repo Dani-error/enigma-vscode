@@ -51,6 +51,14 @@ export class ClassEditors implements vscode.Disposable {
     }
 
     /** The classes that are open in tabs, in the order of the tabs. */
+    /** The classes the editor has a document of, in a tab or not: one opened by an extension may have none. */
+    openDocuments(): { class: string; view: View }[] {
+        return vscode.workspace.textDocuments.flatMap(document => {
+            const parsed = parseClassUri(document.uri);
+            return parsed ? [parsed] : [];
+        });
+    }
+
     openTabs(): { class: string; view: View; column: vscode.ViewColumn; active: boolean }[] {
         return vscode.window.tabGroups.all.flatMap(group =>
             group.tabs.flatMap(tab => {

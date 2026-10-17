@@ -18,7 +18,7 @@ import { ClassEditors } from './documents/classEditors';
 import { EnigmaDocuments } from './documents/documents';
 import { EditorController } from './editor/controller';
 import { Backend } from './engine/backend';
-import { JavaRuntime, MINIMUM_JAVA, discoverInstallations } from './engine/java';
+import { JavaRuntime, discoverInstallations, isSupportedJava } from './engine/java';
 import { TreeNodeResult } from './engine/protocol';
 import { Enigma } from './enigma';
 import { registerLanguageFeatures } from './language/features';
@@ -97,7 +97,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<Enigma
     const layout = new Layout(project, index, classes, structure, entryPane, output);
 
     context.subscriptions.push(
-        output,
         backend,
         index,
         reporter,
@@ -135,6 +134,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<Enigma
         vscode.window.onDidChangeActiveTextEditor(active => {
             void vscode.commands.executeCommand('setContext', 'enigma.classEditorActive', active?.document.uri.scheme === SCHEME);
         }),
+        // last: they are disposed in this order, and what goes before may still tell the log something as it stops
+        output,
     );
 
     const enigma: Enigma = {
@@ -196,7 +197,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Enigma
         classViews: classes.views,
         classDecorations: classes.decorations,
         mcp,
-        javaInstallations: () => discoverInstallations().filter(installation => installation.version >= MINIMUM_JAVA),
+        javaInstallations: () => discoverInstallations().filter(installation => isSupportedJava(installation.version)),
     };
 }
 

@@ -2,13 +2,18 @@ import * as vscode from 'vscode';
 import { Enigma } from '../enigma';
 import { JarOpener } from '../project/jarOpener';
 import { Register, Targets } from './registry';
+import { filePath } from '../project/paths';
 
 /**
  * The file a command was given, if it was given one. Commands are also run from the buttons of views, which pass
  * something of their own, and from the palette, which passes nothing: then there is no file, and the user is asked.
  */
 const fileOf = (argument: unknown): string | undefined =>
-    typeof argument === 'string' ? argument : argument instanceof vscode.Uri && argument.scheme === 'file' ? argument.fsPath : undefined;
+    typeof argument === 'string'
+        ? argument
+        : argument instanceof vscode.Uri && argument.scheme === 'file'
+          ? filePath(argument.fsPath)
+          : undefined;
 
 /** Jars, mappings, exporting, and working on them together. */
 export const registerProjectCommands = (

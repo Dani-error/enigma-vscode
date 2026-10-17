@@ -1,10 +1,11 @@
 import * as vscode from 'vscode';
 import { Enigma } from '../enigma';
-import { MINIMUM_JAVA, discoverInstallations } from '../engine/java';
+import { MAXIMUM_JAVA, MINIMUM_JAVA, discoverInstallations, isSupportedJava } from '../engine/java';
 import { describeOrigin } from '../engine/javaText';
 import { settings } from '../config';
 import { Register } from './registry';
 import { t } from '../l10n';
+import { filePath } from '../project/paths';
 
 /** The engine itself: the Java it runs on, the decompiler it uses, its log. */
 export const registerEngineCommands = (register: Register, { backend, project, output }: Enigma) => {
@@ -12,7 +13,7 @@ export const registerEngineCommands = (register: Register, { backend, project, o
     register('enigma.showOutput', () => output.show());
 
     register('enigma.selectJava', async () => {
-        const installations = discoverInstallations().filter(installation => installation.version >= MINIMUM_JAVA);
+        const installations = discoverInstallations().filter(installation => isSupportedJava(installation.version));
         const browse = {
             label: `$(folder-opened) ${t('engineCommands.browse')}`,
             description: t('engineCommands.chooseTheInstallationDirectoryOfA'),
@@ -33,7 +34,7 @@ export const registerEngineCommands = (register: Register, { backend, project, o
                 automatic,
                 browse,
             ],
-            { title: t('engineCommands.selectJavaOrNewerForThe', MINIMUM_JAVA), matchOnDescription: true },
+            { title: t('engineCommands.selectJavaForTheEngine', MINIMUM_JAVA, MAXIMUM_JAVA), matchOnDescription: true },
         );
         if (!picked) {
             return;
@@ -47,7 +48,7 @@ export const registerEngineCommands = (register: Register, { backend, project, o
                 canSelectFolders: true,
                 canSelectMany: false,
             });
-            home = chosen?.[0]?.fsPath;
+            home = chosen?.[0] && filePath(chosen[0].fsPath);
             if (!home) {
                 return;
             }

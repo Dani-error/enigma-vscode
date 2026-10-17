@@ -169,6 +169,11 @@ export class Backend implements vscode.Disposable {
 
     /** Writes to the log of the extension, which is gone already while the window closes. */
     private log(write: () => void): void {
+        // once disposed, the log may be closed: VS Code says so where no catch here sees it
+        if (this.disposed) {
+            return;
+        }
+
         try {
             write();
         } catch {

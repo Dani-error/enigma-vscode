@@ -202,12 +202,16 @@ function loggedErrors(directory: string): string[] {
 
         const lines = fs.readFileSync(path.join(entry.parentPath, entry.name), 'utf8').split('\n');
         lines.forEach((line, index) => {
+            // the error and where it happened: the stack trace below it, but not the lines of whatever comes next
+            const trace = [line];
+            for (let next = index + 1; next < lines.length && /^\s+at /.test(lines[next]); next++) {
+                trace.push(lines[next]);
+            }
+
             // about this extension: its scheme, its id, or its code; what VS Code says about itself is not ours to fix
-            const ours = /enigma:|danibcastro\.enigma-vscode|build\/extension\/dist/.test(
-                `${line} ${lines[index + 1] ?? ''} ${lines[index + 2] ?? ''}`,
-            );
+            const ours = /enigma:|danibcastro\.enigma-vscode|build\/extension\/dist/.test(trace.join(' '));
             if (line.includes('[error]') && ours) {
-                found.push(`${entry.name}: ${line.trim()}`);
+                found.push(`${entry.name}: ${trace.map(part => part.trim()).join('\n      ')}`);
             }
         });
     }

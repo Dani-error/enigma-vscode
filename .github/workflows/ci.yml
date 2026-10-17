@@ -2,7 +2,7 @@ name: CI
 
 on:
     push:
-        branches: [main]
+        branches: [master]
     pull_request:
     workflow_dispatch:
     # the release runs the tests first (see release.yml)
@@ -84,7 +84,7 @@ jobs:
 
             - name: Coverage reports
               if: always()
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v5
               with:
                   name: coverage-${{ matrix.os }}-${{ matrix.vscode }}
                   path: |

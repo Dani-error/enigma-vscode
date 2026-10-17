@@ -3,6 +3,7 @@ import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { t } from '../l10n';
 import { Project } from './project';
+import { filePath } from './paths';
 
 const sameFile = (a: string | null | undefined, b: string) => {
     if (!a) {
@@ -57,12 +58,12 @@ export class JarOpener implements vscode.CustomReadonlyEditorProvider, vscode.Di
             return false;
         }
 
-        if (!sameFile(this.project.state?.jarPath, uri.fsPath)) {
+        if (!sameFile(this.project.state?.jarPath, filePath(uri.fsPath))) {
             // asks about unsaved changes of the jar that is open, and reports what goes wrong
-            await this.project.openJar(uri.fsPath);
+            await this.project.openJar(filePath(uri.fsPath));
         }
 
-        if (!sameFile(this.project.state?.jarPath, uri.fsPath)) {
+        if (!sameFile(this.project.state?.jarPath, filePath(uri.fsPath))) {
             return false;
         }
 

@@ -1,5 +1,5 @@
 import { t } from '../l10n';
-import { JavaOrigin, JavaProblem, JavaSearch } from './java';
+import { JavaOrigin, JavaProblem, JavaSearch, MAXIMUM_JAVA, MINIMUM_JAVA } from './java';
 
 // What the search for a Java runtime found, in the language of the editor. java.ts stays free of the editor: the
 // build and its unit tests use it too.
@@ -25,6 +25,8 @@ export const describeProblem = (problem: JavaProblem): string => {
             return t('java.noExecutable', problem.file);
         case 'tooOld':
             return t('java.isJava', problem.version);
+        case 'tooNew':
+            return t('java.isJavaTooNew', problem.version, MAXIMUM_JAVA);
         case 'notStartable':
             return problem.error ?? t('java.couldNotStart');
     }
@@ -36,7 +38,9 @@ export const describeRejections = (search: JavaSearch): string =>
 
 /** Why no runtime can be used, with what was tried. */
 export const describeJavaFailure = (search: JavaSearch): string => {
-    const summary = search.configuredInvalid ? t('errors.theJavaInstallationSetInEnigma') : t('errors.enigmaNeedsJava17OrNewer');
+    const summary = search.configuredInvalid
+        ? t('errors.theJavaInstallationSetInEnigma')
+        : t('errors.enigmaNeedsJavaBetween', MINIMUM_JAVA, MAXIMUM_JAVA);
     const tried = describeRejections(search);
     return tried ? `${summary} (${tried})` : summary;
 };

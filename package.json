@@ -83,7 +83,7 @@
     "build": "npm run typecheck && npm run bundle",
     "watch": "tsx scripts/build.ts --watch",
     "test": "npm run check && npm run test:unit && npm run test:protocol && npm run test:e2e && npm run test:reload",
-    "test:unit": "tsx --test test/java.test.ts test/zones.test.ts",
+    "test:unit": "tsx --test test/java.test.ts test/paths.test.ts test/zones.test.ts",
     "test:protocol": "tsx test/protocol.test.ts",
     "pretest:e2e": "npm run build && tsx scripts/build.ts --tests",
     "test:e2e": "tsx scripts/e2e.ts",

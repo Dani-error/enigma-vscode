@@ -234,7 +234,11 @@ describe('Enigma in VS Code: panes and views', () => {
         assert.deepEqual(['a', 'c', 'd'].map(icon), ['abstract.svg', 'abstract.svg', 'class.svg']);
         // the pictures are part of the extension, one for everything a class can be
         const icons = path.join(vscode.extensions.getExtension('danibcastro.enigma-vscode')!.extensionPath, 'resources', 'icons');
-        assert.equal(path.dirname((item('a').iconPath as vscode.Uri).fsPath), icons);
+        // as addresses: on Windows, VS Code and Node write the drive letter differently
+        assert.equal(
+            vscode.Uri.file(path.dirname((item('a').iconPath as vscode.Uri).fsPath)).toString(),
+            vscode.Uri.file(icons).toString(),
+        );
         for (const name of ['class', 'interface', 'enum', 'annotation', 'record', 'abstract', 'exception']) {
             assert.ok(fs.readFileSync(path.join(icons, `${name}.svg`), 'utf8').includes('<svg'), name);
         }

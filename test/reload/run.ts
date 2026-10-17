@@ -162,6 +162,10 @@ function start(executable: string): void {
             '--disable-workspace-trust',
             '--skip-welcome',
             '--skip-release-notes',
+            // as @vscode/test-electron starts it: Chromium's sandbox cannot start on Linux machines without one, like CI's
+            '--no-sandbox',
+            '--disable-gpu-sandbox',
+            '--disable-updates',
             `--remote-debugging-port=${port}`,
         ],
         { env, stdio: 'ignore' },

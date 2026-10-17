@@ -12,6 +12,7 @@ import { ProjectDescriptor, ProjectMemory } from './memory';
 import { Recovery } from './recovery';
 import { ProjectStatus } from './status';
 import { t } from '../l10n';
+import { filePath } from './paths';
 
 /**
  * Owns the open jar and its mappings: the equivalent of Enigma's file menu. What an editor extension needs on top of
@@ -398,12 +399,12 @@ export class Project implements vscode.Disposable {
     // editor no longer carries it out while it shuts down (tried).
     async setAsideTabs(jar: string): Promise<void> {
         const tabs = this.editors?.openTabs() ?? [];
+        // before anything is waited for: the editor is reading these right now, and gets no error for an answer
+        this.documents.setAside([...tabs, ...(this.editors?.openDocuments() ?? [])]);
         if (tabs.length === 0) {
             return;
         }
 
-        // before anything is waited for: the editor is reading these right now, and gets no error for an answer
-        this.documents.setAside(tabs);
         await this.memory.setAside({ jar, tabs });
         await this.editors.closeAll();
     }
@@ -433,12 +434,14 @@ export class Project implements vscode.Disposable {
                 filters: { [t('common.javaArchives')]: ['jar'], [t('project.allFiles')]: ['*'] },
                 defaultUri: this.defaultDirectory(),
             });
-            jar = picked?.[0]?.fsPath;
+            jar = picked?.[0] && filePath(picked[0].fsPath);
         }
 
         if (!jar || !(await this.confirmDiscard(t('project.saveBeforeOpeningJar')))) {
             return;
         }
+
+        jar = filePath(jar);
 
         await this.closeTabs();
 
@@ -491,7 +494,7 @@ export class Project implements vscode.Disposable {
 
     /** Closes the classes of the jar that is about to go. What the editor is still reading of them is answered without it. */
     private async closeTabs(): Promise<void> {
-        this.documents.setAside(this.editors.openTabs());
+        this.documents.setAside([...this.editors.openTabs(), ...this.editors.openDocuments()]);
         await this.editors.closeAll();
     }
 
@@ -549,11 +552,11 @@ export class Project implements vscode.Disposable {
                     : { [t('common.mappings')]: Object.values(filters).flat(), ...filters, [t('project.allFiles')]: ['*'] },
                 defaultUri: this.defaultDirectory(),
             });
-            mappingsPath = picked?.[0]?.fsPath;
+            mappingsPath = picked?.[0] && filePath(picked[0].fsPath);
         }
 
         if (mappingsPath && (await this.confirmDiscard(t('project.saveBeforeOpeningMappings')))) {
-            await this.loadMappings(mappingsPath);
+            await this.loadMappings(filePath(mappingsPath));
             await this.recovery.offer();
         }
     }
@@ -615,7 +618,7 @@ export class Project implements vscode.Disposable {
 
         return (
             (await this.reporter.run(async () => {
-                await this.backend.request('mappings/save', { path: target.fsPath, format: format.id });
+                await this.backend.request('mappings/save', { path: filePath(target.fsPath), format: format.id });
                 vscode.window.setStatusBarMessage(t('project.enigmaMappingsSaved'), 3000);
                 return true;
             })) ?? false
@@ -676,7 +679,7 @@ export class Project implements vscode.Disposable {
             defaultUri: this.defaultDirectory(),
         });
         if (picked?.[0]) {
-            const target = picked[0].fsPath;
+            const target = filePath(picked[0].fsPath);
             if (await this.reporter.run(async () => (await this.backend.request('export/source', { path: target }), true))) {
                 void vscode.window.showInformationMessage(t('project.enigmaExportedTheDecompiledSourceTo', target));
             }
@@ -696,8 +699,8 @@ export class Project implements vscode.Disposable {
             defaultUri: vscode.Uri.file(path.join(path.dirname(jar), `${path.basename(jar, '.jar')}-deobf.jar`)),
         });
         if (target) {
-            if (await this.reporter.run(async () => (await this.backend.request('export/jar', { path: target.fsPath }), true))) {
-                void vscode.window.showInformationMessage(t('project.enigmaExportedTheRemappedJarTo', target.fsPath));
+            if (await this.reporter.run(async () => (await this.backend.request('export/jar', { path: filePath(target.fsPath) }), true))) {
+                void vscode.window.showInformationMessage(t('project.enigmaExportedTheRemappedJarTo', filePath(target.fsPath)));
             }
         }
     }

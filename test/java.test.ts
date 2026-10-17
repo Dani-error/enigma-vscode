@@ -21,6 +21,9 @@ function fakeJdk(directory: string, versionString: string): string {
     return directory;
 }
 
+// newer than Enigma can read (see MAXIMUM_JAVA), in a place of its own
+const newer = join(temp, 'newer');
+const java27 = fakeJdk(join(newer, 'temurin-27.jdk', 'Contents', 'Home'), '27');
 const java8 = fakeJdk(join(temp, 'jdks', 'zulu-8.jdk', 'Contents', 'Home'), '1.8.0_332');
 const java17 = fakeJdk(join(temp, 'jdks', 'corretto-17'), '17.0.5');
 const java21 = fakeJdk(join(temp, 'jdks', 'corretto-21.jdk', 'Contents', 'Home'), '21.0.3');
@@ -47,6 +50,8 @@ writeFileSync(
     `#!/bin/sh\nif [ -n "$JAVA_HOME" ]; then exec "$JAVA_HOME/bin/java" "$@"; fi\necho '    java.home = ${java25}' >&2\necho 'openjdk version "25.0.1" 2025-10-21 LTS' >&2\n`,
 );
 chmodSync(join(tellingStubDir, 'java'), 0o755);
+
+const search = (result: Awaited<ReturnType<typeof findJava>>) => result;
 
 describe('java discovery', { skip }, () => {
     it('parses version strings', () => {
@@ -97,6 +102,25 @@ describe('java discovery', { skip }, () => {
         );
     });
 
+    it('passes over a Java that is newer than Enigma can read, wherever it is found', async () => {
+        // the newest installed is too new: the next one runs the engine, and why the newest does not is said
+        const installed = await findJava({ env: { PATH: none }, searchRoots: [newer, jdks] });
+        assert.equal(search(installed).runtime?.version, 21);
+        assert.match(
+            installed.rejected.map(entry => entry.reason).join('; '),
+            /it is Java 27, newer than Enigma can read \(Java 26 at most\)/,
+        );
+
+        assert.equal((await findJava({ env: { JAVA_HOME: java27, PATH: none }, searchRoots: [jdks] })).runtime?.version, 21);
+        assert.equal((await findJava({ env: { PATH: join(java27, 'bin') }, searchRoots: [jdks] })).runtime?.version, 21);
+
+        // chosen in the setting, it is refused: the setting is not overruled
+        const chosen = await findJava({ configuredHome: java27, env: { PATH: none }, searchRoots: [jdks] });
+        assert.equal(chosen.runtime, undefined);
+        assert.equal(chosen.configuredInvalid, true);
+        assert.match(describeFailure(chosen), /Java 17 to 26/);
+    });
+
     it('uses JAVA_HOME when it is new enough', async () => {
         const search = await findJava({ env: { JAVA_HOME: java17, PATH: join(java21, 'bin') }, searchRoots: [jdks] });
         assert.equal(search.runtime?.version, 17);
@@ -145,7 +169,7 @@ describe('java discovery', { skip }, () => {
         assert.equal(search.runtime, undefined);
         assert.equal(search.configuredInvalid, undefined);
         const message = describeFailure(search);
-        assert.match(message, /needs Java 17 or newer/);
+        assert.match(message, /needs Java 17 to 26/);
         assert.match(message, /from JAVA_HOME\): it is Java 8/);
         assert.match(message, /from the PATH\): it is Java 8/);
     });
