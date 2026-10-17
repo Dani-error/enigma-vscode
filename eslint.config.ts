@@ -8,7 +8,7 @@ import tseslint from 'typescript-eslint';
 export default defineConfig(
     {
         // what the build makes, and what is not ours
-        ignores: ['build/', 'vendor/', 'node_modules/', 'backend/', 'test/reload/driver/extension.js'],
+        ignores: ['build/', 'vendor/', 'node_modules/', 'backend/', '.vscode-test/', 'test/reload/driver/extension.js'],
     },
     js.configs.recommended,
     tseslint.configs.recommendedTypeChecked,

@@ -1,0 +1,67 @@
+name: Release
+
+# Push a tag named after the version in package.json, like v1.0.0, to publish it.
+on:
+    push:
+        tags: ['v*']
+
+permissions:
+    contents: read
+
+jobs:
+    test:
+        uses: ./.github/workflows/ci.yml
+
+    release:
+        needs: test
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        steps:
+            - uses: actions/checkout@v5
+              with:
+                  submodules: recursive
+
+            - uses: actions/setup-java@v5
+              with:
+                  distribution: temurin
+                  java-version: 21
+                  cache: gradle
+
+            - uses: actions/setup-node@v5
+              with:
+                  node-version: 22
+
+            - uses: oven-sh/setup-bun@v2
+
+            - run: bun install --frozen-lockfile
+
+            - name: The tag names the version that is released
+              run: |
+                  version=$(node -p "require('./package.json').version")
+                  if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+                    echo "The tag $GITHUB_REF_NAME does not match version $version in package.json." >&2
+                    exit 1
+                  fi
+                  echo "VSIX=build/enigma-vscode-$version.vsix" >> "$GITHUB_ENV"
+
+            - name: Package
+              run: npm run package
+
+            - name: GitHub release
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: gh release create "$GITHUB_REF_NAME" "$VSIX" --title "$GITHUB_REF_NAME" --generate-notes
+
+            # Only when the tokens are set as secrets of the repository: VSCE_PAT and OVSX_PAT
+            - name: Visual Studio Marketplace
+              env:
+                  VSCE_PAT: ${{ secrets.VSCE_PAT }}
+              if: env.VSCE_PAT != ''
+              run: npx vsce publish --packagePath "$VSIX"
+
+            - name: Open VSX
+              env:
+                  OVSX_PAT: ${{ secrets.OVSX_PAT }}
+              if: env.OVSX_PAT != ''
+              run: npx --yes ovsx publish "$VSIX"

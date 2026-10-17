@@ -43,6 +43,10 @@ Run `npm run check`, `npm run test:backend` and `npm test` before opening a pull
 they cover less than they do now; their reports are in `build/coverage/e2e` and `backend/build/reports/jacoco`.
 Translations are in `l10n/`.
 
+CI runs all of it on Linux, macOS and Windows, and on the oldest VS Code supported. Pushing a tag such as `v1.0.0`
+releases that version: the `.vsix` is attached to a GitHub release, and published to the Marketplace and Open VSX when
+the repository has the `VSCE_PAT` and `OVSX_PAT` secrets.
+
 ## License
 
 [LGPL-3.0-or-later](LICENSE). See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for bundled libraries.

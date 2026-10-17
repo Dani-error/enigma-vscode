@@ -1,0 +1,7 @@
+# LF everywhere, as Prettier and EditorConfig expect, also when checked out on Windows
+* text=auto eol=lf
+# batch files are read by Windows, which wants CRLF
+*.bat text eol=crlf
+*.png binary
+*.jar binary
+*.ttf binary

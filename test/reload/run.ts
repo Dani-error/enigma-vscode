@@ -7,6 +7,7 @@
 // and pictures of it (ENIGMA_RELOAD_SHOTS=<folder> keeps them).
 //
 // Run with: npm run test:reload
+import { downloadAndUnzipVSCode } from '@vscode/test-electron';
 import { buildSync } from 'esbuild';
 import { ChildProcess, spawn } from 'node:child_process';
 import * as fs from 'node:fs';
@@ -60,19 +61,21 @@ interface Step {
 const root = path.resolve(import.meta.dirname, '../..');
 const driver = path.join(root, 'test', 'reload', 'driver');
 const fixture = path.join(root, 'vendor', 'enigma', 'enigma', 'build', 'test-obf', 'inheritance_tree.jar');
-const executable = [
-    process.env.VSCODE_EXECUTABLE,
-    '/Applications/Visual Studio Code.app/Contents/MacOS/Code',
-    '/Applications/Visual Studio Code.app/Contents/MacOS/Electron',
-    '/usr/share/code/code',
-].find(candidate => candidate && fs.existsSync(candidate));
+// An installed VS Code, or a download of one, as for the end-to-end tests (see test/e2e/src/runTest.ts)
+const version = process.env.VSCODE_VERSION;
+const installed =
+    process.env.VSCODE_DOWNLOAD || version
+        ? undefined
+        : [
+              process.env.VSCODE_EXECUTABLE,
+              '/Applications/Visual Studio Code.app/Contents/MacOS/Code',
+              '/Applications/Visual Studio Code.app/Contents/MacOS/Electron',
+              '/usr/share/code/code',
+          ].find(candidate => candidate && fs.existsSync(candidate));
+const executable = installed ?? (await downloadAndUnzipVSCode(version ?? 'stable'));
 
 if (!fs.existsSync(fixture)) {
     throw new Error('Enigma test fixtures are missing. Run "npm run test:backend" once to build them.');
-}
-
-if (!executable) {
-    throw new Error('No installed editor found. Set VSCODE_EXECUTABLE to its executable.');
 }
 
 // the driver is an extension, and the editor loads those as JavaScript
