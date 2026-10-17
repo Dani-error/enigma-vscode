@@ -122,8 +122,17 @@ public final class SourceService implements Service {
                 } else if (this.underWay == null) {
                     this.underWay = t;
                 }
-            } else if (this.underWay != InvalidationType.FULL) {
-                this.underWay = t;
+            } else {
+                // The other way round as well: a javadoc that changes while the names are being mapped again, as
+                // when a javadoc is undone right after a rename. What is under way started before it, and is not
+                // passed on: the source produced once more is the one that is waited for.
+                if (this.underWay != null) {
+                    this.again = this.again == InvalidationType.FULL || t == InvalidationType.FULL ? InvalidationType.FULL : t;
+                }
+
+                if (this.underWay != InvalidationType.FULL) {
+                    this.underWay = t;
+                }
             }
         }
 

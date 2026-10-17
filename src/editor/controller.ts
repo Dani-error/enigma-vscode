@@ -308,6 +308,13 @@ export class EditorController implements vscode.Disposable {
             }
         }
 
+        // Not shown, and without changes of its own: the editor reloads it from the file (see EnigmaDocuments.refresh),
+        // and an edit sent meanwhile collides with that reload, refused and logged by the editor as an error. One with
+        // unsaved changes is not reloaded, and only an edit brings it back.
+        if (!document.isDirty) {
+            return false;
+        }
+
         const edit = new vscode.WorkspaceEdit();
         changes.forEach(change => edit.replace(document.uri, change.range, change.text));
         return vscode.workspace.applyEdit(edit);
