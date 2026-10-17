@@ -44,8 +44,8 @@ they cover less than they do now; their reports are in `build/coverage/e2e` and 
 Translations are in `l10n/`.
 
 CI runs all of it on Linux, macOS and Windows, and on the oldest VS Code supported. Pushing a tag such as `v1.0.0`
-releases that version: the `.vsix` is attached to a GitHub release, and published to the Marketplace and Open VSX when
-the repository has the `VSCE_PAT` and `OVSX_PAT` secrets.
+releases that version: the `.vsix` is attached to a GitHub release, and published to Open VSX when the repository has
+the `OVSX_PAT` secret. It is uploaded to the Marketplace by hand, at marketplace.visualstudio.com/manage.
 
 ## License
 
