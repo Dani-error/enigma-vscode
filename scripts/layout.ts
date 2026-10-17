@@ -22,8 +22,19 @@ export const layout = (root: string) => {
     };
 };
 
-/** What of the repository ships as it is, next to what is built. Files that do not exist are left out. */
-export const SHIPPED = ['README.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'language-configuration.json', 'syntaxes', 'resources'];
+/**
+ * What of the repository ships as it is, next to what is built: where it ships, and where it is in the repository. Files
+ * that do not exist are left out. The README of the repository is for working on the extension; the one that ships, which
+ * the Marketplace and the editor show, is for using it.
+ */
+export const SHIPPED: Record<string, string> = {
+    'README.md': 'README.extension.md',
+    'LICENSE': 'LICENSE',
+    'THIRD_PARTY_NOTICES.md': 'THIRD_PARTY_NOTICES.md',
+    'language-configuration.json': 'language-configuration.json',
+    'syntaxes': 'syntaxes',
+    'resources': 'resources',
+};
 
 /**
  * Parts of package.json that are about developing the extension, not running it. "type" makes the scripts and tests

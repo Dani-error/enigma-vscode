@@ -72,8 +72,8 @@ function stage(): void {
         );
     }
 
-    for (const file of SHIPPED.filter(file => fs.existsSync(path.join(root, file)))) {
-        fs.cpSync(path.join(root, file), path.join(paths.extension, file), { recursive: true });
+    for (const [shipped, file] of Object.entries(SHIPPED).filter(([, file]) => fs.existsSync(path.join(root, file)))) {
+        fs.cpSync(path.join(root, file), path.join(paths.extension, shipped), { recursive: true });
     }
 
     // everything in build/extension ships, except the source maps and the tests that help while developing
