@@ -1,4 +1,4 @@
-# Enigma for VS Code
+# Enigma VSCode
 
 [Enigma](https://github.com/QuiltMC/enigma), the tool for deobfuscating Java bytecode, as a VS Code extension.
 

@@ -2,7 +2,7 @@
 
 ## This project
 
-Enigma for VS Code is distributed under the **GNU Lesser General Public License v3.0 or later** (see [LICENSE](LICENSE)).
+Enigma VSCode is distributed under the **GNU Lesser General Public License v3.0 or later** (see [LICENSE](LICENSE)).
 
 That choice follows from Enigma's own licence. The backend links Enigma, ships it in the same jar, and contains two
 pieces adapted from it:
