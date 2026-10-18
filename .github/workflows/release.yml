@@ -17,6 +17,9 @@ jobs:
         runs-on: ubuntu-latest
         permissions:
             contents: write
+        env:
+            # here rather than on the step: the condition of a step does not see what the step itself sets
+            OVSX_PAT: ${{ secrets.OVSX_PAT }}
         steps:
             - uses: actions/checkout@v5
               with:
@@ -56,7 +59,5 @@ jobs:
             # Only when the token is set as a secret of the repository: OVSX_PAT. The Marketplace gets the .vsix of the
             # GitHub release by hand.
             - name: Open VSX
-              env:
-                  OVSX_PAT: ${{ secrets.OVSX_PAT }}
               if: env.OVSX_PAT != ''
               run: npx --yes ovsx publish "$VSIX"
